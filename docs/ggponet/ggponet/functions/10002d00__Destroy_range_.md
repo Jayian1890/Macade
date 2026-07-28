@@ -1,0 +1,95 @@
+# 10002d00 `_Destroy_range<>`
+
+## Metadata
+
+| Field | Value |
+| --- | --- |
+| `entry` | 10002d00 |
+| `name` | _Destroy_range<> |
+| `namespace` | Global |
+| `signature` | undefined _Destroy_range<>(void) |
+| `size_bytes` | 38 |
+| `stack_frame_size` | 4 |
+| `calling_convention` | unknown |
+| `source_type` | ANALYSIS |
+| `export_names` | _Destroy_range<> |
+
+## Decompiled C
+
+```c
+
+/* Library Function - Multiple Matches With Same Base Name
+    void __cdecl std::_Destroy_range<struct std::_Wrap_alloc<class std::allocator<class
+   std::shared_ptr<struct Concurrency::details::_Task_impl<unsigned char> > > > >(class
+   std::shared_ptr<struct Concurrency::details::_Task_impl<unsigned char> > *,class
+   std::shared_ptr<struct Concurrency::details::_Task_impl<unsigned char> > *,struct
+   std::_Wrap_alloc<class std::allocator<class std::shared_ptr<struct
+   Concurrency::details::_Task_impl<unsigned char> > > > &,struct std::_Nonscalar_ptr_iterator_tag)
+    void __cdecl std::_Destroy_range<struct std::_Wrap_alloc<class std::allocator<class
+   std::shared_ptr<struct Concurrency::details::_Task_impl<struct std::pair<unsigned char,class
+   Concurrency::details::_CancellationTokenState *> > > > > >(class std::shared_ptr<struct
+   Concurrency::details::_Task_impl<struct std::pair<unsigned char,class
+   Concurrency::details::_CancellationTokenState *> > > *,class std::shared_ptr<struct
+   Concurrency::details::_Task_impl<struct std::pair<unsigned char,class
+   Concurrency::details::_CancellationTokenState *> > > *,struct std::_Wrap_alloc<class
+   std::allocator<class std::shared_ptr<struct Concurrency::details::_Task_impl<struct
+   std::pair<unsigned char,class Concurrency::details::_CancellationTokenState *> > > > > &,struct
+   std::_Nonscalar_ptr_iterator_tag)
+    void __cdecl std::_Destroy_range<struct std::_Wrap_alloc<class std::allocator<class
+   Concurrency::details::_ContextCallback> > >(class Concurrency::details::_ContextCallback *,class
+   Concurrency::details::_ContextCallback *,struct std::_Wrap_alloc<class std::allocator<class
+   Concurrency::details::_ContextCallback> > &,struct std::_Nonscalar_ptr_iterator_tag)
+   
+   Libraries: Visual Studio 2012 Debug, Visual Studio 2012 Release */
+
+void _Destroy_range<>(_Container_proxy *param_1,_Container_proxy *param_2,
+                     allocator<std::_Container_proxy> *param_3)
+
+{
+  for (; param_1 != param_2; param_1 = param_1 + 0x10) {
+    std::allocator<std::_Container_proxy>::destroy(param_3,param_1);
+  }
+  return;
+}
+```
+
+## Calls
+
+| From | To | Type | Target | Target Entry |
+| --- | --- | --- | --- | --- |
+| `10002d1d` | `10004500` | `UNCONDITIONAL_CALL` | std::allocator<std::_Container_proxy>::destroy | `10004500` |
+
+## Callers
+
+| From | Function |
+| --- | --- |
+| `10002cb8` | FUN_10002c90 |
+
+## Referenced Strings
+
+No direct string references identified by Ghidra.
+
+## Referenced Data Symbols
+
+No direct named data references identified by Ghidra.
+
+## Disassembly
+
+| Address | Bytes | Instruction |
+| --- | --- | --- |
+| `10002d00` | `55` | `PUSH EBP` |
+| `10002d01` | `8b ec` | `MOV EBP,ESP` |
+| `10002d03` | `eb 09` | `JMP 0x10002d0e` |
+| `10002d05` | `8b 45 08` | `MOV EAX,dword ptr [EBP + 0x8]` |
+| `10002d08` | `83 c0 10` | `ADD EAX,0x10` |
+| `10002d0b` | `89 45 08` | `MOV dword ptr [EBP + 0x8],EAX` |
+| `10002d0e` | `8b 4d 08` | `MOV ECX,dword ptr [EBP + 0x8]` |
+| `10002d11` | `3b 4d 0c` | `CMP ECX,dword ptr [EBP + 0xc]` |
+| `10002d14` | `74 0e` | `JZ 0x10002d24` |
+| `10002d16` | `8b 55 08` | `MOV EDX,dword ptr [EBP + 0x8]` |
+| `10002d19` | `52` | `PUSH EDX` |
+| `10002d1a` | `8b 4d 10` | `MOV ECX,dword ptr [EBP + 0x10]` |
+| `10002d1d` | `e8 de 17 00 00` | `CALL 0x10004500` |
+| `10002d22` | `eb e1` | `JMP 0x10002d05` |
+| `10002d24` | `5d` | `POP EBP` |
+| `10002d25` | `c3` | `RET` |

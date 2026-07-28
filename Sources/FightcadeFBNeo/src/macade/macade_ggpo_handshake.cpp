@@ -1,9 +1,7 @@
 #include "macade_ggpo_session.h"
 
 #include <arpa/inet.h>
-#include <ifaddrs.h>
 #include <netdb.h>
-#include <net/if.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -23,6 +21,7 @@ extern int iRanked;
 static const int kUDPPort = 6006;
 static const int kTCPPort = 6004;
 static const int kRegisterValue = 6000;
+static const int kPunchAttempts = 10;
 static const int kTCPFrameBatchInterval = 60;
 static const int kTCPSnapshotFirstBatch = 3;
 static const int kTCPSnapshotIntervalBatches = 11;
@@ -117,7 +116,6 @@ static bool RecvFrom(int fd, unsigned char* buffer, int capacity, sockaddr_in* f
 	if (received <= 0) return false;
 	*count = (int)received; return true;
 }
-
 static void SendUsePortsToMaster(int fd, const sockaddr_in* master, const char* quark)
 {
 	char payload[192]; snprintf(payload, sizeof(payload), "useports/%s", quark);
@@ -130,15 +128,18 @@ static bool MasterUDP(GGPOSession* session, const char* quark, int serverport)
 	sockaddr_in master;
 	if (!Resolve(kMasterHost, serverport, SOCK_DGRAM, IPPROTO_UDP, &master)) return false;
 	char registration[192]; snprintf(registration, sizeof(registration), "%s/7001", quark);
-	sendto(session->udpFd, registration, strlen(registration), 0, (sockaddr*)&master, sizeof(master));
-	MacadeLog("Macade GGPO: UDP master registration sent payload=%s\n", registration);
 	unsigned char buffer[1024]; sockaddr_in from; int count = 0;
 	char expected[192]; snprintf(expected, sizeof(expected), "ok %s", quark);
-	if (!RecvFrom(session->udpFd, buffer, sizeof(buffer), &from, 10000, &count)) { MacadeLog("Macade GGPO: UDP master ok timeout\n"); return false; }
+	for (int attempt = 0; attempt < 2; attempt++) {
+		sendto(session->udpFd, registration, strlen(registration), 0, (sockaddr*)&master, sizeof(master));
+		MacadeLog("Macade GGPO: UDP master registration sent payload=%s attempt=%d\n", registration, attempt + 1);
+		if (RecvFrom(session->udpFd, buffer, sizeof(buffer), &from, 10000, &count)) break;
+	}
+	if (count <= 0) { MacadeLog("Macade GGPO: UDP master ok timeout\n"); return false; }
 	if (count != (int)strlen(expected) || memcmp(buffer, expected, count) != 0) return false;
 	sendto(session->udpFd, "ok", 2, 0, (sockaddr*)&master, sizeof(master));
 	MacadeLog("Macade GGPO: UDP master ok acknowledged\n");
-	if (!RecvFrom(session->udpFd, buffer, sizeof(buffer), &from, 25000, &count)) { SendUsePortsToMaster(session->udpFd, &master, quark); return false; }
+	if (!RecvFrom(session->udpFd, buffer, sizeof(buffer), &from, 25000, &count)) { SendUsePortsToMaster(session->udpFd, &master, quark); session->openPortFallback = true; session->hasPeer = false; return true; }
 	if (count >= 2 && buffer[0] == '0' && buffer[1] == '.') {
 		session->peer = from;
 		session->hasPeer = true;
@@ -200,7 +201,7 @@ static bool PunchWithSocket(GGPOSession* session, int fd, const char* label, int
 		if (remoteToken[0] && remoteKnowsLocalToken) { MacadeLog("Macade GGPO: UDP punch complete label=%s peer=%s:%d\n", label, inet_ntoa(session->peer.sin_addr), ntohs(session->peer.sin_port)); return true; }
 		if (RecvFrom(fd, buffer, sizeof(buffer) - 1, &from, 0, &count)) {
 			buffer[count] = 0;
-			if (from.sin_addr.s_addr == target.sin_addr.s_addr && from.sin_port != target.sin_port && ntohs(from.sin_port) != 7000 && ntohs(from.sin_port) != 7001) target = from;
+			if (from.sin_addr.s_addr == target.sin_addr.s_addr && from.sin_port != target.sin_port && ntohs(from.sin_port) != 7000 && ntohs(from.sin_port) != 7001 && ntohs(from.sin_port) != 7002) target = from;
 			if (count > 2 && buffer[0] == '0' && buffer[1] == '.') { sscanf((char*)buffer, "%63s", remoteToken); remoteKnowsLocalToken = strstr((char*)buffer, " ok") != NULL; session->peer = from; target = from; }
 			else if (count >= 5 && buffer[0] <= 5) { session->peer = from; target = from; SendUDPControlReply(fd, &from, buffer, count); return true; }
 		}
@@ -209,30 +210,6 @@ static bool PunchWithSocket(GGPOSession* session, int fd, const char* label, int
 		if (sleepUs > 0) usleep((useconds_t)sleepUs);
 	}
 	return remoteToken[0] != 0;
-}
-
-static bool PunchLANBroadcast(GGPOSession* session, int fd, int port)
-{
-	if (session == NULL || fd < 0) return false;
-	sockaddr_in original = session->peer;
-	sockaddr_in target; memset(&target, 0, sizeof(target));
-	target.sin_family = AF_INET; target.sin_addr.s_addr = htonl(INADDR_BROADCAST); target.sin_port = htons(WrappedPort(port));
-	session->peer = target;
-	if (PunchWithSocket(session, fd, "lan-broadcast", port, 6, 250000)) return true;
-	ifaddrs* addrs = NULL;
-	if (getifaddrs(&addrs) == 0) {
-		for (ifaddrs* item = addrs; item != NULL; item = item->ifa_next) {
-			if (item->ifa_addr == NULL || item->ifa_broadaddr == NULL) continue;
-			if (item->ifa_addr->sa_family != AF_INET || (item->ifa_flags & IFF_BROADCAST) == 0 || (item->ifa_flags & IFF_LOOPBACK) != 0) continue;
-			target = *(sockaddr_in*)item->ifa_broadaddr;
-			target.sin_port = htons(WrappedPort(port));
-			session->peer = target;
-			if (PunchWithSocket(session, fd, "lan-interface", port, 3, 200000)) { freeifaddrs(addrs); return true; }
-		}
-		freeifaddrs(addrs);
-	}
-	session->peer = original;
-	return false;
 }
 
 static bool ScanPeerPorts(GGPOSession* session, int fd, int basePort, int firstOffset, const char* label)
@@ -255,7 +232,7 @@ static bool RebindAndPunch(GGPOSession* session, int bindPort, int targetPort, i
 	sockaddr_in local; memset(&local, 0, sizeof(local));
 	local.sin_family = AF_INET; local.sin_port = htons(bindPort); local.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (bind(fd, (sockaddr*)&local, sizeof(local)) != 0) { MacadeLog("Macade GGPO: UDP punch unable to bind fallback port=%d\n", bindPort); close(fd); return false; }
-	bool ok = PunchWithSocket(session, fd, label, targetPort, 6, 500000);
+	bool ok = PunchWithSocket(session, fd, label, targetPort, kPunchAttempts, 500000);
 	if (!ok && scanPort > 0) {
 		if (scanPort > 6005 && scanPort < 6009) ok = PunchWithSocket(session, fd, label, targetPort, 1024, 0);
 		else ok = ScanPeerPorts(session, fd, scanPort, 0, label);
@@ -266,16 +243,28 @@ static bool RebindAndPunch(GGPOSession* session, int bindPort, int targetPort, i
 
 static bool HolePunch(GGPOSession* session, const char* quark)
 {
+	if (session == NULL || !session->hasPeer) return false;
 	int basePort = ntohs(session->peer.sin_port);
-	if (PunchWithSocket(session, session->udpFd, "initial", basePort, 8, 500000)) return true;
-	if (PunchLANBroadcast(session, session->udpFd, basePort)) return true;
-	if (basePort != kUDPPort && PunchLANBroadcast(session, session->udpFd, kUDPPort)) return true;
+	if (PunchWithSocket(session, session->udpFd, "initial", basePort, kPunchAttempts, 500000)) return true;
 	if (ScanPeerPorts(session, session->udpFd, basePort, 1, "scan")) return true;
 	if (RebindAndPunch(session, RestrictedPort(quark), RestrictedPort(quark), basePort, "restricted")) return true;
 	if (RebindAndPunch(session, 6004, 6004, 0, "fixed6004")) return true;
 	MacadeLog("Macade GGPO: UDP punch failed after all fallbacks\n"); return false;
 }
 
+static void ApplyTCPEndpointNotice(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize)
+{
+	if (session == NULL || payload == NULL || payloadSize < 12) return;
+	unsigned int hostLength = ReadBE32(payload); if (hostLength == 0 || hostLength >= 256 || payloadSize < 4 + hostLength + 8) return;
+	char host[256]; memcpy(host, payload + 4, hostLength); host[hostLength] = 0;
+	unsigned int port = ReadBE32(payload + 4 + hostLength); unsigned int value2 = ReadBE32(payload + 8 + hostLength);
+	bool loopback = strncmp(host, "127.", 4) == 0 || strcmp(host, "0.0.0.0") == 0 || strcmp(host, "localhost") == 0;
+	MacadeLog("Macade GGPO: TCP endpoint notice host=%s value1=%u value2=%u fallback=%d\n", host, port, value2, session->openPortFallback ? 1 : 0);
+	if (!session->openPortFallback || loopback || port == 0 || port > 65535) return;
+	sockaddr_in peer; if (!Resolve(host, (int)port, SOCK_DGRAM, IPPROTO_UDP, &peer)) return;
+	session->peer = peer; session->hasPeer = true;
+	MacadeLog("Macade GGPO: open-port UDP peer set from TCP notice peer=%s:%d\n", inet_ntoa(session->peer.sin_addr), ntohs(session->peer.sin_port));
+}
 static void HandleTCPFrameBatch(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize)
 {
 	if (payloadSize < 8) return;
@@ -297,7 +286,9 @@ static void HandleTCPServerRecord(GGPOSession* session, int code, const unsigned
 		MacadeHandleTCPStreamRecord(session, code, payload, payloadSize);
 		return;
 	}
-		if (code == 3) MacadeHandleTCPMatchInfoRecord(session, payload, payloadSize); else if (code == 14) HandleTCPFrameBatch(session, payload, payloadSize);
+	if (code == -7) ApplyTCPEndpointNotice(session, payload, payloadSize);
+	else if (code == 3) MacadeHandleTCPMatchInfoRecord(session, payload, payloadSize);
+	else if (code == 14) HandleTCPFrameBatch(session, payload, payloadSize);
 }
 
 static bool PayloadContains(const unsigned char* payload, unsigned int payloadSize, const char* needle)
@@ -315,6 +306,7 @@ static bool MacadeWaitForTCPStartup(GGPOSession* session)
 	if (session == NULL || session->tcpFd < 0) return false;
 	std::vector<unsigned char>& tcpBuffer = session->tcpReceiveBuffer;
 	int elapsedMs = 0;
+	bool commandEcho = false;
 	while (elapsedMs < 10000) {
 		fd_set readSet; FD_ZERO(&readSet); FD_SET(session->tcpFd, &readSet);
 		timeval tv; tv.tv_sec = 0; tv.tv_usec = 250000;
@@ -334,17 +326,21 @@ static bool MacadeWaitForTCPStartup(GGPOSession* session)
 			const unsigned char* payload = &tcpBuffer[8];
 			unsigned int payloadSize = length - 4;
 			MacadeLog("Macade GGPO: TCP startup record code=%d payload=%u\n", code, payloadSize);
+			if (code == -7) ApplyTCPEndpointNotice(session, payload, payloadSize);
 			if (code == 3) MacadeHandleTCPMatchInfoRecord(session, payload, payloadSize);
 			if (code == 14) HandleTCPFrameBatch(session, payload, payloadSize);
 			if (code == -8 && PayloadContains(payload, payloadSize, "Command")) {
 				MacadeLog("Macade GGPO: TCP startup command echo received\n");
+				commandEcho = true;
+			}
+			if (commandEcho && (!session->openPortFallback || session->hasPeer)) {
 				tcpBuffer.erase(tcpBuffer.begin(), tcpBuffer.begin() + length + 4);
 				return true;
 			}
 			tcpBuffer.erase(tcpBuffer.begin(), tcpBuffer.begin() + length + 4);
 		}
 	}
-	MacadeLog("Macade GGPO: TCP startup command echo timeout\n");
+	MacadeLog(commandEcho ? "Macade GGPO: TCP startup open-port peer timeout\n" : "Macade GGPO: TCP startup command echo timeout\n");
 	return false;
 }
 
@@ -441,16 +437,19 @@ void MacadeSendTCPFrameBatch(GGPOSession* session)
 	}
 }
 
-static void StartTCP(int fd, const char* quark)
+static void StartTCP(GGPOSession* session, const char* quark)
 {
+	int fd = session == NULL ? -1 : session->tcpFd;
 	if (fd < 0) return;
 	std::vector<unsigned char> payload;
 	AppendBE32(payload, 0); AppendBE32(payload, 29); AppendBE32(payload, 1); SendCommand(fd, 1, 0, payload);
 	payload.clear(); AppendString(payload, quark); AppendBE32(payload, kRegisterValue); SendCommand(fd, 2, 11, payload);
 	payload.clear(); AppendString(payload, quark); SendCommand(fd, 3, 12, payload);
 	payload.clear(); AppendString(payload, quark); AppendString(payload, "V14"); SendCommand(fd, 4, 15, payload);
+	payload.clear(); AppendString(payload, quark); AppendBE32(payload, 60); AppendBE32(payload, 10); payload.insert(payload.end(), 60 * 10, 0); SendCommand(fd, 5, 17, payload);
 	char ready[64]; snprintf(ready, sizeof(ready), "C2,%d,%d,%d", iPlayer, iDelay, iRanked);
-	payload.clear(); AppendString(payload, quark); AppendString(payload, ready); SendCommand(fd, 5, 15, payload);
+	payload.clear(); AppendString(payload, quark); AppendString(payload, ready); SendCommand(fd, 6, 15, payload);
+	session->tcpSequence = 7;
 	MacadeLog("Macade GGPO: served TCP startup sent quark=%s ready=%s\n", quark, ready);
 }
 
@@ -471,15 +470,16 @@ bool MacadeEstablishServedSession(GGPOSession* session, const char* quark, int s
 	session->udpFd = BindUDP();
 	if (session->udpFd < 0) return false;
 	if (!MasterUDP(session, quark, serverport)) return false;
-	if (!HolePunch(session, quark)) {
+	if (session->hasPeer && !HolePunch(session, quark)) {
 		sockaddr_in master;
 		if (Resolve(kMasterHost, serverport, SOCK_DGRAM, IPPROTO_UDP, &master)) SendUsePortsToMaster(session->udpFd, &master, quark);
-		MacadeLog("Macade GGPO: UDP punch failed; direct peer path unavailable\n");
-		return false;
+		session->openPortFallback = true;
+		session->hasPeer = false;
+		MacadeLog("Macade GGPO: UDP punch failed; continuing with open-port fallback\n");
 	}
 	session->tcpFd = ConnectTCP(serverport);
 	if (session->tcpFd < 0) { MacadeLog("Macade GGPO: TCP connect failed after UDP punch\n"); return false; }
-	StartTCP(session->tcpFd, quark);
+	StartTCP(session, quark);
 	if (!MacadeWaitForTCPStartup(session)) return false;
 	return true;
 }

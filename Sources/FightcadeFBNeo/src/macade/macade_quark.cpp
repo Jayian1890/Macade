@@ -33,7 +33,9 @@ struct MacadeQuarkCommand {
 	char mode[16];
 	char game[64];
 	char quarkId[128];
+	char remoteHost[128];
 	int port;
+	int remotePort;
 	int delay;
 	int ranked;
 	int player;
@@ -70,11 +72,28 @@ static bool MacadeParseRankedValue(const char* value, int* ranked)
 static bool MacadeParseQuarkCommand(const char* command, MacadeQuarkCommand* parsed)
 {
 	char ranked[32] = { 0 };
+	int consumed = 0;
 	memset(parsed, 0, sizeof(*parsed));
 	parsed->port = -1;
-	if (sscanf(command, "quark:served,%63[^,],%127[^,],%d,%d,%31s", parsed->game, parsed->quarkId, &parsed->port, &parsed->delay, ranked) == 5 && MacadeParseRankedValue(ranked, &parsed->ranked)) {
+	if (sscanf(command, "quark:served,%63[^,],%127[^,],%d,%d,%31[^,]%n", parsed->game, parsed->quarkId, &parsed->port, &parsed->delay, ranked, &consumed) == 5 && command[consumed] == '\0' && MacadeParseRankedValue(ranked, &parsed->ranked)) {
 		strncpy(parsed->mode, "served", sizeof(parsed->mode) - 1);
 		parsed->player = MacadeQuarkPlayer(parsed->quarkId);
+		return true;
+	}
+	consumed = 0;
+	if (sscanf(command, "quark:served,%63[^,],%127[^,],%d,%d%n", parsed->game, parsed->quarkId, &parsed->port, &parsed->delay, &consumed) == 4 && command[consumed] == '\0') {
+		strncpy(parsed->mode, "served", sizeof(parsed->mode) - 1);
+		parsed->player = MacadeQuarkPlayer(parsed->quarkId);
+		return true;
+	}
+	consumed = 0;
+	if (sscanf(command, "quark:direct,%63[^,],%d,%127[^,],%d,%d,%d,%31[^,]%n", parsed->game, &parsed->port, parsed->remoteHost, &parsed->remotePort, &parsed->player, &parsed->delay, ranked, &consumed) == 7 && command[consumed] == '\0' && MacadeParseRankedValue(ranked, &parsed->ranked)) {
+		strncpy(parsed->mode, "direct", sizeof(parsed->mode) - 1);
+		return true;
+	}
+	consumed = 0;
+	if (sscanf(command, "quark:direct,%63[^,],%d,%127[^,],%d,%d,%d%n", parsed->game, &parsed->port, parsed->remoteHost, &parsed->remotePort, &parsed->player, &parsed->delay, &consumed) == 6 && command[consumed] == '\0') {
+		strncpy(parsed->mode, "direct", sizeof(parsed->mode) - 1);
 		return true;
 	}
 	if (sscanf(command, "quark:stream,%63[^,],%127[^,],%d", parsed->game, parsed->quarkId, &parsed->port) == 3) {
@@ -238,7 +257,7 @@ int MacadeQuarkHandleCommand(const char* command)
 	MacadeOverlaySetSession(parsed.spectator ? 1 : 0, parsed.ranked, parsed.player);
 	MacadeOverlaySetSystemMessage("Connecting...");
 	printf("Macade quark: parsed command\nMacade quark: mode=%s\nMacade quark: game=%s\nMacade quark: quarkId=%s\n", parsed.mode, parsed.game, parsed.quarkId);
-	printf("Macade quark: port=%d\nMacade quark: delay=%d\nMacade quark: ranked=%d\nMacade quark: player=%d\nMacade quark: spectator=%d\nMacade quark: seed=%d\n", parsed.port, parsed.delay, parsed.ranked, parsed.player, parsed.spectator ? 1 : 0, iSeed);
+	printf("Macade quark: port=%d\nMacade quark: remoteHost=%s\nMacade quark: remotePort=%d\nMacade quark: delay=%d\nMacade quark: ranked=%d\nMacade quark: player=%d\nMacade quark: spectator=%d\nMacade quark: seed=%d\n", parsed.port, parsed.remoteHost, parsed.remotePort, parsed.delay, parsed.ranked, parsed.player, parsed.spectator ? 1 : 0, iSeed);
 	GGPOSessionCallbacks cb;
 	memset(&cb, 0, sizeof(cb));
 	cb.begin_game = MacadeBeginGame;
@@ -248,9 +267,11 @@ int MacadeQuarkHandleCommand(const char* command)
 	cb.free_buffer = MacadeFreeBuffer;
 	cb.advance_frame = MacadeAdvanceFrame;
 	cb.on_event = MacadeOnEvent;
-	ggpo = parsed.spectator ? ggpo_start_streaming(&cb, parsed.game, parsed.quarkId, parsed.port) : ggpo_client_connect(&cb, parsed.game, parsed.quarkId, parsed.port);
+	if (strcmp(parsed.mode, "direct") == 0) ggpo = ggpo_start_session(&cb, parsed.game, parsed.port, parsed.remoteHost, parsed.remotePort, parsed.player);
+	else ggpo = parsed.spectator ? ggpo_start_streaming(&cb, parsed.game, parsed.quarkId, parsed.port) : ggpo_client_connect(&cb, parsed.game, parsed.quarkId, parsed.port);
 	if (ggpo == NULL) return 2;
-	printf("Macade quark: native Fightcade GGPO %s session connected\n", parsed.spectator ? "stream" : "served");
+	ggpo_set_frame_delay(ggpo, parsed.delay);
+	printf("Macade quark: native Fightcade GGPO %s session connected\n", parsed.mode);
 	fflush(stdout);
 	return 0;
 }

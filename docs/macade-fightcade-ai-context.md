@@ -35,10 +35,11 @@ Public components: `fightcade-fbneo`, `fightcade-snes9x`, `fightcade-detectors`,
 | dll.sha256 | `a7721eafb66fed1c0383b4dbc62ad61e9837acab9762586fe9fe39adbe1615a8` | Same for FBNeo/GGPOFBA/SNES9x package copies. |
 | asm | external evidence, not currently tracked | Primary static map was removed with `.build`; reacquire before new static-analysis work. |
 | decomp | external evidence, not currently tracked | RetDec C was removed with `.build`; verify against ASM/captures when restored. |
+| decomp.current | `docs/ggponet/` | Current Ghidra 12.1.2/PyGhidra decompiler output for `ggponet.dll`, focused `ggpofba-ng.exe` GGPO/quark slice, and unpacked `kailleraclient.dll`; includes per-function Markdown, raw C-like pseudocode, calls, callers, strings, data refs, disassembly, indexes, and relevance notes. |
 | extracts | external evidence, not currently tracked | Focused TCP/UDP/backend extracts were removed with `.build`. |
-| ghidra.project | `ghidra-out/` | Ghidra 12.1.2 project for current `ggponet.dll`; hidden project paths are rejected by Ghidra. |
-| ghidra.export | `ghidra-out/export/` | Phase 2 function/symbol/string/target export from Ghidra; all 30 requested targets decompiled with status `ok`. |
-| ghidra.exporter | not currently tracked | Export script was removed with `scripts`; recreate before rerunning Ghidra exports. |
+| ghidra.project | local ignored scratch, not retained | Ghidra hidden project paths are rejected; use non-hidden ignored paths such as `ghidra-out/project` when regenerating, then remove transient project DBs after export. |
+| ghidra.export | `docs/ggponet/` | Current Ghidra 12.1.2/PyGhidra function/symbol/string export docs; `ggponet.dll` full export has all 1180 discovered functions decompiled with status `ok`. |
+| ghidra.exporter | local ignored `.reverse-engineering/ggponet/scripts/ExportGgponetDocs.py` | Retained locally with the tool install; not tracked. Recreate or recover from local scratch before rerunning exports elsewhere. |
 | address.map | `docs/ggponet-address-map.md` | Reviewed Phase 2 address map for exports, vtables, UDP/TCP targets, and public-GGPO boundaries. |
 | public.ggpo.boundary | `docs/ggpo-public-port-boundary.md` | Phase 3 exact public GGPO port/adapt/reference/do-not-port decisions. |
 | runtime.abstraction | `docs/ggpo-runtime-abstraction-design.md` | Phase 4 native runtime module boundaries for rollback, UDP, TCP, rendezvous, stream, callbacks, and API shims. |
@@ -60,6 +61,9 @@ Public components: `fightcade-fbneo`, `fightcade-snes9x`, `fightcade-detectors`,
 | Package config URL/user-agent. | `https://web.fightcade.com/`, `Fightcade2-WIN32-v2.1.45`. |
 | Local Electron app source is not Fightcade web source. | Unpacked app contains Nativefier shell code only. |
 | `fcadefbneo.exe` imports `ggponet.dll`. | PE imports. |
+| `ggpofba-ng.exe` imports `ggponet.dll` and `kailleraclient.dll`. | `docs/ggponet/ggpofba-ng/imports-exports.md`. |
+| `ggpofba-ng.exe` route parser maps `quark:served/direct/synctest/stream/replay` to `ggponet.dll` exports. | `docs/ggponet/ggpofba-ng/functions/0062dc50_FUN_0062dc50.md`. |
+| `kailleraclient.dll` is legacy Kaillera v0.9, not Fightcade GGPO/quark authority. | `docs/ggponet/relevance-assessment.md`; unpacked full function export under `docs/ggponet/kailleraclient/`. |
 | FBNeo route strings | `quark:served`, `training`, `direct`, `stream`, `replay`, `debugdetector`. |
 | Public Fightcade FBNeo lacks private client implementation. | Public source has headers/import lib, not `ggponet.dll` source. |
 
@@ -126,6 +130,8 @@ ROM downloader default index: `https://fightcade.download/fc2json.zip`, override
 | stream | `quark:stream,{gameid},{quarkid}.2,{port}` | Implemented subset, needs live validation. |
 | replay | Win32-recognized route | Not implemented; keep unavailable. |
 | synctest | DLL export, not Fightcade live network | Not implemented; local-only future work. |
+
+Macade-emitted `served` and `direct` routes include ranked metadata. Runtime parsing also accepts current `ggpofba-ng.exe` no-ranked `served`/`direct` forms and treats ranked as `0` for those inputs.
 
 Official web app emits `fcade://` URLs. Macade should launch native emulator processes from the same server-derived metadata. Other official launcher URLs include `play`, `training`, `checkrom`, `killemu`, `autoupdate`, and `userstatus`.
 
@@ -255,7 +261,7 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | Fightcade session | Login/autologin WebSocket, launcher status, channels, chat, challenges, `start`. |
 | Runtime launch | Native FBNeo SDL2, embedded child process, shared-memory video, input socket. |
 | Routes | served/training/direct/stream parsing. |
-| Served startup | UDP master, peer address, token punch, fallback attempts, TCP startup. |
+| Served startup | UDP master, peer address, 10-round token punch, restricted/fixed fallback attempts, `useports` continuation, TCP `-7` open-port peer handling, TCP startup. |
 | UDP gameplay | Type `3` input send/receive with ack-based pending-output pruning; type `1/2`, `4/5` probes/replies. |
 | Prediction/rollback | Bounded last-input prediction, saved-state history, rollback replay via `advance_frame`. |
 | TCP ongoing | Command `15` chat/control subset, `17` frame batches, `18` snapshots. |
@@ -268,7 +274,7 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 
 | Priority | Gap |
 | ---: | --- |
-| 1 | Failed NAT/open-port behavior not proven against current official failed-path captures. |
+| 1 | Open-port fallback gameplay still needs live proof; native flow now follows current failed-path evidence through `useports` and public TCP `-7` endpoint handling. |
 | 2 | TCP nonblocking connect/retry/disconnect parity incomplete. |
 | 3 | UDP ack-window pruning, resend cadence, stale input handling, quality cadence, interruption, disconnect timing incomplete. |
 | 4 | Timesync wait-frame/state behavior partial. |
@@ -300,12 +306,12 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | Current pcap attempt 1 | `1785164991594-5611.1` gets peer `172.7.214.252:59733`, sends many token probes, sends `useports` about 11 seconds after registration, then TCP `-7` reports `172.7.214.252:6000`. | Treat as partial failed-path evidence, not proof that open-port mode reaches gameplay. |
 | Current pcap attempt 2 | `1785165334663-5955.1` completes token exchange with `196.200.146.10:6006`, then carries 6021 UDP packets for about 131 seconds. | This is the primary served happy-path acceptance fixture. |
 | UDP type mix | Successful peer flow: type `3` count 5520, type `4` count 241, type `5` count 234, type `1` count 10, type `2` count 10, token packets 6. Median type `3` spacing is about 20-22 ms per direction; successful type `3` windows show no gaps or malformed packets and monotonic ack progression in both directions. Quality report/reply cadence is about 1000 ms. | Use these counts/cadences as initial smoke thresholds, not exact constants. |
-| Native runtime | Current pcap decodes one startup command `17` frame batch before `C2`; native runtime and Swift scaffolding were corrected to match. | Keep tests/tools aligned with analyzer output before relying on them for parity. |
+| Native runtime | Current pcap decodes one startup command `17` frame batch before `C2`; native runtime and Swift scaffolding send that order. Native served fallback sends `useports/<quark>` after verified punch failure and applies public TCP `-7` endpoint notices only while in open-port fallback mode. | Keep tests/tools aligned with analyzer output before relying on them for parity; live-validate open-port fallback gameplay before closing the gap. |
 | Runtime diagnostics | Native runtime now logs a bounded close-time session summary with UDP send/resend/receive, sync, quality, TCP record/batch/snapshot, prediction, rollback, saved-state, byte, disconnect, and fatal-desync counters. | Correlate native summaries with analyzer output during live validation and loss/delay tests. |
 | Runtime ownership split | Current direct source keeps exported `ggpo_*` shims, client event emission, rollback helpers, and API lifecycle in `src/macade/macade_ggpo_client.cpp`; `src/macade/macade_ggpo_handshake.cpp` owns served rendezvous/TCP startup and is 499 lines. The abandoned `macade_ggpo_api.cpp`/`macade_ggpo_tcp.cpp` split is not present in the build. | Perform behavior-preserving splits before importing public GGPO rollback/input code. |
 | Rollback harness | not currently tracked | Recreate the deterministic frame-delay, prediction, mismatch, and rollback harness before Phase C rollback/input migration. |
 | TCP implementation | Current native `ConnectTCP` is blocking and fails immediately on connect error; DLL has socket bind, nonblocking connect, WSA event handling, close path, and disconnect event logging. | TCP retry/error parity needs deeper static/dynamic evidence before implementation. |
-| UDP implementation | Current native UDP implements type `1/2/3/4/5`, prunes pending local UDP output frames strictly less than incoming type `3` ack frames, resends every 200 ms, sends quality every 1000 ms, sends sync every 2000 ms, interrupts at 5000 ms, and disconnects at 30000 ms. Public GGPO uses similar running retry, quality, and notify/shutdown constants, but Fightcade packets are modified. | Validate cadence constants against Fightcade DLL captures rather than blindly porting public GGPO. |
+| UDP implementation | Current native UDP implements type `1/2/3/4/5`, prunes pending local UDP output frames strictly less than incoming type `3` ack frames, resends every 200 ms, sends quality every 1000 ms, sends sync every 2000 ms, interrupts at 5000 ms, and disconnects at 30000 ms. Served rendezvous uses 10 half-second punch rounds, `±512` port scan, restricted/fixed `6004` retries, and no LAN-broadcast-only path. Public GGPO uses similar running retry, quality, and notify/shutdown constants, but Fightcade packets are modified. | Validate cadence constants against Fightcade DLL captures rather than blindly porting public GGPO. |
 | Timesync | Current runtime records frame advantage in stats but does not delay frames using public GGPO `TimeSync::recommend_frame_wait_duration`. | Port wait-frame logic only after measuring Fightcade behavior under asymmetric delay. |
 | Stats/events | Current `ggpo_get_stats` is partial; `ggpo_client_set_game_event` updates overlay scores only and does not send command `19`. | Need official runtime trace or finished-match pcap before implementing full event semantics. |
 

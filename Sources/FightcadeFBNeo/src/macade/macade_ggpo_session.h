@@ -25,6 +25,7 @@ struct GGPOSession {
 	int tcpFd = -1;
 	sockaddr_in peer{};
 	bool hasPeer = false;
+	bool openPortFallback = false;
 	bool isSpectator = false;
 	bool streamInitialStateReceived = false;
 	bool streamInitialStateLoaded = false;
@@ -108,6 +109,7 @@ bool MacadeSaveCurrentFrame(GGPOSession* session);
 bool MacadeRunRollbackIfNeeded(GGPOSession* session);
 bool MacadeStoreRemoteInput(GGPOSession* session, int frame, const std::vector<unsigned char>& input);
 bool MacadeEstablishServedSession(GGPOSession* session, const char* quark, int serverport);
+bool MacadeEstablishDirectSession(GGPOSession* session, int localport, const char* remoteip, int remoteport);
 bool MacadeEstablishStreamingSession(GGPOSession* session, const char* quark, int serverport);
 void MacadeHandleTCPStreamRecord(GGPOSession* session, int code, const unsigned char* payload, unsigned int payloadSize);
 bool MacadeHandleTCPMatchInfoRecord(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize);

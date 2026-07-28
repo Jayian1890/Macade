@@ -1,5 +1,6 @@
 .DS_Store
 graphify-out/
+.reverse-engineering/
 __pycache__/
 *.pyc
 

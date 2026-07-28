@@ -238,7 +238,23 @@ GGPOSession* __cdecl ggpo_client_connect(GGPOSessionCallbacks* cb, char* game, c
 	return session;
 }
 
-GGPOSession* __cdecl ggpo_start_session(GGPOSessionCallbacks*, char*, int, char*, int, int) { return NULL; }
+GGPOSession* __cdecl ggpo_start_session(GGPOSessionCallbacks* cb, char* game, int localport, char* remoteip, int remoteport, int player_num)
+{
+	GGPOSession* session = new GGPOSession();
+	if (cb != NULL) session->callbacks = *cb;
+	session->playerIndex = player_num < 0 ? 0 : (player_num > 1 ? 1 : player_num);
+	session->delay = iDelay;
+	session->startedAtMs = MacadeNowMilliseconds();
+	if (!MacadeEstablishDirectSession(session, localport, remoteip, remoteport)) {
+		delete session;
+		return NULL;
+	}
+	if (session->callbacks.begin_game != NULL) session->callbacks.begin_game(game);
+	EmitEvent(session, GGPO_EVENTCODE_CONNECTED_TO_PEER);
+	EmitEvent(session, GGPO_EVENTCODE_RUNNING);
+	MacadeLog("Macade GGPO: native direct session ready game=%s local=%d remote=%s:%d player=%d\n", game, localport, remoteip, remoteport, session->playerIndex);
+	return session;
+}
 GGPOSession* __cdecl ggpo_start_synctest(GGPOSessionCallbacks*, char*, int) { return NULL; }
 GGPOSession* __cdecl ggpo_start_streaming(GGPOSessionCallbacks* cb, char* game, char* matchid, int serverport)
 {
