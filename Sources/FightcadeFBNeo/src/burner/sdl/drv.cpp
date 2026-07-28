@@ -110,8 +110,10 @@ int DrvInit(int nDrvNum, bool bRestore)
 
 	{ // Init input and audio, save blitter init for later. (reduce # of mode changes, nice for emu front-ends)
 		bVidOkay = 1;
+		bAudOkay = 1;
 		MediaInit();
 		bVidOkay = 0;
+		bAudOkay = 0;
 	}
 	MacadeDrvDiagnostic("prelib-media-ready");
 

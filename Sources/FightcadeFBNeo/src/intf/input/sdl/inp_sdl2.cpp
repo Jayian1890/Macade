@@ -2,8 +2,7 @@
 #include <SDL.h>
 
 #include "burner.h"
-
-extern "C" int MacadeEmbeddedKeyState(int scancode);
+#include "macade_embedded.h"
 
 
 #define MAX_JOYSTICKS (8)
@@ -420,8 +419,10 @@ static struct { unsigned char buttons; int xdelta; int ydelta; } SDLinpMouseStat
 // Call before checking for Input in a frame
 int SDLinpStart()
 {
-	// Update SDL event queue
-	SDL_PumpEvents();
+	if (!MacadeEmbeddedEnabled()) {
+		// Update SDL event queue
+		SDL_PumpEvents();
+	}
 
 	// Keyboard not read this frame
 	bKeyboardRead = 0;

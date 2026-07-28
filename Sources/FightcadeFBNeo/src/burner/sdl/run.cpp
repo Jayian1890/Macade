@@ -324,7 +324,7 @@ unsigned int GetTime(void)
 	unsigned int ticks;
 	struct timeval now;
 	gettimeofday(&now, NULL);
-	ticks = (now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec;
+	ticks = (now.tv_sec - start.tv_sec) * 1000 + (now.tv_usec - start.tv_usec) / 1000;
 	return ticks;
 }
 
@@ -344,6 +344,8 @@ static int RunFrame(int bDraw, int bPause)
 	}
 	else
 	{
+		nFramesEmulated++;
+		nCurrentFrame++;
 		InputMake(true);
 		if (kNetGame) {
 			if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0) {
@@ -363,8 +365,6 @@ static int RunFrame(int bDraw, int bPause)
 				return kMacadeRunFrameQuit;
 			}
 		}
-		nFramesEmulated++;
-		nCurrentFrame++;
 	}
 
 	if (bDraw)
@@ -490,10 +490,12 @@ int delay_ticks(int ticks)
 int RunIdle()
 {
 	int nTime, nCount;
+	bool didNetIdle = false;
 
 	if (bAudPlaying)
 	{
 		// Run with sound
+		int framesBeforeAudio = macadeRunFrameCount;
 		int soundStatus = AudSoundCheck();
 		if (macadeRunIdleAudioLogCount < 20 || macadeRunIdleAudioLogCount % 120 == 0 || soundStatus != 0) {
 			printf("Macade diagnostic: RunIdle audio=%d status=%d fillFrames=%d rendered=%u\n", macadeRunIdleAudioLogCount, soundStatus, macadeRunFrameCount, nFramesRendered);
@@ -501,8 +503,14 @@ int RunIdle()
 		}
 		macadeRunIdleAudioLogCount++;
 		if (soundStatus) return 1;
-		if (kNetGame) MacadeQuarkRunIdle(1);
-		return 0;
+		if (!kNetGame) return 0;
+		MacadeQuarkRunIdle(1);
+		didNetIdle = true;
+		if (macadeRunFrameCount != framesBeforeAudio) {
+			nNormalLast = GetTime();
+			nNormalFrac = 0;
+			return 0;
+		}
 	}
 
 	// Run without sound
@@ -510,6 +518,7 @@ int RunIdle()
 	nCount = (nTime * nAppVirtualFps - nNormalFrac) / 100000;
 	if (nCount <= 0) {						// No need to do anything for a bit
 		//delay_ticks(2);
+		if (kNetGame && !didNetIdle) MacadeQuarkRunIdle(1);
 		return 0;
 	}
 

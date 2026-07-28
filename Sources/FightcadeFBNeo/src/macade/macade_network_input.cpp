@@ -184,6 +184,7 @@ static void MacadeApplySynchronizedControls(int blockSize)
 			}
 		}
 
+		j += gCommonInputs;
 		j = (j + 7) >> 3;
 		for (i = 0; i < gPlayerInputs[player]; i++) {
 			if (!ReadInputInfo(i + gPlayerOffset[player], &input)) continue;
@@ -230,6 +231,7 @@ int MacadeNetworkReplayFrame()
 	memset(gControls, 0, sizeof(gControls));
 	std::map<int, std::vector<unsigned char> >::iterator local = ggpo->localInputs.find(ggpo->currentFrame);
 	if (local != ggpo->localInputs.end() && local->second.size() == (size_t)ggpo->inputSize) memcpy(gControls, local->second.data(), ggpo->inputSize);
+	nCurrentFrame++;
 	bool synchronized = ggpo_synchronize_input(ggpo, gControls, ggpo->inputSize, kMaxPlayers);
 	if (!synchronized) return 1;
 	MacadeApplySynchronizedControls(ggpo->inputSize);
@@ -237,7 +239,6 @@ int MacadeNetworkReplayFrame()
 	INT16* oldSound = pBurnSoundOut;
 	pBurnDraw = NULL;
 	pBurnSoundOut = NULL;
-	nCurrentFrame++;
 	BurnDrvFrame();
 	pBurnDraw = oldDraw;
 	pBurnSoundOut = oldSound;

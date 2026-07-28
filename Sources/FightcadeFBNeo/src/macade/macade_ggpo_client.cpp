@@ -286,13 +286,16 @@ void __cdecl ggpo_close_session(GGPOSession* session)
 
 bool __cdecl ggpo_idle(GGPOSession* session, int timeout)
 {
+	int waitMs = timeout < 0 ? 0 : timeout;
 	if (session != NULL && session->isSpectator) {
-		MacadePollTCP(session, timeout);
+		MacadePollTCP(session, waitMs);
 		return !session->networkDisconnected;
 	}
+	// Keep the timeout as a total idle budget; blocking once per transport visibly stalls gameplay.
 	MacadePumpUDPControl(session);
-	MacadePollTCP(session, timeout);
-	MacadePollUDP(session, timeout);
+	MacadePollTCP(session, 0);
+	MacadePollUDP(session, waitMs);
+	MacadePollTCP(session, 0);
 	return session == NULL || (!session->networkDisconnected && MacadeRunRollbackIfNeeded(session));
 }
 
