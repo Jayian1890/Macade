@@ -1,0 +1,14 @@
+start=Start,raw,eq,0x107c0b,99,8
+player1=P1 Win,raw,gts,0x10715d,0,8
+player2=P2 Win,raw,gts,0x1076bd,0,8
+char1=P1 Char,raw,char,0x107155,0,8
+char2=P2 Char,raw,char,0x1076b5,0,8
+char=0,Sho
+char=1,Dao-Long
+char=2,Condor
+char=3,Tia
+char=4,Rila
+char=5,Alsion III
+char=6,Pielle
+char=7,Maherl
+char=8,Bai-Hu

@@ -1,0 +1,8 @@
+start=Start,raw,eq,0xe0303D,26369,16
+player1=P1 Wins,raw,gts,0xE04001,4,8
+player2=P2 Wins,raw,gts,0xE04281,4,8
+char1=P1 Speed,raw,char,0xE04003,0,8
+char2=P2 Speed,raw,char,0xE04283,0,8
+char=0,Low
+char=2,Middle
+char=4,High

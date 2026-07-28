@@ -1,0 +1,15 @@
+start=Start,raw,eq,0x108110,153,8
+player1=P1 Win,raw,eq,0x108111,2,8
+player2=P2 Win,raw,eq,0x108112,2,8
+char1=P1 Char,raw,char,0x10c6b0,0,8
+char2=P2 Char,raw,char,0x10c7b0,0,8
+char=0,Han Baedal
+char=1,Miyuki
+char=2,Rophen Heimer
+char=3,Golrio
+char=4,Nick Commando
+char=5,Chintao
+char=6,Kim Hoon
+char=7,Master Taekuk
+char=8,Magic Dunker
+char=9,Karate Kenji 

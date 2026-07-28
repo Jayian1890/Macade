@@ -1,0 +1,17 @@
+start=Start,raw,eq,0xe09456,5400,16
+player1=P1 Win,raw,eq,0xe0ea12,2,8
+player2=P2 Win,raw,eq,0xe0ea11,2,8
+char1=P1 Char,raw,char,0xff9479,0,8
+char2=P2 Char,raw,char,0xff9478,0,8
+char=0,Shaq
+char=1,Mephis
+char=2,Sett
+char=3,Nezu
+char=4,Kaori
+char=5,Beast
+char=6,Auroch
+char=7,Voodoo
+char=8,Colonel
+char=9,Diesel
+char=10,Leotsu
+char=11,Rajah

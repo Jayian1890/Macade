@@ -1,0 +1,12 @@
+start=Start,raw,eq,0x10081d,255,8
+player1=P1 Win,raw,eq,0x1005bd,2,8
+player2=P2 Win,raw,eq,0x1005bf,2,8
+char1=P1 Char,raw,char,0x1005ab,0,8
+char2=P2 Char,raw,char,0x1005ad,0,8
+char=0,Prim
+char=1,Kumada
+char=2,Liv
+char=3,Misty
+char=4,Jurado
+char=5,Paradisus
+char=6,Graber

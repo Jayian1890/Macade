@@ -1,0 +1,16 @@
+start=Start,raw,eq,0x409522,0,8
+player1=P1 Win,raw,gts,0x412bbb,0,8
+player2=P2 Win,raw,gts,0x412dbb,0,8
+char1=P1 Char,raw,char,0x412bbc,0,8
+char2=P2 Char,raw,char,0x412dbc,0,8
+char=0,Kazuya
+char=1,Barts
+char=2,Gekkou
+char=3,Wu-long
+char=4,Lihua
+char=5,Liza
+char=6,J.Mccoy
+char=7,Boggy
+char=8,Gonzales
+char=9,Azteca
+char=10,Marco

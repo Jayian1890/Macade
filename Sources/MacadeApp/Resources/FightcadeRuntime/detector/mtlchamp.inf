@@ -1,0 +1,16 @@
+start=Start,raw,eq,0x105832,144,8
+player1=P1 Win,raw,eq,0x105010,2,8
+player2=P2 Win,raw,eq,0x105410,2,8
+char1=P1 Char,raw,char,0x105001,0,8
+char2=P2 Char,raw,char,0x105401,0,8
+char=0,Jin
+char=1,Goldor
+char=2,Racheal
+char=3,Zen
+char=4,Hoi
+char=5,Titi
+char=6,Mahambah
+char=7,Avu
+char=8,Chaos
+char=9,Bobby
+char=10,Salamander

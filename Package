@@ -1,0 +1,38 @@
+// swift-tools-version: 6.0
+
+import PackageDescription
+
+let package = Package(
+    name: "Macade",
+    platforms: [
+        .macOS(.v15)
+    ],
+    products: [
+        .executable(
+            name: "Macade",
+            targets: ["MacadeApp"]
+        )
+    ],
+    targets: [
+        .executableTarget(
+            name: "MacadeApp",
+            path: "Sources/MacadeApp",
+            resources: [
+                .copy("Resources/Assets.xcassets"),
+                .copy("Resources/FightcadeRuntime"),
+                .process("Resources/rom-index.json")
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
+        .testTarget(
+            name: "MacadeAppTests",
+            dependencies: ["MacadeApp"],
+            path: "Tests/MacadeAppTests",
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        )
+    ]
+)

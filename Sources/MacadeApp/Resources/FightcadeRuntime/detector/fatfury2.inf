@@ -1,0 +1,17 @@
+start=Start,raw,eq,0x10092a,144,8
+player1=P1 Win,raw,eq,0x100058,2,8
+player2=P2 Win,raw,eq,0x10005a,2,8
+char1=P1Char,raw,char,0x10419b,0,8
+char2=P2Char,raw,char,0x10419d,0,8
+char=1,Terry
+char=2,Andy
+char=3,Joe
+char=4,Big Bear
+char=5,Jubei
+char=6,Cheng
+char=7,Kim
+char=8,Mai
+char=9,Billy
+char=10,Axel
+char=11,Laurence
+char=12,Krauser

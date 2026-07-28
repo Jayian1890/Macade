@@ -1,0 +1,17 @@
+start=Start,raw,eq,0xe0972a,153,8
+player1=P1 Win,raw,eq,0xe081da,2,8
+player2=P2 Win,raw,eq,0xe0845a,2,8
+char1=P1 Char,raw,char,0xe081db,0,8
+char2=P2 Char,raw,char,0xe0845b,0,8
+char=0,Ryu
+char=1,E.Honda
+char=2,Blanka
+char=3,Guile
+char=4,Ken
+char=5,Chun Li
+char=6,Zangief
+char=7,Dhalsim
+char=8,Vega (Dictator)
+char=9,Sagat
+char=10,M. Bison (Boxer)
+char=11,Balrog (Claw)

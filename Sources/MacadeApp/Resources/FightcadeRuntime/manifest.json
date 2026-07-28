@@ -1,0 +1,8 @@
+{
+  "emulators": {
+    "fbneo": {
+      "supportsQuark": true,
+      "detectorsRevision": "de9e7a99c494af488ed64155678e9d22d78f7ae6"
+    }
+  }
+}

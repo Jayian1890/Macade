@@ -1,0 +1,12 @@
+start=Start,raw,eq,0xe001fd,1,8
+player1=P1 Win,raw,gts,0xe00167,0,8
+player2=P2 Win,raw,gts,0xe00169,0,8
+char1=P1Char,raw,char,0xe01853,0,8
+char2=P2Char,raw,char,0xe01923,0,8
+char=0,Korr
+char=1,Zorn
+char=2,Zarak
+char=3,Talazia
+char=4,Jen-Tai
+char=5,Divada
+char=6,Bane

@@ -1,0 +1,5 @@
+start=Start,raw,eq,0xff8e18,516,16
+player1=P1 Win,raw,eq,0xff86b8,2,8
+player2=P2 Win,raw,eq,0xff86e2,2,8
+
+33882128

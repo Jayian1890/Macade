@@ -1,0 +1,15 @@
+start=Start,raw,eq,0x0602e287,180,8
+player1=P1 Win,raw,gts,0x0602e99f,0,8
+player2=P2 Win,raw,gts,0x0602e9b3,0,8
+char1=P1Char,raw,char,0x602e23d,0,8
+char2=P2Char,raw,char,0x602e241,0,8
+char=0,Yuiren
+char=1,Yuiran
+char=2,Cool
+char=3,Harry Ness
+char=4,Taro
+char=5,Roche
+char=6,Torao Onigawara
+char=7,Haiji Mibu
+char=8,Trigger
+char=9,Carlos

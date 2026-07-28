@@ -1,0 +1,15 @@
+start=Start,raw,eq,0x48752d,99,8
+player1=P1 Win,raw,eq,0x4877c3,2,8
+player2=P2 Win,raw,eq,0x4877c5,2,8
+char1=P1 Char,raw,char,0x48c401,0,8
+char2=P2 Char,raw,char,0x48c403,0,8
+char=0,Goku
+char=1,Gohan
+char=2,Vegeta
+char=3,Trunks
+char=4,Mr. Satan
+char=5,Piccolo
+char=6,No. 20 (Dr. Gero)
+char=7,No. 18
+char=8,No. 16
+char=9,Cell

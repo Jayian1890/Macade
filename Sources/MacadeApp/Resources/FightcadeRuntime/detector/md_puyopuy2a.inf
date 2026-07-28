@@ -1,0 +1,4 @@
+[Mem]
+start=Start,raw,eq,0xe0a144,0,16
+player1=P1 Win,raw,eq,0xe0a140,128,8
+player2=P2 Win,raw,eq,0xe0a140,129,8

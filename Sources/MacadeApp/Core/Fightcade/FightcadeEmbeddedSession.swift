@@ -1,0 +1,211 @@
+import Foundation
+import Observation
+
+@MainActor
+@Observable
+final class FightcadeEmbeddedSession {
+    enum Mode: String, Sendable {
+        case test = "Test"
+        case training = "Training"
+        case direct = "Direct"
+        case match = "Match"
+        case spectate = "Spectate"
+    }
+
+    enum Status: Equatable, Sendable {
+        case launching
+        case running(processID: Int32)
+        case stopping
+        case terminated(status: Int32)
+        case failed(String)
+    }
+
+    let id: UUID
+    let channelID: FightcadeChannel.ID
+    let mode: Mode
+    let emulator: String
+    let gameID: String
+    let title: String
+    let logURL: URL
+    let videoStream: FightcadeEmbeddedVideoStream
+    let inputClient: FightcadeEmbeddedInputClient
+
+    private var process: Process?
+    private var proxyTask: Task<Void, Never>?
+    var status: Status = .launching
+    var overlayState: FightcadeEmbeddedOverlayState?
+
+    init(
+        id: UUID,
+        channelID: FightcadeChannel.ID,
+        mode: Mode,
+        emulator: String,
+        gameID: String,
+        title: String,
+        logURL: URL,
+        videoStream: FightcadeEmbeddedVideoStream,
+        inputClient: FightcadeEmbeddedInputClient
+    ) {
+        self.id = id
+        self.channelID = channelID
+        self.mode = mode
+        self.emulator = emulator
+        self.gameID = gameID
+        self.title = title
+        self.logURL = logURL
+        self.videoStream = videoStream
+        self.inputClient = inputClient
+    }
+
+    var statusText: String {
+        switch status {
+        case .launching:
+            "Launching"
+        case .running(let processID):
+            "Running · pid \(processID)"
+        case .stopping:
+            "Stopping"
+        case .terminated(let status):
+            "Exited · status \(status)"
+        case .failed(let message):
+            message
+        }
+    }
+
+    var isActive: Bool {
+        switch status {
+        case .launching, .running:
+            true
+        case .stopping, .terminated, .failed:
+            false
+        }
+    }
+
+    func attach(process: Process, proxyTask: Task<Void, Never>? = nil) {
+        self.process = process
+        self.proxyTask = proxyTask
+        status = .running(processID: process.processIdentifier)
+    }
+
+    func markTerminated(status terminationStatus: Int32) {
+        status = .terminated(status: terminationStatus)
+        process = nil
+        proxyTask?.cancel()
+        proxyTask = nil
+        videoStream.close()
+        inputClient.close()
+    }
+
+    func markFailed(_ message: String) {
+        status = .failed(message)
+        process = nil
+        proxyTask?.cancel()
+        proxyTask = nil
+        videoStream.close()
+        inputClient.close()
+    }
+
+    func stop() {
+        guard let process, process.isRunning else {
+            proxyTask?.cancel()
+            proxyTask = nil
+            videoStream.close()
+            inputClient.close()
+            return
+        }
+
+        status = .stopping
+        proxyTask?.cancel()
+        proxyTask = nil
+        process.terminate()
+    }
+}
+
+struct FightcadeEmbeddedLaunch: Sendable, Equatable {
+    let channelID: FightcadeChannel.ID
+    let mode: FightcadeEmbeddedSession.Mode
+    let emulator: String
+    let gameID: String
+    let arguments: [String]
+    let title: String
+    let match: FightcadeMatchLaunch?
+
+    static func test(channelID: FightcadeChannel.ID, emulator: String, gameID: String) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .test,
+            emulator: emulator,
+            gameID: gameID,
+            arguments: [gameID],
+            title: "Test · \(gameID)",
+            match: nil
+        )
+    }
+
+    static func training(channelID: FightcadeChannel.ID, emulator: String, gameID: String) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .training,
+            emulator: emulator,
+            gameID: gameID,
+            arguments: [gameID],
+            title: "Training · \(gameID)",
+            match: nil
+        )
+    }
+
+    static func match(channelID: FightcadeChannel.ID, match: FightcadeMatchLaunch) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .match,
+            emulator: match.emulator,
+            gameID: match.gameID,
+            arguments: [match.quarkCommand],
+            title: "Match · \(match.gameID)",
+            match: match
+        )
+    }
+
+    static func fightcadeTraining(channelID: FightcadeChannel.ID, launch: FightcadeTrainingLaunch) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .training,
+            emulator: launch.emulator,
+            gameID: launch.gameID,
+            arguments: [launch.quarkCommand],
+            title: "Training · \(launch.gameID)",
+            match: nil
+        )
+    }
+
+    static func direct(channelID: FightcadeChannel.ID, launch: FightcadeDirectLaunch) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .direct,
+            emulator: launch.emulator,
+            gameID: launch.gameID,
+            arguments: [launch.quarkCommand],
+            title: "Direct · \(launch.gameID)",
+            match: nil
+        )
+    }
+
+    static func spectate(
+        channelID: FightcadeChannel.ID,
+        emulator: String,
+        gameID: String,
+        quarkID: String,
+        port: Int
+    ) -> FightcadeEmbeddedLaunch {
+        let launch = FightcadeSpectateLaunch(emulator: emulator, gameID: gameID, quarkID: quarkID, port: port)
+        return FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .spectate,
+            emulator: emulator,
+            gameID: gameID,
+            arguments: [launch.quarkCommand],
+            title: "Spectating · \(gameID)",
+            match: nil
+        )
+    }
+}

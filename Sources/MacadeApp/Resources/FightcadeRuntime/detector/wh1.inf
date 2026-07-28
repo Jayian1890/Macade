@@ -1,0 +1,16 @@
+start=Start,raw,eq,0x10b008,153,8
+player1=P1 Win_A,raw,eq,0x10c12a,3,8
+player1=P1 Win_B,raw,eq,0x10c12a,7,8
+player2=P2 Win_A,raw,eq,0x10c12a,12,8
+player2=P2 Win_B,raw,eq,0x10c12a,13,8
+char1=P1 Char,raw,char,0x10600c,0,8
+char2=P2 Char,raw,char,0x10610c,0,8
+char=1,Dragon
+char=2,Hanzo
+char=3,M. Power
+char=4,J. Carn
+char=5,Janne
+char=6,Rasputin
+char=7,Fuuma
+char=8,Brocken
+char=9,Geegus

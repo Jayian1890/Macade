@@ -1,0 +1,16 @@
+start=Start,raw,eq,0xff8108,0,16
+player1=P1 Win,raw,gts,0xff83a2,0,8
+player2=P2 Win,raw,gts,0xff87a2,0,8
+char1=P1Char,raw,char,0xff83f6,0,8
+char2=P2Char,raw,char,0xff87f6,0,8
+char=10,Dan
+char=1,Chun-Li
+char=2,Ryu
+char=7,Sakura
+char=3,Ken
+char=0,Morrigan
+char=4,Hsien-Ko
+char=5,Donavan
+char=6,Felicia
+char=8,Devilot
+char=9,Akuma (Gouki)

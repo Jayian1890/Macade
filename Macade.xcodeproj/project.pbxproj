@@ -1,0 +1,856 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BF0000010000000000000001 /* MacadeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000001 /* MacadeApp.swift */; };
+		BF0000010000000000000002 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000002 /* RootView.swift */; };
+		BF0000010000000000000003 /* AuthenticatedHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000003 /* AuthenticatedHomeView.swift */; };
+		BF0000010000000000000004 /* MacadeBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000004 /* MacadeBackground.swift */; };
+		BF0000010000000000000005 /* MacadeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000005 /* MacadeColor.swift */; };
+		BF0000010000000000000006 /* MacadeSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000006 /* MacadeSpacing.swift */; };
+		BF0000010000000000000007 /* MacadeTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000007 /* MacadeTypography.swift */; };
+		BF0000010000000000000008 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000008 /* AuthSession.swift */; };
+		BF0000010000000000000009 /* LoginCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000009 /* LoginCredentials.swift */; };
+		BF000001000000000000000A /* AuthenticationServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000002000000000000000A /* AuthenticationServicing.swift */; };
+		BF000001000000000000000B /* FightcadeAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000002000000000000000B /* FightcadeAuthenticationService.swift */; };
+		BF000001000000000000000C /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000002000000000000000C /* LoginViewModel.swift */; };
+		BF000001000000000000000D /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000002000000000000000D /* LoginView.swift */; };
+		BF000001000000000000000E /* LoginHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000002000000000000000E /* LoginHeroView.swift */; };
+		BF000001000000000000000F /* LoginFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000002000000000000000F /* LoginFormView.swift */; };
+		BF0000010000000000000010 /* MacadeTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000010 /* MacadeTextField.swift */; };
+		BF0000010000000000000011 /* MacadePrimaryButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000011 /* MacadePrimaryButtonStyle.swift */; };
+		BF0000010000000000000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000015 /* Assets.xcassets */; };
+		BF00000B0000000000000001 /* FightcadeEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000001 /* FightcadeEndpoint.swift */; };
+		BF00000B0000000000000002 /* FightcadeBootstrapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000002 /* FightcadeBootstrapService.swift */; };
+		BF00000B0000000000000003 /* FightcadeServiceError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000003 /* FightcadeServiceError.swift */; };
+		BF00000B0000000000000005 /* FightcadeChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000005 /* FightcadeChannel.swift */; };
+		BF00000B0000000000000006 /* FightcadeDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000006 /* FightcadeDashboard.swift */; };
+		BF00000B0000000000000007 /* FightcadeLobbyServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000007 /* FightcadeLobbyServicing.swift */; };
+		BF00000B0000000000000008 /* FightcadeLobbyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000008 /* FightcadeLobbyService.swift */; };
+		BF00000B0000000000000009 /* AuthenticatedHomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000009 /* AuthenticatedHomeViewModel.swift */; };
+		BF00000B000000000000000A /* LobbySidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000A /* LobbySidebarView.swift */; };
+		BF00000B000000000000000C /* ChannelDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000C /* ChannelDetailView.swift */; };
+		BF00000B000000000000000D /* ChannelBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000D /* ChannelBrowserView.swift */; };
+		BF00000B000000000000000E /* FightcadeChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000E /* FightcadeChatMessage.swift */; };
+		BF00000B000000000000000F /* FightcadeLobbyEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000F /* FightcadeLobbyEvent.swift */; };
+		BF00000B0000000000000010 /* FightcadeLobbyPayloadParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */; };
+		BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000011 /* FightcadeLauncher.swift */; };
+		BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000012 /* FightcadeChallenge.swift */; };
+		BF00000B0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */; };
+		BF00000B0000000000000014 /* ChannelErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000014 /* ChannelErrorBanner.swift */; };
+		BF00000B0000000000000015 /* FightcadeRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000015 /* FightcadeRuntime.swift */; };
+		BF00000B0000000000000016 /* FightcadeROMDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000016 /* FightcadeROMDownloader.swift */; };
+		BF00000B0000000000000017 /* FightcadeChannel+LaunchMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000017 /* FightcadeChannel+LaunchMetadata.swift */; };
+		BF00000B0000000000000018 /* AuthenticatedHomeViewModel+ROMDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000018 /* AuthenticatedHomeViewModel+ROMDownload.swift */; };
+		BF00000B0000000000000019 /* FightcadeRuntime in Resources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000019 /* FightcadeRuntime */; };
+		BF00000B000000000000001A /* rom-index.json in Resources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001A /* rom-index.json */; };
+		BF00000B000000000000001B /* MacadeResourceBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001B /* MacadeResourceBundle.swift */; };
+		BF00000B000000000000001C /* FightcadeZipArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001C /* FightcadeZipArchive.swift */; };
+		BF00000B000000000000001D /* AuthenticatedHomeViewModel+LaunchAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001D /* AuthenticatedHomeViewModel+LaunchAvailability.swift */; };
+		BF00000B000000000000001E /* FightcadeLaunchSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001E /* FightcadeLaunchSupport.swift */; };
+		BF00000B000000000000001F /* FightcadeFBNeoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */; };
+		BF00000B0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */; };
+		BF00000B0000000000000021 /* ChannelHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000021 /* ChannelHeaderView.swift */; };
+		BF00000B0000000000000023 /* FightcadeROMLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000023 /* FightcadeROMLibrary.swift */; };
+		BF00000B0000000000000024 /* FightcadeFBNeoSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */; };
+		BF00000B0000000000000025 /* AuthenticatedHomeViewModel+ROMManagement.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000025 /* AuthenticatedHomeViewModel+ROMManagement.swift */; };
+		BF00000B0000000000000026 /* FBNeoSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000026 /* FBNeoSettingsView.swift */; };
+		BF00000B0000000000000027 /* FightcadeUserStatusReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000027 /* FightcadeUserStatusReporter.swift */; };
+		BF00000B0000000000000028 /* FightcadeLobbyDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */; };
+		BF00000B0000000000000029 /* FightcadeNetplaySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000029 /* FightcadeNetplaySession.swift */; };
+		BF00000B000000000000002A /* FightcadeUDPProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002A /* FightcadeUDPProxy.swift */; };
+		BF00000B000000000000002B /* FightcadeGGPOProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002B /* FightcadeGGPOProtocol.swift */; };
+		BF00000B000000000000002C /* FightcadeGGPOServedHandshake.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002C /* FightcadeGGPOServedHandshake.swift */; };
+		BF00000B000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */; };
+		BF00000B000000000000002E /* ChallengeBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002E /* ChallengeBanner.swift */; };
+		BF00000B000000000000002F /* ChatMessageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002F /* ChatMessageRow.swift */; };
+		BF00000B0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift */; };
+		BF00000B0000000000000031 /* PingQualityIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000031 /* PingQualityIcon.swift */; };
+		BF00000B0000000000000032 /* JoinedChannelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000032 /* JoinedChannelStore.swift */; };
+		BF00000B0000000000000033 /* AuthenticatedHomeViewModel+JoinedChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000033 /* AuthenticatedHomeViewModel+JoinedChannels.swift */; };
+		BF00000B0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */; };
+		BF00000B0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift */; };
+		BF00000B0000000000000036 /* FightcadeChannelUser+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */; };
+		BF00000B0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift */; };
+		BF00000B0000000000000038 /* FightcadeEmbeddedInputClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000038 /* FightcadeEmbeddedInputClient.swift */; };
+		BF00000B0000000000000039 /* FightcadeEmbeddedSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000039 /* FightcadeEmbeddedSession.swift */; };
+		BF00000B000000000000003A /* FightcadeEmbeddedVideoStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */; };
+		BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */; };
+		BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */; };
+		BF00000B000000000000003D /* PlayerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003D /* PlayerListView.swift */; };
+		BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003E /* PlayerDetailPane.swift */; };
+		BF00000B000000000000003F /* EmbeddedChatInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003F /* EmbeddedChatInputController.swift */; };
+		BF00000B0000000000000040 /* SDLScancodeMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000040 /* SDLScancodeMapper.swift */; };
+		BF00000B0000000000000041 /* EmbeddedInputEventRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */; };
+		BF00000B00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift */; };
+		BF00000B00000000000000A5 /* FightcadeProxyDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A5 /* FightcadeProxyDiagnostics.swift */; };
+		BF00000B00000000000000A6 /* FightcadeChannelBrowserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A6 /* FightcadeChannelBrowserModels.swift */; };
+		BF00000B00000000000000A7 /* FightcadeLobbyService+Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */; };
+		BF00000B00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */; };
+		BF00000B00000000000000A9 /* ChannelBrowserControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A9 /* ChannelBrowserControls.swift */; };
+		BF00000B00000000000000AA /* ChannelBrowserCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AA /* ChannelBrowserCards.swift */; };
+		BF00000B00000000000000AB /* ChannelBrowserPreviewPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AB /* ChannelBrowserPreviewPane.swift */; };
+		BF00000B00000000000000AC /* ChannelBrowserCategories.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AC /* ChannelBrowserCategories.swift */; };
+		BF00000B00000000000000AD /* MacadeSettingsPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AD /* MacadeSettingsPreferencesStore.swift */; };
+		BF00000B00000000000000AE /* MacadeSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AE /* MacadeSettingsViewModel.swift */; };
+		BF00000B00000000000000AF /* MacadeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AF /* MacadeSettingsView.swift */; };
+		BF00000B00000000000000B0 /* FightcadeLaunchRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		BF0000020000000000000001 /* MacadeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeApp.swift; sourceTree = "<group>"; };
+		BF0000020000000000000002 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		BF0000020000000000000003 /* AuthenticatedHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedHomeView.swift; sourceTree = "<group>"; };
+		BF0000020000000000000004 /* MacadeBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeBackground.swift; sourceTree = "<group>"; };
+		BF0000020000000000000005 /* MacadeColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeColor.swift; sourceTree = "<group>"; };
+		BF0000020000000000000006 /* MacadeSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSpacing.swift; sourceTree = "<group>"; };
+		BF0000020000000000000007 /* MacadeTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeTypography.swift; sourceTree = "<group>"; };
+		BF0000020000000000000008 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		BF0000020000000000000009 /* LoginCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginCredentials.swift; sourceTree = "<group>"; };
+		BF000002000000000000000A /* AuthenticationServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationServicing.swift; sourceTree = "<group>"; };
+		BF000002000000000000000B /* FightcadeAuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeAuthenticationService.swift; sourceTree = "<group>"; };
+		BF000002000000000000000C /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		BF000002000000000000000D /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		BF000002000000000000000E /* LoginHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginHeroView.swift; sourceTree = "<group>"; };
+		BF000002000000000000000F /* LoginFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginFormView.swift; sourceTree = "<group>"; };
+		BF0000020000000000000010 /* MacadeTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeTextField.swift; sourceTree = "<group>"; };
+		BF0000020000000000000011 /* MacadePrimaryButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadePrimaryButtonStyle.swift; sourceTree = "<group>"; };
+		BF0000020000000000000012 /* Macade.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Macade.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF0000020000000000000013 /* Package */ = {isa = PBXFileReference; lastKnownFileType = text; path = Package; sourceTree = "<group>"; };
+		BF0000020000000000000014 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
+		BF0000020000000000000015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BF00000C0000000000000001 /* FightcadeEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEndpoint.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000002 /* FightcadeBootstrapService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeBootstrapService.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000003 /* FightcadeServiceError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeServiceError.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000005 /* FightcadeChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChannel.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000006 /* FightcadeDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeDashboard.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000007 /* FightcadeLobbyServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyServicing.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000008 /* FightcadeLobbyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyService.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000009 /* AuthenticatedHomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedHomeViewModel.swift; sourceTree = "<group>"; };
+		BF00000C000000000000000A /* LobbySidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LobbySidebarView.swift; sourceTree = "<group>"; };
+		BF00000C000000000000000C /* ChannelDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelDetailView.swift; sourceTree = "<group>"; };
+		BF00000C000000000000000D /* ChannelBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserView.swift; sourceTree = "<group>"; };
+		BF00000C000000000000000E /* FightcadeChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChatMessage.swift; sourceTree = "<group>"; };
+		BF00000C000000000000000F /* FightcadeLobbyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyEvent.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyPayloadParser.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000011 /* FightcadeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLauncher.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000012 /* FightcadeChallenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChallenge.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Challenge.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000014 /* ChannelErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelErrorBanner.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000015 /* FightcadeRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeRuntime.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000016 /* FightcadeROMDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeROMDownloader.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000017 /* FightcadeChannel+LaunchMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeChannel+LaunchMetadata.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000018 /* AuthenticatedHomeViewModel+ROMDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+ROMDownload.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000019 /* FightcadeRuntime */ = {isa = PBXFileReference; lastKnownFileType = folder; path = FightcadeRuntime; sourceTree = "<group>"; };
+		BF00000C000000000000001A /* rom-index.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "rom-index.json"; sourceTree = "<group>"; };
+		BF00000C000000000000001B /* MacadeResourceBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeResourceBundle.swift; sourceTree = "<group>"; };
+		BF00000C000000000000001C /* FightcadeZipArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeZipArchive.swift; sourceTree = "<group>"; };
+		BF00000C000000000000001D /* AuthenticatedHomeViewModel+LaunchAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+LaunchAvailability.swift"; sourceTree = "<group>"; };
+		BF00000C000000000000001E /* FightcadeLaunchSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLaunchSupport.swift; sourceTree = "<group>"; };
+		BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeFBNeoConfig.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Chat.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000021 /* ChannelHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelHeaderView.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000023 /* FightcadeROMLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeROMLibrary.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeFBNeoSettings.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000025 /* AuthenticatedHomeViewModel+ROMManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+ROMManagement.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000026 /* FBNeoSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBNeoSettingsView.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000027 /* FightcadeUserStatusReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeUserStatusReporter.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyDiagnostics.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000029 /* FightcadeNetplaySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplaySession.swift; sourceTree = "<group>"; };
+		BF00000C000000000000002A /* FightcadeUDPProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeUDPProxy.swift; sourceTree = "<group>"; };
+		BF00000C000000000000002B /* FightcadeGGPOProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOProtocol.swift; sourceTree = "<group>"; };
+		BF00000C000000000000002C /* FightcadeGGPOServedHandshake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOServedHandshake.swift; sourceTree = "<group>"; };
+		BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOPeerUDPProtocol.swift; sourceTree = "<group>"; };
+		BF00000C000000000000002E /* ChallengeBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeBanner.swift; sourceTree = "<group>"; };
+		BF00000C000000000000002F /* ChatMessageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageRow.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+PlayerRefresh.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000031 /* PingQualityIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingQualityIcon.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000032 /* JoinedChannelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinedChannelStore.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000033 /* AuthenticatedHomeViewModel+JoinedChannels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+JoinedChannels.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+ChallengeWarning.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Spectate.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeChannelUser+Display.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+Streams.swift"; sourceTree = "<group>"; };
+		BF00000C0000000000000038 /* FightcadeEmbeddedInputClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEmbeddedInputClient.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000039 /* FightcadeEmbeddedSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEmbeddedSession.swift; sourceTree = "<group>"; };
+		BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEmbeddedVideoStream.swift; sourceTree = "<group>"; };
+		BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+EmbeddedEmulation.swift"; sourceTree = "<group>"; };
+		BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedEmulatorPanel.swift; sourceTree = "<group>"; };
+		BF00000C000000000000003D /* PlayerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerListView.swift; sourceTree = "<group>"; };
+		BF00000C000000000000003E /* PlayerDetailPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailPane.swift; sourceTree = "<group>"; };
+		BF00000C000000000000003F /* EmbeddedChatInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedChatInputController.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000040 /* SDLScancodeMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDLScancodeMapper.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedInputEventRouter.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEmbeddedProxyBootstrap.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000A5 /* FightcadeProxyDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeProxyDiagnostics.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000A6 /* FightcadeChannelBrowserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChannelBrowserModels.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyService+Browser.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Browser.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000A9 /* ChannelBrowserControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserControls.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000AA /* ChannelBrowserCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserCards.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000AB /* ChannelBrowserPreviewPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserPreviewPane.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000AC /* ChannelBrowserCategories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserCategories.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000AD /* MacadeSettingsPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsPreferencesStore.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000AE /* MacadeSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsViewModel.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000AF /* MacadeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsView.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLaunchRoutes.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BF0000030000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BF0000040000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				BF0000020000000000000013 /* Package */,
+				BF0000020000000000000014 /* AGENTS.md */,
+				BF0000040000000000000002 /* Sources */,
+				BF0000040000000000000012 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000002 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000040000000000000003 /* MacadeApp */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000003 /* MacadeApp */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000020000000000000001 /* MacadeApp.swift */,
+				BF0000040000000000000004 /* App */,
+				BF0000040000000000000005 /* Core */,
+				BF0000040000000000000007 /* Features */,
+				BF0000040000000000000013 /* Resources */,
+			);
+			path = MacadeApp;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000004 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000020000000000000002 /* RootView.swift */,
+				BF0000020000000000000003 /* AuthenticatedHomeView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000005 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000040000000000000006 /* Design */,
+				BF00000D0000000000000001 /* Fightcade */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000006 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000020000000000000004 /* MacadeBackground.swift */,
+				BF0000020000000000000005 /* MacadeColor.swift */,
+				BF0000020000000000000006 /* MacadeSpacing.swift */,
+				BF0000020000000000000007 /* MacadeTypography.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000007 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000040000000000000008 /* Auth */,
+				BF00000D0000000000000002 /* Lobby */,
+				BF00000D0000000000000007 /* Settings */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000008 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000040000000000000009 /* Models */,
+				BF000004000000000000000A /* Services */,
+				BF000004000000000000000B /* ViewModels */,
+				BF000004000000000000000C /* Views */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000009 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000020000000000000008 /* AuthSession.swift */,
+				BF0000020000000000000009 /* LoginCredentials.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		BF000004000000000000000A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BF000002000000000000000A /* AuthenticationServicing.swift */,
+				BF000002000000000000000B /* FightcadeAuthenticationService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		BF000004000000000000000B /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BF000002000000000000000C /* LoginViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		BF000004000000000000000C /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BF000002000000000000000D /* LoginView.swift */,
+				BF000002000000000000000E /* LoginHeroView.swift */,
+				BF000002000000000000000F /* LoginFormView.swift */,
+				BF0000020000000000000010 /* MacadeTextField.swift */,
+				BF0000020000000000000011 /* MacadePrimaryButtonStyle.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000012 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000020000000000000012 /* Macade.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BF0000040000000000000013 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BF0000020000000000000015 /* Assets.xcassets */,
+				BF00000C0000000000000019 /* FightcadeRuntime */,
+				BF00000C000000000000001A /* rom-index.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000001 /* Fightcade */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C0000000000000001 /* FightcadeEndpoint.swift */,
+				BF00000C0000000000000002 /* FightcadeBootstrapService.swift */,
+				BF00000C0000000000000003 /* FightcadeServiceError.swift */,
+				BF00000C0000000000000027 /* FightcadeUserStatusReporter.swift */,
+				BF00000C000000000000001B /* MacadeResourceBundle.swift */,
+				BF00000C0000000000000015 /* FightcadeRuntime.swift */,
+				BF00000C0000000000000016 /* FightcadeROMDownloader.swift */,
+				BF00000C0000000000000023 /* FightcadeROMLibrary.swift */,
+				BF00000C000000000000001C /* FightcadeZipArchive.swift */,
+				BF00000C0000000000000038 /* FightcadeEmbeddedInputClient.swift */,
+				BF00000C0000000000000039 /* FightcadeEmbeddedSession.swift */,
+				BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */,
+				BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */,
+				BF00000C0000000000000011 /* FightcadeLauncher.swift */,
+				BF00000C000000000000001E /* FightcadeLaunchSupport.swift */,
+				BF00000C000000000000002B /* FightcadeGGPOProtocol.swift */,
+				BF00000C000000000000002C /* FightcadeGGPOServedHandshake.swift */,
+				BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */,
+				BF00000C0000000000000029 /* FightcadeNetplaySession.swift */,
+				BF00000C000000000000002A /* FightcadeUDPProxy.swift */,
+				BF00000C00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift */,
+				BF00000C00000000000000A5 /* FightcadeProxyDiagnostics.swift */,
+				BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */,
+				BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */,
+			);
+			path = Fightcade;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000002 /* Lobby */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000D0000000000000003 /* Models */,
+				BF00000D0000000000000004 /* Services */,
+				BF00000D0000000000000005 /* ViewModels */,
+				BF00000D0000000000000006 /* Views */,
+			);
+			path = Lobby;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000003 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C0000000000000012 /* FightcadeChallenge.swift */,
+				BF00000C0000000000000017 /* FightcadeChannel+LaunchMetadata.swift */,
+				BF00000C00000000000000A6 /* FightcadeChannelBrowserModels.swift */,
+				BF00000C0000000000000005 /* FightcadeChannel.swift */,
+				BF00000C000000000000000E /* FightcadeChatMessage.swift */,
+				BF00000C0000000000000006 /* FightcadeDashboard.swift */,
+				BF00000C000000000000000F /* FightcadeLobbyEvent.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000004 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C0000000000000007 /* FightcadeLobbyServicing.swift */,
+				BF00000C0000000000000008 /* FightcadeLobbyService.swift */,
+				BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */,
+				BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */,
+				BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */,
+				BF00000C0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift */,
+				BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */,
+				BF00000C0000000000000032 /* JoinedChannelStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000005 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C0000000000000009 /* AuthenticatedHomeViewModel.swift */,
+				BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */,
+				BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */,
+				BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */,
+				BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */,
+				BF00000C0000000000000033 /* AuthenticatedHomeViewModel+JoinedChannels.swift */,
+				BF00000C000000000000001D /* AuthenticatedHomeViewModel+LaunchAvailability.swift */,
+				BF00000C0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift */,
+				BF00000C0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift */,
+				BF00000C0000000000000025 /* AuthenticatedHomeViewModel+ROMManagement.swift */,
+				BF00000C0000000000000018 /* AuthenticatedHomeViewModel+ROMDownload.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C000000000000000A /* LobbySidebarView.swift */,
+				BF00000C000000000000000C /* ChannelDetailView.swift */,
+				BF00000C0000000000000021 /* ChannelHeaderView.swift */,
+				BF00000C0000000000000014 /* ChannelErrorBanner.swift */,
+				BF00000C00000000000000AA /* ChannelBrowserCards.swift */,
+				BF00000C00000000000000AC /* ChannelBrowserCategories.swift */,
+				BF00000C00000000000000A9 /* ChannelBrowserControls.swift */,
+				BF00000C00000000000000AB /* ChannelBrowserPreviewPane.swift */,
+				BF00000C000000000000002E /* ChallengeBanner.swift */,
+				BF00000C000000000000002F /* ChatMessageRow.swift */,
+				BF00000C000000000000003F /* EmbeddedChatInputController.swift */,
+				BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */,
+				BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */,
+				BF00000C0000000000000040 /* SDLScancodeMapper.swift */,
+				BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */,
+				BF00000C000000000000003D /* PlayerListView.swift */,
+				BF00000C000000000000003E /* PlayerDetailPane.swift */,
+				BF00000C0000000000000031 /* PingQualityIcon.swift */,
+				BF00000C000000000000000D /* ChannelBrowserView.swift */,
+				BF00000C0000000000000026 /* FBNeoSettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000007 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000D0000000000000008 /* ViewModels */,
+				BF00000D0000000000000009 /* Views */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000008 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C00000000000000AD /* MacadeSettingsPreferencesStore.swift */,
+				BF00000C00000000000000AE /* MacadeSettingsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		BF00000D0000000000000009 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C00000000000000AF /* MacadeSettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BF0000050000000000000001 /* Macade */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF0000060000000000000002 /* Build configuration list for PBXNativeTarget "Macade" */;
+			buildPhases = (
+				BF0000030000000000000001 /* Frameworks */,
+				BF0000070000000000000001 /* Sources */,
+				BF00000A0000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Macade;
+			productName = Macade;
+			productReference = BF0000020000000000000012 /* Macade.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BF0000080000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2700;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					BF0000050000000000000001 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = BF0000060000000000000001 /* Build configuration list for PBXProject "Macade" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BF0000040000000000000001;
+			productRefGroup = BF0000040000000000000012 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BF0000050000000000000001 /* Macade */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BF00000A0000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF0000010000000000000012 /* Assets.xcassets in Resources */,
+				BF00000B0000000000000019 /* FightcadeRuntime in Resources */,
+				BF00000B000000000000001A /* rom-index.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BF0000070000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF0000010000000000000001 /* MacadeApp.swift in Sources */,
+				BF0000010000000000000002 /* RootView.swift in Sources */,
+				BF0000010000000000000003 /* AuthenticatedHomeView.swift in Sources */,
+				BF0000010000000000000004 /* MacadeBackground.swift in Sources */,
+				BF0000010000000000000005 /* MacadeColor.swift in Sources */,
+				BF0000010000000000000006 /* MacadeSpacing.swift in Sources */,
+				BF0000010000000000000007 /* MacadeTypography.swift in Sources */,
+				BF0000010000000000000008 /* AuthSession.swift in Sources */,
+				BF0000010000000000000009 /* LoginCredentials.swift in Sources */,
+				BF000001000000000000000A /* AuthenticationServicing.swift in Sources */,
+				BF000001000000000000000B /* FightcadeAuthenticationService.swift in Sources */,
+				BF000001000000000000000C /* LoginViewModel.swift in Sources */,
+				BF000001000000000000000D /* LoginView.swift in Sources */,
+				BF000001000000000000000E /* LoginHeroView.swift in Sources */,
+				BF000001000000000000000F /* LoginFormView.swift in Sources */,
+				BF0000010000000000000010 /* MacadeTextField.swift in Sources */,
+				BF0000010000000000000011 /* MacadePrimaryButtonStyle.swift in Sources */,
+				BF00000B0000000000000001 /* FightcadeEndpoint.swift in Sources */,
+				BF00000B0000000000000002 /* FightcadeBootstrapService.swift in Sources */,
+				BF00000B0000000000000003 /* FightcadeServiceError.swift in Sources */,
+				BF00000B0000000000000027 /* FightcadeUserStatusReporter.swift in Sources */,
+				BF00000B00000000000000B0 /* FightcadeLaunchRoutes.swift in Sources */,
+				BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */,
+				BF00000B0000000000000005 /* FightcadeChannel.swift in Sources */,
+				BF00000B0000000000000006 /* FightcadeDashboard.swift in Sources */,
+				BF00000B0000000000000007 /* FightcadeLobbyServicing.swift in Sources */,
+				BF00000B0000000000000008 /* FightcadeLobbyService.swift in Sources */,
+				BF00000B0000000000000009 /* AuthenticatedHomeViewModel.swift in Sources */,
+				BF00000B0000000000000028 /* FightcadeLobbyDiagnostics.swift in Sources */,
+				BF00000B000000000000000A /* LobbySidebarView.swift in Sources */,
+				BF00000B000000000000000C /* ChannelDetailView.swift in Sources */,
+				BF00000B000000000000000D /* ChannelBrowserView.swift in Sources */,
+				BF00000B00000000000000A6 /* FightcadeChannelBrowserModels.swift in Sources */,
+				BF00000B00000000000000A7 /* FightcadeLobbyService+Browser.swift in Sources */,
+				BF00000B00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift in Sources */,
+				BF00000B00000000000000A9 /* ChannelBrowserControls.swift in Sources */,
+				BF00000B00000000000000AA /* ChannelBrowserCards.swift in Sources */,
+				BF00000B00000000000000AB /* ChannelBrowserPreviewPane.swift in Sources */,
+				BF00000B00000000000000AC /* ChannelBrowserCategories.swift in Sources */,
+				BF00000B00000000000000AD /* MacadeSettingsPreferencesStore.swift in Sources */,
+				BF00000B00000000000000AE /* MacadeSettingsViewModel.swift in Sources */,
+				BF00000B00000000000000AF /* MacadeSettingsView.swift in Sources */,
+				BF00000B000000000000000E /* FightcadeChatMessage.swift in Sources */,
+				BF00000B000000000000000F /* FightcadeLobbyEvent.swift in Sources */,
+				BF00000B0000000000000010 /* FightcadeLobbyPayloadParser.swift in Sources */,
+				BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */,
+				BF00000B0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift in Sources */,
+				BF00000B0000000000000014 /* ChannelErrorBanner.swift in Sources */,
+				BF00000B000000000000002E /* ChallengeBanner.swift in Sources */,
+				BF00000B000000000000002F /* ChatMessageRow.swift in Sources */,
+				BF00000B0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift in Sources */,
+				BF00000B0000000000000031 /* PingQualityIcon.swift in Sources */,
+				BF00000B0000000000000032 /* JoinedChannelStore.swift in Sources */,
+				BF00000B0000000000000033 /* AuthenticatedHomeViewModel+JoinedChannels.swift in Sources */,
+				BF00000B0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift in Sources */,
+				BF00000B0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift in Sources */,
+				BF00000B0000000000000036 /* FightcadeChannelUser+Display.swift in Sources */,
+				BF00000B0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift in Sources */,
+				BF00000B0000000000000038 /* FightcadeEmbeddedInputClient.swift in Sources */,
+				BF00000B0000000000000039 /* FightcadeEmbeddedSession.swift in Sources */,
+				BF00000B000000000000003A /* FightcadeEmbeddedVideoStream.swift in Sources */,
+				BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */,
+				BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */,
+				BF00000B000000000000003D /* PlayerListView.swift in Sources */,
+				BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */,
+				BF00000B000000000000003F /* EmbeddedChatInputController.swift in Sources */,
+				BF00000B0000000000000040 /* SDLScancodeMapper.swift in Sources */,
+				BF00000B0000000000000041 /* EmbeddedInputEventRouter.swift in Sources */,
+				BF00000B0000000000000015 /* FightcadeRuntime.swift in Sources */,
+				BF00000B0000000000000016 /* FightcadeROMDownloader.swift in Sources */,
+				BF00000B0000000000000017 /* FightcadeChannel+LaunchMetadata.swift in Sources */,
+				BF00000B0000000000000018 /* AuthenticatedHomeViewModel+ROMDownload.swift in Sources */,
+				BF00000B000000000000001B /* MacadeResourceBundle.swift in Sources */,
+				BF00000B000000000000001C /* FightcadeZipArchive.swift in Sources */,
+				BF00000B000000000000001D /* AuthenticatedHomeViewModel+LaunchAvailability.swift in Sources */,
+				BF00000B000000000000001E /* FightcadeLaunchSupport.swift in Sources */,
+				BF00000B000000000000002B /* FightcadeGGPOProtocol.swift in Sources */,
+				BF00000B000000000000002C /* FightcadeGGPOServedHandshake.swift in Sources */,
+				BF00000B000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift in Sources */,
+				BF00000B0000000000000029 /* FightcadeNetplaySession.swift in Sources */,
+				BF00000B000000000000002A /* FightcadeUDPProxy.swift in Sources */,
+				BF00000B00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift in Sources */,
+				BF00000B00000000000000A5 /* FightcadeProxyDiagnostics.swift in Sources */,
+				BF00000B000000000000001F /* FightcadeFBNeoConfig.swift in Sources */,
+				BF00000B0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift in Sources */,
+				BF00000B0000000000000021 /* ChannelHeaderView.swift in Sources */,
+				BF00000B0000000000000023 /* FightcadeROMLibrary.swift in Sources */,
+				BF00000B0000000000000024 /* FightcadeFBNeoSettings.swift in Sources */,
+				BF00000B0000000000000025 /* AuthenticatedHomeViewModel+ROMManagement.swift in Sources */,
+				BF00000B0000000000000026 /* FBNeoSettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		BF0000090000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BF0000090000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		BF0000090000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Macade;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Macade.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		BF0000090000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Macade;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Macade.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BF0000060000000000000001 /* Build configuration list for PBXProject "Macade" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF0000090000000000000001 /* Debug */,
+				BF0000090000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BF0000060000000000000002 /* Build configuration list for PBXNativeTarget "Macade" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF0000090000000000000003 /* Debug */,
+				BF0000090000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BF0000080000000000000001 /* Project object */;
+}

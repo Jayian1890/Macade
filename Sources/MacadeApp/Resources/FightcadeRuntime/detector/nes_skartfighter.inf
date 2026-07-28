@@ -1,0 +1,14 @@
+start=Start,raw,eq,0x00AB,0,8
+player1=P1 Win,raw,eq,0x040D,2,8
+player2=P2 Win,raw,eq,0x040E,2,8
+char1=P1 Char,raw,char,0x00B0,7,8
+char2=P2 Char,raw,char,0x00B1,7,8
+char=0,Toad
+char=1,Mario
+char=2,Neo
+char=3,Tisgu
+char=4,Peach
+char=5,DK Jr.
+char=6,Bowser
+char=7,Luigi
+char=8,Daisy

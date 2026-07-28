@@ -1,0 +1,13 @@
+start=Start,raw,eq,0x5803a8,144,8
+player1=P1 Win,raw,eq,0x582864,0,8
+player2=P2 Win,raw,eq,0x582064,0,8
+char1=P1 Char,raw,char,0x58005a,0,8
+char2=P2 Char,raw,char,0x58005b,0,8
+char=0,Tom
+char=1,Hawk
+char=2,Sha Lin
+char=3,Abdul
+char=4,Scott
+char=5,Sasaki
+char=6,Tango
+char=7,Alli

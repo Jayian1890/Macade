@@ -1,0 +1,14 @@
+start=Start,raw,eq,0x010519d0,1,8
+player1=P1 Win,raw,gts,0x01051a30,0,8
+player2=P2 Win,raw,gts,0x01051a40,0,8
+char1=P1 Char,raw,char,0x01051290,0,8
+char2=P2 Char,raw,char,0x01051570,0,8
+char=0,Johnny Cage
+char=1,Kano
+char=2,Raiden
+char=3,Liu Kang
+char=4,Scorpion
+char=5,Sub-Zero
+char=6,Sonya Blade
+char=7,Goro
+char=8,Shang Tsung

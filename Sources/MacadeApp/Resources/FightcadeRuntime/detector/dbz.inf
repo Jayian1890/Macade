@@ -1,0 +1,13 @@
+start=Start,raw,eq,0x486217,99,8
+player1=P1 Win,raw,eq,0x48648d,2,8
+player2=P2 Win,raw,eq,0x48648f,2,8
+char1=P1Char,raw,char,0x4864b1,0,8
+char2=P2Char,raw,char,0x4864b3,0,8
+char=0,Goku
+char=1,Vegeta
+char=2,Gohan
+char=3,Piccolo
+char=4,Rikum
+char=5,Boter
+char=6,Ginyu
+char=7,Freeza

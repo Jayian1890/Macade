@@ -1,0 +1,16 @@
+start=Start,raw,eq,0xff8572,153,8
+player1=P1 Win,raw,eq,0xff8a90,2,8
+player2=P2 Win,raw,eq,0xff8e90,2,8
+char1=P1Char,raw,char,0xff8a91,0,8
+char2=P2Char,raw,char,0xff8e91,0,8
+char=0,Klaus Garcia
+char=2,Joey
+char=3,Deliza
+char=4,Dark Man
+char=5,Jackie
+char=7,Jedi Ryan
+char=8,Gloria
+char=11,Baekun Dosa
+char=10,Dynamo
+char=6,Mozard
+char=1,Garner

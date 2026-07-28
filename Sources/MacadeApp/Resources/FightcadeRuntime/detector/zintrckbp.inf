@@ -1,0 +1,13 @@
+start=Start,raw,eq,0x10c419,100,8
+player1=P1 Win,raw,gts,0x10e222,0,8
+player2=P2 Win,raw,gts,0x10e223,0,8
+char1=P1Char,raw,char,0x10b609,0,8
+char2=P2Char,raw,char,0x10b649,0,8
+char=0,Subberg
+char=1,Pukie
+char=2,Sheira
+char=3,Reusha
+char=4,Kaireen
+char=5,Iga no Takanome
+char=6,Gimri
+char=7,Dark Sniper

@@ -1,0 +1,3 @@
+start=Start,CpsRamFF,eq,0x4809,153,8
+player1=P1 Win,CpsRamFF,gts,0x3A85,0,8
+player2=P2 Win,CpsRamFF,gts,0x3E85,0,8

@@ -1,0 +1,13 @@
+start=Start,raw,eq,0x400B08,131074,32
+player1=P1 Win,raw,eq,0x400B0A,0,16
+player2=P2 Win,raw,eq,0x400B08,0,16
+char1=P1 Char,raw,char,0x400F98,0,16
+char2=P2 Char,raw,char,0x400F9A,0,16
+char=5,Benzou
+char=1,Yuki
+char=0,Musashi
+char=3,Shuuzou
+char=4,Mikan
+char=2,Bazuo
+char=6,Dekoichi
+char=7,Shaki

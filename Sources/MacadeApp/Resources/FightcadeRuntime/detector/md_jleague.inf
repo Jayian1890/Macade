@@ -1,0 +1,14 @@
+start=Start,raw,eq,0xe01959,99,8
+player1=P1 Win,raw,gts,0xe01a9d,0,8
+player2=P2 Win,raw,gts,0xe01a9f,0,8
+char1=P1 Char,raw,char,0xe018bd,0,8
+char2=P2 Char,raw,char,0xe018bf,0,8
+char=0,Superman
+char=1,Batman
+char=2,Wonder Woman
+char=3,The Flash
+char=4,Aquaman
+char=5,Green Arrow
+char=6,Cheetah
+char=7,Despero
+char=8,Darkseid

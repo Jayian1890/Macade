@@ -1,0 +1,13 @@
+start=Start,raw,eq,0xe7113,153,8
+player1=P1 Win,raw,eq,0xe1afa,2,8
+player2=P2 Win,raw,eq,0xe1afb,2,8
+char1=P1Char,raw,char,0xe1b02,0,8
+char2=P2Char,raw,char,0xe1b03,0,8
+char=0,Starsaber
+char=1,Meltdown
+char=2,Arabian Moon
+char=3,Reptilian
+char=4,Busido
+char=5,Satinsect
+char=6,Cattydox
+char=7,Skull Reaper

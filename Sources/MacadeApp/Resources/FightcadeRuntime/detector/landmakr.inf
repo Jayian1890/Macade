@@ -1,0 +1,15 @@
+start=Start,raw,eq,0x41c5e1,0,8
+player1=P1 Win,raw,eq,0x401f6b,2,8
+player2=P2 Win,raw,eq,0x401f6d,2,8
+char1=P1Char,raw,char,0x401fa9,0,8
+char2=P2Char,raw,char,0x402051,0,8
+char=0,Hiryu
+char=1,Aifa
+char=2,Soumei
+char=3,Renki
+char=4,Youen
+char=5,Kouko
+char=6,RinRei
+char=7,Roushinshi
+char=8,Ranju
+char=9,Gaira

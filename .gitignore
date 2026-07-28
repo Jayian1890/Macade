@@ -1,0 +1,28 @@
+.DS_Store
+graphify-out/
+__pycache__/
+*.pyc
+
+# Xcode and SwiftPM generated state
+.swiftpm/
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Vendored FBNeo build outputs under Sources/FightcadeFBNeo.
+Sources/FightcadeFBNeo/obj/
+Sources/FightcadeFBNeo/fbneosdl*
+Sources/FightcadeFBNeo/gamelist.txt
+Sources/FightcadeFBNeo/src/dep/generated/
+
+# Ghidra exports are useful research artifacts; local Ghidra projects/logs are not.
+ghidra-out/*
+!ghidra-out/export/
+!ghidra-out/export/**
+
+# Build/runtime logs and local tool installs.
+*.log
+
+# Keep macOS metadata ignored even inside allowlisted research/source trees.
+**/.DS_Store

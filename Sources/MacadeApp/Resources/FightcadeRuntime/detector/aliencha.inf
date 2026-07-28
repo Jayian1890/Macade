@@ -1,0 +1,14 @@
+start=Start,raw,eq,0x200f31,98,8
+player1=P1 Win,raw,gts,0x20103e,0,8
+player2=P2 Win,raw,gts,0x201120,0,8
+char1=P1Char,raw,char,0x200f60,0,8
+char2=P2Char,raw,char,0x201042,0,8
+char=0,Nic-San
+char=1,Jean Paul
+char=2,Stevareno
+char=3,Drew
+char=4,Dougster
+char=5,Fang
+char=6,Burnie
+char=7,Melanie
+char=8,Claus

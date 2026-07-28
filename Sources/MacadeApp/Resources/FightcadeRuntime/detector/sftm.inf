@@ -1,0 +1,3 @@
+start=Start,68K RAM,eq,0x715E,99,8
+player1=P1 Win,68K RAM,eq,0x716E,2,8
+player2=P2 Win,68K RAM,eq,0x7330,2,8

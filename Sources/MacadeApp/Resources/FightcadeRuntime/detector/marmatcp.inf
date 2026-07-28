@@ -1,0 +1,3 @@
+start=Start,raw,eq,0x80ac19,60,8
+player1=P1 Win,raw,gts,0x80c56b,0,8
+player2=P2 Win,raw,gts,0x80c647,0,8

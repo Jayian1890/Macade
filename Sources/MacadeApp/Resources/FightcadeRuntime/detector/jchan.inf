@@ -1,0 +1,14 @@
+start=Start,raw,eq,0x200101,153,8
+player1=P1 Win,raw,eq,0x2000d9,2,8
+player2=P2 Win,raw,eq,0x2000db,2,8
+char1=P1Char,raw,char,0x20409b,0,8
+char2=P2Char,raw,char,0x20409d,0,8
+char=0,Jackie Chan (Project A)
+char=1,Jackie Chan (Spiritual Kung Fu)
+char=2,Jackie Chan (Drunken Master)
+char=3,Lau
+char=4,Yeung
+char=5,Sam
+char=6,Thorsten
+char=7,Kim-Maree
+char=8,Mysterious Lion
