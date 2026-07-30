@@ -10,6 +10,7 @@ extern bool bSaveconfig;
 INT32 Init_Joysticks(int p1_use_joystick);
 int MacadeQuarkLoadStateIfAvailable();
 bool MacadeQuarkSessionActive();
+bool MacadeQuarkLocalTrainingActive();
 bool MacadeQuarkSessionRunning();
 bool MacadeQuarkStreamInitialStateLoaded();
 void MacadeQuarkRestoreNetworkFlags();
@@ -66,7 +67,7 @@ void DoGame(int gameToRun)
 		if (macadeRunLoopAllowed) {
 			MediaInit();
 			Init_Joysticks(usejoy);
-			if (kNetGame || macadeQuarkActive) {
+			if ((kNetGame || macadeQuarkActive) && !MacadeQuarkLocalTrainingActive()) {
 				int inputStatus = MacadeNetworkInitInput();
 				printf("Macade diagnostic: DoGame net-input status=%d\n", inputStatus);
 				fflush(stdout);

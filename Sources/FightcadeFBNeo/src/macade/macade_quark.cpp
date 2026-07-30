@@ -252,7 +252,7 @@ static bool __cdecl MacadeAdvanceFrame(int) { return MacadeNetworkReplayFrame() 
 
 static void MacadeStartGameplayTracking()
 {
-	if (gMacadeGameplayTrackingStarted || kNetSpectator) return;
+	if (gMacadeGameplayTrackingStarted || kNetSpectator || gMacadeLocalTraining) return;
 	gMacadeGameplayTrackingStarted = true;
 	if (ggpo != NULL && iRanked > 0) ggpo_client_set_game_event(ggpo, GGPOCLIENT_GAMEEVENT_STARTING, NULL);
 	MacadeDetectorLoad(gMacadeGame, false, iSeed);
@@ -372,9 +372,9 @@ int MacadeQuarkLoadStateIfAvailable()
 		return MacadeLoadStreamingInitialState(ggpo, 0) ? 0 : 1;
 	}
 	if (!kNetGame) return 0;
-	const char* suffixes[2] = { iRanked ? "_fbneo_ranked.fs" : "_fbneo.fs", iRanked ? "_fbneo.fs" : NULL };
+	const char* suffixes[3] = { "_ggpo.fs", iRanked ? "_fbneo_ranked.fs" : "_fbneo.fs", iRanked ? "_fbneo.fs" : NULL };
 	char path[256];
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 3; i++) {
 		if (suffixes[i] == NULL) continue;
 		snprintf(path, sizeof(path), "savestates/%s%s", gMacadeGame, suffixes[i]);
 		FILE* file = fopen(path, "rb");
@@ -396,6 +396,7 @@ int MacadeQuarkLoadStateIfAvailable()
 
 const char* MacadeQuarkGameName() { return gMacadeGame; }
 bool MacadeQuarkSessionActive() { return gMacadeGame[0] != 0 && (ggpo != NULL || gMacadeLocalTraining); }
+bool MacadeQuarkLocalTrainingActive() { return gMacadeGame[0] != 0 && gMacadeLocalTraining; }
 bool MacadeQuarkSessionRunning() { return ggpo != NULL && !ggpo->networkDisconnected && !ggpo->fatalDesync; }
 bool MacadeQuarkStreamInitialStateLoaded() { return ggpo != NULL && ggpo->isSpectator && ggpo->streamInitialStateLoaded; }
 void MacadeQuarkRestoreNetworkFlags()

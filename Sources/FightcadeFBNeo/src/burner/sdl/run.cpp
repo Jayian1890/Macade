@@ -41,6 +41,7 @@ extern int kNetGame;
 extern int kNetSpectator;
 extern void MacadeQuarkRunIdle(int ms);
 extern bool MacadeQuarkIncrementFrame();
+extern bool MacadeQuarkLocalTrainingActive();
 extern void MacadeDetectorUpdate();
 extern int MacadeNetworkGetInput();
 extern int MacadeSDLSoundCommitFrame();
@@ -345,10 +346,11 @@ static int RunFrame(int bDraw, int bPause)
 	}
 	else
 	{
+		bool macadeNetplayActive = kNetGame && !MacadeQuarkLocalTrainingActive();
 		nFramesEmulated++;
 		nCurrentFrame++;
 		InputMake(true);
-		if (kNetGame) {
+		if (macadeNetplayActive) {
 			if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0) {
 				printf("Macade diagnostic: RunFrame=%d before-net bDraw=%d pause=%d emulated=%u rendered=%u\n", macadeRunFrameCount, bDraw, bPause, nFramesEmulated, nFramesRendered);
 				fflush(stdout);
@@ -395,10 +397,11 @@ static int RunFrame(int bDraw, int bPause)
 			fflush(stdout);
 		}
 	}
-	if (!bPause && kNetGame && !MacadeQuarkIncrementFrame()) {
+	bool macadeNetplayActive = kNetGame && !MacadeQuarkLocalTrainingActive();
+	if (!bPause && macadeNetplayActive && !MacadeQuarkIncrementFrame()) {
 		return kMacadeRunFrameQuit;
 	}
-	if (!bPause && kNetGame) {
+	if (!bPause && macadeNetplayActive) {
 		MacadeDetectorUpdate();
 	}
 	if (commitEmbeddedSpectatorAudio) MacadeSDLSoundCommitFrame();
@@ -506,7 +509,7 @@ int RunIdle()
 		}
 		macadeRunIdleAudioLogCount++;
 		if (soundStatus) return 1;
-		if (!kNetGame) return 0;
+		if (!kNetGame || MacadeQuarkLocalTrainingActive()) return 0;
 		MacadeQuarkRunIdle(1);
 		didNetIdle = true;
 		if (macadeRunFrameCount != framesBeforeAudio) {
@@ -521,7 +524,7 @@ int RunIdle()
 	nCount = (nTime * nAppVirtualFps - nNormalFrac) / 100000;
 	if (nCount <= 0) {						// No need to do anything for a bit
 		//delay_ticks(2);
-		if (kNetGame && !didNetIdle) MacadeQuarkRunIdle(1);
+		if (kNetGame && !MacadeQuarkLocalTrainingActive() && !didNetIdle) MacadeQuarkRunIdle(1);
 		return 0;
 	}
 
