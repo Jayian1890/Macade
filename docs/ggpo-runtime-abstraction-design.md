@@ -79,7 +79,7 @@ TCP record parsing emits typed events: endpoint notice, match info, chat/control
 
 ## File Split Target
 
-Future runtime code should keep each source file under 500 lines. Macade runtime files live under `Sources/FightcadeFBNeo/src/macade`. `macade_ggpo_handshake.cpp` is currently 499 lines, so any Phase 5 or Phase 7 edit in that area should split it before adding behavior.
+Future runtime code should keep each source file under 500 lines. Macade runtime files live under `Sources/FightcadeFBNeo/src/macade`. `macade_ggpo_handshake.cpp` is currently 500 lines, so any Phase 5 or Phase 7 edit in that area should split it before adding behavior.
 
 | Target file | Contents |
 | --- | --- |

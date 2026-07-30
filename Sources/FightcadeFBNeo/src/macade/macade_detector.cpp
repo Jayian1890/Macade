@@ -14,6 +14,7 @@ extern int kNetVersion;
 extern GGPOSession* ggpo;
 
 static const int kStartFrames = 300;
+static const int kEndFrames = 500;
 static const int kDetectorFrames = 30;
 
 struct MacadeDetectorRule {
@@ -41,6 +42,9 @@ struct MacadeGameDetector {
 	int score1 = 0;
 	int score2 = 0;
 	int winner = 0;
+	int finalWinner = 0;
+	int frameEnd = 0;
+	bool finishedSent = false;
 	bool rawDetector = false;
 	bool running = false;
 	bool debug = false;
@@ -200,6 +204,15 @@ void MacadeDetectorUpdate()
 	gDetector.frameTime++;
 	gDetector.winner = 0;
 	if (!gDetector.running || gDetector.state == MacadeGameDetector::None) return;
+	if (gDetector.frameEnd > 0 && !gDetector.finishedSent && gDetector.frameTime - gDetector.frameEnd > kEndFrames) {
+		gDetector.finishedSent = true;
+		if (ggpo != NULL && iRanked > 1 && !kNetSpectator) {
+			ggpo_client_set_game_event(ggpo, GGPOCLIENT_GAMEEVENT_WINNER, &gDetector.finalWinner);
+			ggpo_client_set_game_event(ggpo, GGPOCLIENT_GAMEEVENT_FINISHED, NULL);
+			MacadeOverlaySetSystemMessage("Ranked game finished");
+		}
+	}
+	if (gDetector.frameEnd > 0) return;
 	if (gDetector.rawDetector) UpdateRules(NULL, true);
 	else { BurnAcb = DetectorScan; BurnAreaScan(ACB_MEMORY_RAM | ACB_READ, NULL); }
 
@@ -217,7 +230,12 @@ void MacadeDetectorUpdate()
 			MacadeOverlaySetScores(gDetector.score1, gDetector.score2);
 			ggpo_client_set_game_event(ggpo, GGPOCLIENT_GAMEEVENT_PLAYER_1_SCORE, &gDetector.score1);
 			ggpo_client_set_game_event(ggpo, GGPOCLIENT_GAMEEVENT_PLAYER_2_SCORE, &gDetector.score2);
+			ggpo_client_set_game_event(ggpo, GGPOCLIENT_GAMEEVENT_WINNER, &gDetector.winner);
 			SendWinnerIfNeeded(gDetector.winner);
+			if (iRanked > 1 && (gDetector.score1 == iRanked || gDetector.score2 == iRanked) && gDetector.frameEnd == 0) {
+				gDetector.finalWinner = gDetector.winner;
+				gDetector.frameEnd = gDetector.frameTime;
+			}
 		}
 	}
 }

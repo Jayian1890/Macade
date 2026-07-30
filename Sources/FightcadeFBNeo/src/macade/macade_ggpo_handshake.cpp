@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 #include <zlib.h>
-
 extern int iDelay;
 extern int iPlayer;
 extern int iRanked;
@@ -65,10 +64,10 @@ static bool SendAll(int fd, const unsigned char* bytes, size_t count)
 
 static bool SendCommand(int fd, unsigned int sequence, unsigned int command, const std::vector<unsigned char>& payload)
 {
-	std::vector<unsigned char> frame;
-	AppendBE32(frame, (unsigned int)payload.size() + 8); AppendBE32(frame, sequence); AppendBE32(frame, command);
-	frame.insert(frame.end(), payload.begin(), payload.end());
-	return SendAll(fd, frame.data(), frame.size());
+	std::vector<unsigned char> header; AppendBE32(header, (unsigned int)payload.size() + 8);
+	std::vector<unsigned char> body; AppendBE32(body, sequence); AppendBE32(body, command);
+	body.insert(body.end(), payload.begin(), payload.end());
+	return SendAll(fd, header.data(), header.size()) && SendAll(fd, body.data(), body.size());
 }
 
 static int ConnectTCP(int port)
@@ -77,6 +76,7 @@ static int ConnectTCP(int port)
 	if (!Resolve(kMasterHost, port, SOCK_STREAM, IPPROTO_TCP, &remote)) return -1;
 	int fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (fd < 0) return -1;
+	int noSigPipe = 1; setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, sizeof(noSigPipe));
 	sockaddr_in local; memset(&local, 0, sizeof(local));
 	local.sin_family = AF_INET; local.sin_port = htons(kTCPPort); local.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (bind(fd, (sockaddr*)&local, sizeof(local)) != 0) {
@@ -287,6 +287,7 @@ static void HandleTCPServerRecord(GGPOSession* session, int code, const unsigned
 		return;
 	}
 	if (code == -7) ApplyTCPEndpointNotice(session, payload, payloadSize);
+	else if (code == -8) MacadeHandleTCPChatRecord(session, payload, payloadSize);
 	else if (code == 3) MacadeHandleTCPMatchInfoRecord(session, payload, payloadSize);
 	else if (code == 14) HandleTCPFrameBatch(session, payload, payloadSize);
 }
@@ -355,16 +356,17 @@ void MacadePollTCP(GGPOSession* session, int timeoutMs)
 	if (ready < 0) { MacadeMarkDisconnected(session); return; }
 	if (ready == 0) return;
 	unsigned char buffer[4096]; ssize_t count = recv(session->tcpFd, buffer, sizeof(buffer), 0);
-	if (count <= 0) { MacadeMarkDisconnected(session); return; }
+	if (count <= 0) { MacadeLog("Macade GGPO: TCP recv closed count=%zd spectator=%d\n", count, session->isSpectator ? 1 : 0); MacadeMarkDisconnected(session); return; }
 	session->bytesReceived += (unsigned long long)count;
 	std::vector<unsigned char>& tcpBuffer = session->tcpReceiveBuffer;
 	tcpBuffer.insert(tcpBuffer.end(), buffer, buffer + count);
 	while (tcpBuffer.size() >= 8) {
 		unsigned int length = ReadBE32(&tcpBuffer[0]);
-		if (length < 4 || length > 1024 * 1024) { tcpBuffer.clear(); MacadeMarkDisconnected(session); return; }
+		if (length < 4 || length > 1024 * 1024) { MacadeLog("Macade GGPO: TCP invalid record length=%u buffered=%zu\n", length, tcpBuffer.size()); tcpBuffer.clear(); MacadeMarkDisconnected(session); return; }
 		if (tcpBuffer.size() < length + 4) return;
 		int code = (int)(int32_t)ReadBE32(&tcpBuffer[4]);
 		if (ShouldLogCount(session->tcpRecordLogCount)) MacadeLog("Macade GGPO: TCP server record code=%d payload=%u\n", code, length - 4);
+		if (session->isSpectator && !session->streamTcpStarted && code == 1 && length >= 8 && ReadBE32(&tcpBuffer[8]) == 0 && session->quarkId[0] != 0) { std::vector<unsigned char> payload; AppendString(payload, session->quarkId); bool ok20 = SendCommand(session->tcpFd, session->tcpSequence++, 20, payload); payload.clear(); AppendString(payload, session->quarkId); bool ok12 = SendCommand(session->tcpFd, session->tcpSequence++, 12, payload); session->streamTcpStarted = ok20 && ok12; MacadeLog("Macade GGPO: stream TCP registration sent after command0 ack quark=%s commands=20,12 ok20=%d ok12=%d\n", session->quarkId, ok20 ? 1 : 0, ok12 ? 1 : 0); if (!session->streamTcpStarted) MacadeMarkDisconnected(session); }
 		HandleTCPServerRecord(session, code, &tcpBuffer[8], length - 4);
 		session->tcpRecordLogCount++;
 		tcpBuffer.erase(tcpBuffer.begin(), tcpBuffer.begin() + length + 4);
@@ -452,18 +454,17 @@ static void StartTCP(GGPOSession* session, const char* quark)
 	session->tcpSequence = 7;
 	MacadeLog("Macade GGPO: served TCP startup sent quark=%s ready=%s\n", quark, ready);
 }
-
-static void StartStreamingTCP(GGPOSession* session, const char* quark)
+bool MacadeStartStreamingTCPIfNeeded(GGPOSession* session)
 {
-	if (session == NULL || session->tcpFd < 0) return;
+	if (session == NULL || !session->isSpectator || session->streamStartupSent) return true;
+	if (session->tcpFd < 0) return false;
 	std::vector<unsigned char> payload;
-	AppendBE32(payload, 0); AppendBE32(payload, 29); AppendBE32(payload, 1); SendCommand(session->tcpFd, 1, 0, payload);
-	payload.clear(); AppendString(payload, quark); SendCommand(session->tcpFd, 2, 20, payload);
-	payload.clear(); AppendString(payload, quark); SendCommand(session->tcpFd, 3, 12, payload);
-	session->tcpSequence = 4;
-	MacadeLog("Macade GGPO: stream TCP startup sent quark=%s\n", quark);
+	AppendBE32(payload, 0); AppendBE32(payload, 29); AppendBE32(payload, 1); bool ok = SendCommand(session->tcpFd, 1, 0, payload);
+	session->tcpSequence = 2;
+	session->streamStartupSent = ok;
+	MacadeLog("Macade GGPO: stream TCP startup sent from idle quark=%s commands=0 ok=%d\n", session->quarkId, ok ? 1 : 0);
+	return ok;
 }
-
 bool MacadeEstablishServedSession(GGPOSession* session, const char* quark, int serverport)
 {
 	strncpy(session->quarkId, quark, sizeof(session->quarkId) - 1);
@@ -494,6 +495,6 @@ bool MacadeEstablishStreamingSession(GGPOSession* session, const char* quark, in
 		MacadeLog("Macade GGPO: stream TCP connect failed port=%d\n", serverport);
 		return false;
 	}
-	StartStreamingTCP(session, quark);
+	MacadeLog("Macade GGPO: stream TCP connected; startup deferred until idle quark=%s\n", quark);
 	return true;
 }

@@ -9,17 +9,6 @@ static bool bSaveRAM = false;
 
 static INT32 nNeoCDZnAudSampleRateSave = 0;
 
-extern int kNetGame;
-extern int MacadeNetworkInitInput();
-extern int MacadeNetworkGetInput();
-
-static void MacadeDrvDiagnostic(const char* step)
-{
-	printf("Macade diagnostic: DrvInit %s game=%s net=%d drv=%d vid=%d aud=%d inputs=%u\n",
-		step, BurnDrvGetTextA(DRV_NAME), kNetGame, bDrvOkay, bVidOkay, bAudOkay, nGameInpCount);
-	fflush(stdout);
-}
-
 void NeoCDZRateChangeback()
 {
 	if (nNeoCDZnAudSampleRateSave != 0) {
@@ -94,7 +83,7 @@ int DrvInit(int nDrvNum, bool bRestore)
 	MediaExit();
 
 	nBurnDrvActive = nDrvNum;		// Set the driver number
-	MacadeDrvDiagnostic("start");
+
 
 
 	if ((BurnDrvGetHardwareCode() & HARDWARE_PUBLIC_MASK) == HARDWARE_SNK_NEOCD) {
@@ -110,12 +99,9 @@ int DrvInit(int nDrvNum, bool bRestore)
 
 	{ // Init input and audio, save blitter init for later. (reduce # of mode changes, nice for emu front-ends)
 		bVidOkay = 1;
-		bAudOkay = 1;
 		MediaInit();
 		bVidOkay = 0;
-		bAudOkay = 0;
 	}
-	MacadeDrvDiagnostic("prelib-media-ready");
 
 	// Define nMaxPlayers early; GameInpInit() needs it (normally defined in DoLibInit()).
 	nMaxPlayers = BurnDrvGetMaxPlayers();
@@ -125,15 +111,9 @@ int DrvInit(int nDrvNum, bool bRestore)
 	InputMake(true);
 
 	GameInpDefault();
-	MacadeDrvDiagnostic("inputs-ready");
-
-	if (kNetGame) {
-		nBurnCPUSpeedAdjust = 0x0100;
-	}
 
 	if (DoLibInit())                         // Init the Burn library's driver
 	{
-		MacadeDrvDiagnostic("lib-init-failed");
 		char szTemp[512];
 
 		BurnDrvExit();                                // Exit the driver
@@ -141,25 +121,18 @@ int DrvInit(int nDrvNum, bool bRestore)
 		_stprintf(szTemp, _T("There was an error starting '%s'.\n"), BurnDrvGetText(DRV_FULLNAME));
 		return 1;
 	}
-	MacadeDrvDiagnostic("lib-init-ready");
 
 	BurnExtLoadRom = DrvLoadRom;
 
 	bDrvOkay = 1;                            // Okay to use all BurnDrv functions
 
 	bSaveRAM = false;
-	if (kNetGame) {
-		int inputStatus = MacadeNetworkInitInput();
-		printf("Macade diagnostic: DrvInit net-input status=%d\n", inputStatus);
-		fflush(stdout);
-	}
 	nBurnLayer = 0xFF;                       // show all layers
 
 	// Reset the speed throttling code, so we don't 'jump' after the load
 	RunReset();
 	VidExit();
 	AudSoundExit();
-	MacadeDrvDiagnostic("complete");
 	return 0;
 }
 

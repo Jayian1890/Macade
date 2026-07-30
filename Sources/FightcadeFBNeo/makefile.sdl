@@ -216,7 +216,7 @@ drvobj	+= \
 		d_sg1000.o
 
 depobj	+= \
-		bzip.o config.o drv.o inpdipsw.o main.o macade_detector.o macade_embedded.o macade_exit_diagnostics.o macade_ggpo_client.o macade_ggpo_direct.o macade_ggpo_handshake.o macade_ggpo_matchinfo.o macade_ggpo_stream.o macade_ggpo_udp.o macade_netplay_loop.o macade_network_input.o macade_overlay.o macade_quark.o media.o replay.o run.o stated.o \
+		bzip.o config.o drv.o inpdipsw.o main.o macade_detector.o macade_embedded.o macade_exit_diagnostics.o macade_ggpo_chat.o macade_ggpo_client.o macade_ggpo_direct.o macade_ggpo_handshake.o macade_ggpo_matchinfo.o macade_ggpo_replay.o macade_ggpo_stream.o macade_ggpo_udp.o macade_netplay_loop.o macade_network_input.o macade_overlay.o macade_quark.o macade_sdl_game.o media.o replay.o run.o stated.o \
 		stringset.o ips_manager.o support_paths.o scrn.o \
 		\
 		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o luaengine_stub.o \

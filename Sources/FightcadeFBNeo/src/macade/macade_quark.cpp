@@ -15,9 +15,14 @@ extern int kNetVersion;
 extern int kNetGame;
 extern int kNetSpectator;
 extern GGPOSession* ggpo;
+void MacadeDetectorLoad(const char* game, bool debug, int seed);
+void MacadeQuarkRestoreNetworkFlags();
 
 char kNetQuarkId[128] = { 0 };
+int kNetLua = 0;
 static char gMacadeGame[64] = { 0 };
+static bool gMacadeGameplayTrackingStarted = false;
+static int gMacadeSessionLua = 0;
 int iRanked = 0;
 int iPlayer = 0;
 int iDelay = 0;
@@ -28,6 +33,8 @@ static const int kMacadeGGPOStateMagic = 0x4747504f;
 static std::vector<unsigned char> gMacadeStateBuffer;
 static const unsigned char* gMacadeLoadCursor = NULL;
 static int gMacadeLoadRemaining = 0;
+static FILE* gMacadeLogFile = NULL;
+static int gMacadeLogChecksum = 0;
 
 struct MacadeQuarkCommand {
 	char mode[16];
@@ -83,6 +90,12 @@ static bool MacadeParseQuarkCommand(const char* command, MacadeQuarkCommand* par
 	consumed = 0;
 	if (sscanf(command, "quark:served,%63[^,],%127[^,],%d,%d%n", parsed->game, parsed->quarkId, &parsed->port, &parsed->delay, &consumed) == 4 && command[consumed] == '\0') {
 		strncpy(parsed->mode, "served", sizeof(parsed->mode) - 1);
+		parsed->player = MacadeQuarkPlayer(parsed->quarkId);
+		return true;
+	}
+	consumed = 0;
+	if (sscanf(command, "quark:training,%63[^,],%127[^,],%d,%d%n", parsed->game, parsed->quarkId, &parsed->port, &parsed->delay, &consumed) == 4 && command[consumed] == '\0') {
+		strncpy(parsed->mode, "training", sizeof(parsed->mode) - 1);
 		parsed->player = MacadeQuarkPlayer(parsed->quarkId);
 		return true;
 	}
@@ -180,9 +193,62 @@ static bool __cdecl MacadeLoadState(unsigned char* buffer, int len)
 	gMacadeLoadRemaining = 0;
 	return result == 0;
 }
-static bool __cdecl MacadeLogState(char*, unsigned char*, int) { return true; }
+
+static void MacadeComputeLogChecksum(struct BurnArea* pba)
+{
+	if (pba == NULL || pba->Data == NULL) return;
+	const unsigned char* bytes = (const unsigned char*)pba->Data;
+	for (unsigned int i = 0; i < pba->nLen; i++) {
+		if (bytes[i] != 0) {
+			if ((i & 1) != 0) gMacadeLogChecksum *= bytes[i];
+			else gMacadeLogChecksum += bytes[i] * 317;
+		} else {
+			gMacadeLogChecksum++;
+		}
+	}
+}
+
+static int __cdecl MacadeLogAcb(struct BurnArea* pba)
+{
+	if (gMacadeLogFile == NULL || pba == NULL || pba->Data == NULL) return 0;
+	fprintf(gMacadeLogFile, "%s:", pba->szName == NULL ? "" : pba->szName);
+	for (unsigned int i = 0; i < pba->nLen; i++) {
+		if ((i % 30) == 0) fprintf(gMacadeLogFile, "\noffset %9u :", i);
+		else if ((i % 10) == 0) fprintf(gMacadeLogFile, " - ");
+		fprintf(gMacadeLogFile, " %02x", ((unsigned char*)pba->Data)[i]);
+	}
+	fprintf(gMacadeLogFile, "\n");
+	MacadeComputeLogChecksum(pba);
+	return 0;
+}
+
+static bool __cdecl MacadeLogState(char* filename, unsigned char* buffer, int len)
+{
+	if (filename == NULL || buffer == NULL || len <= 0) return false;
+	if (!MacadeLoadState(buffer, len)) return false;
+	gMacadeLogFile = fopen(filename, "w");
+	if (gMacadeLogFile == NULL) return false;
+	gMacadeLogChecksum = 0;
+	BurnAcb = MacadeLogAcb;
+	BurnAreaScan(ACB_FULLSCANL | ACB_READ, NULL);
+	fprintf(gMacadeLogFile, "\n");
+	fprintf(gMacadeLogFile, "Checksum:       %d\n", gMacadeLogChecksum);
+	fprintf(gMacadeLogFile, "Buffer Pointer: %p\n", buffer);
+	fprintf(gMacadeLogFile, "Buffer Len:     %d\n", len);
+	fclose(gMacadeLogFile);
+	gMacadeLogFile = NULL;
+	return true;
+}
 static void __cdecl MacadeFreeBuffer(void* buffer) { free(buffer); }
 static bool __cdecl MacadeAdvanceFrame(int) { return MacadeNetworkReplayFrame() == 0; }
+
+static void MacadeStartGameplayTracking()
+{
+	if (gMacadeGameplayTrackingStarted || kNetSpectator) return;
+	gMacadeGameplayTrackingStarted = true;
+	if (ggpo != NULL && iRanked > 0) ggpo_client_set_game_event(ggpo, GGPOCLIENT_GAMEEVENT_STARTING, NULL);
+	MacadeDetectorLoad(gMacadeGame, false, iSeed);
+}
 
 static bool __cdecl MacadeOnEvent(GGPOEvent* info)
 {
@@ -246,6 +312,8 @@ int MacadeQuarkHandleCommand(const char* command)
 	kNetVersion = NET_VERSION;
 	kNetGame = 1;
 	kNetSpectator = parsed.spectator ? 1 : 0;
+	kNetLua = strcmp(parsed.mode, "served") == 0 ? 0 : 1;
+	gMacadeSessionLua = kNetLua;
 	strncpy(kNetQuarkId, parsed.quarkId, sizeof(kNetQuarkId) - 1);
 	strncpy(gMacadeGame, parsed.game, sizeof(gMacadeGame) - 1);
 	iRanked = parsed.ranked;
@@ -256,6 +324,7 @@ int MacadeQuarkHandleCommand(const char* command)
 	MacadeOverlayReset();
 	MacadeOverlaySetSession(parsed.spectator ? 1 : 0, parsed.ranked, parsed.player);
 	MacadeOverlaySetSystemMessage("Connecting...");
+	gMacadeGameplayTrackingStarted = false;
 	printf("Macade quark: parsed command\nMacade quark: mode=%s\nMacade quark: game=%s\nMacade quark: quarkId=%s\n", parsed.mode, parsed.game, parsed.quarkId);
 	printf("Macade quark: port=%d\nMacade quark: remoteHost=%s\nMacade quark: remotePort=%d\nMacade quark: delay=%d\nMacade quark: ranked=%d\nMacade quark: player=%d\nMacade quark: spectator=%d\nMacade quark: seed=%d\n", parsed.port, parsed.remoteHost, parsed.remotePort, parsed.delay, parsed.ranked, parsed.player, parsed.spectator ? 1 : 0, iSeed);
 	GGPOSessionCallbacks cb;
@@ -278,11 +347,13 @@ int MacadeQuarkHandleCommand(const char* command)
 
 int MacadeQuarkLoadStateIfAvailable()
 {
-	if (!kNetGame || gMacadeGame[0] == 0) return 0;
-	if (kNetSpectator) {
-		if (ggpo == NULL) return 1;
-		return MacadeLoadStreamingInitialState(ggpo, 15000) ? 0 : 1;
+	if (gMacadeGame[0] == 0) return 0;
+	if (ggpo != NULL && ggpo->isSpectator) {
+		MacadeQuarkRestoreNetworkFlags();
+		if (!ggpo->streamInitialStateReceived) return 1;
+		return MacadeLoadStreamingInitialState(ggpo, 0) ? 0 : 1;
 	}
+	if (!kNetGame) return 0;
 	const char* suffixes[2] = { iRanked ? "_fbneo_ranked.fs" : "_fbneo.fs", iRanked ? "_fbneo.fs" : NULL };
 	char path[256];
 	for (int i = 0; i < 2; i++) {
@@ -295,15 +366,28 @@ int MacadeQuarkLoadStateIfAvailable()
 		printf("Macade quark: savestate load path=%s result=%d\n", path, result);
 		fflush(stdout);
 		if (ggpo != NULL && MacadeSaveCurrentFrame(ggpo)) printf("Macade quark: rollback initial state captured frame=%d\n", ggpo->currentFrame);
+		MacadeStartGameplayTracking();
 		return result;
 	}
 	printf("Macade quark: no Fightcade savestate found for game=%s\n", gMacadeGame);
 	fflush(stdout);
 	if (ggpo != NULL && MacadeSaveCurrentFrame(ggpo)) printf("Macade quark: rollback initial state captured frame=%d\n", ggpo->currentFrame);
+	MacadeStartGameplayTracking();
 	return 1;
 }
 
 const char* MacadeQuarkGameName() { return gMacadeGame; }
+bool MacadeQuarkSessionActive() { return ggpo != NULL && gMacadeGame[0] != 0; }
+bool MacadeQuarkSessionRunning() { return ggpo != NULL && !ggpo->networkDisconnected && !ggpo->fatalDesync; }
+bool MacadeQuarkStreamInitialStateLoaded() { return ggpo != NULL && ggpo->isSpectator && ggpo->streamInitialStateLoaded; }
+void MacadeQuarkRestoreNetworkFlags()
+{
+	if (!MacadeQuarkSessionActive()) return;
+	kNetVersion = NET_VERSION;
+	kNetGame = 1;
+	kNetSpectator = ggpo->isSpectator ? 1 : 0;
+	kNetLua = gMacadeSessionLua;
+}
 void MacadeQuarkRunIdle(int ms) { if (ggpo != NULL) ggpo_idle(ggpo, ms); }
 bool MacadeQuarkIncrementFrame()
 {

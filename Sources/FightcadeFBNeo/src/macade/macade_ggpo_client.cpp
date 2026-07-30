@@ -55,12 +55,24 @@ void MacadeEmitClientEvent(GGPOSession* session, GGPOClientEventCode code, const
 	session->callbacks.on_event((GGPOEvent*)&event);
 }
 
+void MacadeEmitChatEvent(GGPOSession* session, const char* username, const char* text)
+{
+	if (session == NULL || session->callbacks.on_event == NULL) return;
+	GGPOClientEvent event;
+	memset(&event, 0, sizeof(event));
+	event.code = GGPOCLIENT_EVENTCODE_CHAT;
+	event.u.chat.username = const_cast<char*>(username == NULL ? "" : username);
+	event.u.chat.text = const_cast<char*>(text == NULL ? "" : text);
+	session->callbacks.on_event((GGPOEvent*)&event);
+}
+
 void MacadeMarkDisconnected(GGPOSession* session)
 {
 	if (session == NULL) return;
 	session->networkDisconnected = true;
 	if (!session->clientDisconnectEventSent) {
 		session->clientDisconnectEventSent = true;
+		MacadeLog("Macade GGPO: transport disconnected tcp=%d udp=%d spectator=%d\n", session->tcpFd, session->udpFd, session->isSpectator ? 1 : 0);
 		MacadeEmitClientEvent(session, GGPOCLIENT_EVENTCODE_DISCONNECTED, NULL, NULL, NULL, 0);
 	}
 }
@@ -224,6 +236,7 @@ GGPOSession* __cdecl ggpo_client_connect(GGPOSessionCallbacks* cb, char* game, c
 {
 	GGPOSession* session = new GGPOSession();
 	if (cb != NULL) session->callbacks = *cb;
+	if (game != NULL) strncpy(session->gameName, game, sizeof(session->gameName) - 1);
 	session->playerIndex = iPlayer < 0 ? 0 : (iPlayer > 1 ? 1 : iPlayer);
 	session->delay = iDelay;
 	session->startedAtMs = MacadeNowMilliseconds();
@@ -242,6 +255,7 @@ GGPOSession* __cdecl ggpo_start_session(GGPOSessionCallbacks* cb, char* game, in
 {
 	GGPOSession* session = new GGPOSession();
 	if (cb != NULL) session->callbacks = *cb;
+	if (game != NULL) strncpy(session->gameName, game, sizeof(session->gameName) - 1);
 	session->playerIndex = player_num < 0 ? 0 : (player_num > 1 ? 1 : player_num);
 	session->delay = iDelay;
 	session->startedAtMs = MacadeNowMilliseconds();
@@ -260,6 +274,7 @@ GGPOSession* __cdecl ggpo_start_streaming(GGPOSessionCallbacks* cb, char* game, 
 {
 	GGPOSession* session = new GGPOSession();
 	if (cb != NULL) session->callbacks = *cb;
+	if (game != NULL) strncpy(session->gameName, game, sizeof(session->gameName) - 1);
 	session->isSpectator = true;
 	session->playerIndex = 2;
 	session->startedAtMs = MacadeNowMilliseconds();
@@ -288,6 +303,7 @@ bool __cdecl ggpo_idle(GGPOSession* session, int timeout)
 {
 	int waitMs = timeout < 0 ? 0 : timeout;
 	if (session != NULL && session->isSpectator) {
+		MacadeStartStreamingTCPIfNeeded(session);
 		MacadePollTCP(session, waitMs);
 		return !session->networkDisconnected;
 	}
@@ -364,6 +380,7 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 		session->remoteTimeoutCount++;
 		memcpy(bytes + remoteSlot * size, predicted.data(), predicted.size());
 	}
+	MacadeReplayRecordInput(session, local.data(), size);
 	return true;
 }
 
@@ -408,20 +425,10 @@ bool __cdecl ggpo_set_frame_delay(GGPOSession* session, int frames)
 	return true;
 }
 
-bool __cdecl ggpo_client_chat(GGPOSession*, char*) { return true; }
-bool __cdecl ggpo_client_set_game_event(GGPOSession*, GGPOClientGameEventType type, void* data)
+bool __cdecl ggpo_client_chat(GGPOSession* session, char* text)
 {
-	int score1 = 0;
-	int score2 = 0;
-	MacadeOverlayGetScores(&score1, &score2);
-	if (data != NULL && type == GGPOCLIENT_GAMEEVENT_PLAYER_1_SCORE) {
-		score1 = *(int*)data;
-		MacadeOverlaySetScores(score1, score2);
-	} else if (data != NULL && type == GGPOCLIENT_GAMEEVENT_PLAYER_2_SCORE) {
-		score2 = *(int*)data;
-		MacadeOverlaySetScores(score1, score2);
-	}
-	return true;
+	return MacadeSendTCPChat(session, text);
 }
+bool __cdecl ggpo_client_set_game_event(GGPOSession* session, GGPOClientGameEventType type, void* data) { return MacadeHandleGameEvent(session, type, data); }
 void __cdecl ggpo_log(GGPOSession*, char* fmt, ...) { va_list args; va_start(args, fmt); vprintf(fmt, args); va_end(args); }
 void __cdecl ggpo_logv(GGPOSession*, char* fmt, va_list args) { vprintf(fmt, args); }

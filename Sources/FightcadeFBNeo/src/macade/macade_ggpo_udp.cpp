@@ -7,6 +7,7 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <utility>
 
 static const long long kUDPQualityIntervalMs = 1000;
 static const long long kUDPSyncIntervalMs = 2000;
@@ -271,7 +272,6 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 			int inputBytes = buffer[11];
 			int payloadBytes = (bitCount + 7) / 8;
 			if (inputBytes > 0 && inputBytes <= 64 && count >= 12 + payloadBytes) {
-				if (ackFrame > session->localAckFrame) session->localAckFrame = ackFrame;
 				if (session->lastRemoteInput.size() != (size_t)inputBytes) session->lastRemoteInput.assign(inputBytes, 0);
 				if (startFrame > 0 && session->remoteInputs.find(startFrame - 1) == session->remoteInputs.end() && startFrame != session->remoteLastFrame + 1) {
 					MacadeLog("Macade GGPO: UDP input batch missing base frame start=%d remoteLast=%d; waiting for resend\n", startFrame, session->remoteLastFrame);
@@ -279,6 +279,8 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 				}
 				int bitOffset = 0;
 				int frame = startFrame;
+				bool malformed = false;
+				std::vector<std::pair<int, std::vector<unsigned char> > > decodedFrames;
 				std::vector<unsigned char> previous(inputBytes, 0);
 				if (startFrame > 0) {
 					std::map<int, std::vector<unsigned char> >::iterator prior = session->remoteInputs.find(startFrame - 1);
@@ -289,21 +291,35 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 					std::vector<unsigned char> current = previous;
 					while (bitOffset < bitCount) {
 						bool changed = false;
-						if (!ReadCompressedBit(buffer + 12, bitCount, &bitOffset, &changed)) break;
+						if (!ReadCompressedBit(buffer + 12, bitCount, &bitOffset, &changed)) { malformed = true; break; }
 						if (!changed) break;
 						bool value = false;
-						if (!ReadCompressedBit(buffer + 12, bitCount, &bitOffset, &value)) break;
+						if (!ReadCompressedBit(buffer + 12, bitCount, &bitOffset, &value)) { malformed = true; break; }
 						int index = 0;
 						for (int indexBit = 0; indexBit < 8; indexBit++) {
 							bool indexValue = false;
-							if (ReadCompressedBit(buffer + 12, bitCount, &bitOffset, &indexValue) && indexValue) index |= 1 << indexBit;
+							if (!ReadCompressedBit(buffer + 12, bitCount, &bitOffset, &indexValue)) { malformed = true; break; }
+							if (indexValue) index |= 1 << indexBit;
 						}
+						if (malformed) break;
 						if (index >= 0 && index < inputBytes * 8) SetInputBit(current, index, value);
 					}
-					MacadeStoreRemoteInput(session, frame, current);
+					if (malformed) break;
+					if (frame == session->remoteLastFrame + 1 + (int)decodedFrames.size()) decodedFrames.push_back(std::make_pair(frame, current));
+					else if (frame > session->remoteLastFrame + 1 + (int)decodedFrames.size()) {
+						MacadeLog("Macade GGPO: UDP input batch gap frame=%d remoteLast=%d decoded=%zu\n", frame, session->remoteLastFrame, decodedFrames.size());
+						malformed = true;
+						break;
+					}
 					previous = current;
 					frame++;
 				}
+				if (malformed) {
+					MacadeLog("Macade GGPO: malformed UDP input batch start=%d bits=%d inputBytes=%d\n", startFrame, bitCount, inputBytes);
+					continue;
+				}
+				for (size_t i = 0; i < decodedFrames.size(); i++) MacadeStoreRemoteInput(session, decodedFrames[i].first, decodedFrames[i].second);
+				if (ackFrame > session->localAckFrame) session->localAckFrame = ackFrame;
 				handled = true;
 			}
 		}

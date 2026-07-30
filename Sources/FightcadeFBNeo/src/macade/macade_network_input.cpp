@@ -204,6 +204,7 @@ static void MacadeApplySynchronizedControls(int blockSize)
 int MacadeNetworkGetInput()
 {
 	if (ggpo == NULL) return 0;
+	if (ggpo->isSpectator && !ggpo->streamInitialStateLoaded && ggpo->streamInitialStateReceived && !MacadeLoadStreamingInitialState(ggpo, 0)) return 1;
 	int blockSize = 0;
 	if (!MacadeCaptureLocalControls(&blockSize)) return 1;
 	if (gNetworkGetInputLogCount < 20 || gNetworkGetInputLogCount % 120 == 0) {

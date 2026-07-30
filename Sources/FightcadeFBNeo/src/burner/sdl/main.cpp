@@ -7,10 +7,9 @@ bool bFixDiagonals = false;
 int nEnableSOCD = 0;
 INT32 Init_Joysticks(int p1_use_joystick);
 int MacadeQuarkHandleCommand(const char* command);
-int MacadeQuarkLoadStateIfAvailable();
-int MacadeNetworkInitInput();
 const char* MacadeQuarkGameName();
 bool MacadeChatInputIsActive();
+void DoGame(int gameToRun);
 extern "C" void MacadePrintExitBacktrace();
 int  nAppVirtualFps = 0;         // App fps * 100
 bool bRunPause = 0;
@@ -198,46 +197,6 @@ void generateDats()
 #endif
 }
 
-
-void DoGame(int gameToRun)
-{
-	printf("Macade diagnostic: DoGame enter index=%d net=%d\n", gameToRun, kNetGame);
-	fflush(stdout);
-	if (!DrvInit(gameToRun, 0))
-	{
-		if (kNetGame) {
-			int stateStatus = MacadeQuarkLoadStateIfAvailable();
-			printf("Macade diagnostic: DoGame state load status=%d\n", stateStatus);
-			fflush(stdout);
-		}
-		printf("Macade diagnostic: DoGame DrvInit ok index=%d net=%d\n", gameToRun, kNetGame);
-		fflush(stdout);
-		MediaInit();
-		Init_Joysticks(usejoy);
-		if (kNetGame) {
-			int inputStatus = MacadeNetworkInitInput();
-			printf("Macade diagnostic: DoGame net-input status=%d\n", inputStatus);
-			fflush(stdout);
-		}
-		printf("Macade diagnostic: DoGame entering RunMessageLoop\n");
-		fflush(stdout);
-		RunMessageLoop();
-		printf("Macade diagnostic: DoGame returned from RunMessageLoop\n");
-		fflush(stdout);
-	}
-	else
-	{
-		printf("There was an error loading your selected game.\n");
-		fflush(stdout);
-	}
-
-	if (bSaveconfig)
-	{
-		ConfigAppSave();
-	}
-	DrvExit();
-	MediaExit();
-}
 
 void bye(void)
 {

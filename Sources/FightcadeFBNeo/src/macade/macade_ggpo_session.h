@@ -27,6 +27,8 @@ struct GGPOSession {
 	bool hasPeer = false;
 	bool openPortFallback = false;
 	bool isSpectator = false;
+	bool streamStartupSent = false;
+	bool streamTcpStarted = false;
 	bool streamInitialStateReceived = false;
 	bool streamInitialStateLoaded = false;
 	char quarkId[128] = { 0 };
@@ -90,6 +92,14 @@ struct GGPOSession {
 	char streamPlayer1[256] = { 0 };
 	char streamPlayer2[256] = { 0 };
 	char streamBlurb[256] = { 0 };
+	char gameName[64] = { 0 };
+	char replayPlayerAvatar[2][256] = {{ 0 }};
+	int replayScores[2] = { 0, 0 };
+	int replayWinner = -1;
+	bool replayArmed = false;
+	bool replayUploaded = false;
+	std::vector<unsigned char> replayInitialState;
+	std::vector<std::vector<unsigned char> > replayInputs;
 	GGPOSessionCallbacks callbacks{};
 	std::map<int, std::vector<unsigned char> > localInputs;
 	std::map<int, std::vector<unsigned char> > remoteInputs;
@@ -104,6 +114,7 @@ struct GGPOSession {
 
 void MacadeLog(const char* format, ...);
 void MacadeEmitClientEvent(GGPOSession* session, GGPOClientEventCode code, const char* p1, const char* p2, const char* blurb, int count);
+void MacadeEmitChatEvent(GGPOSession* session, const char* username, const char* text);
 void MacadeMarkDisconnected(GGPOSession* session);
 bool MacadeSaveCurrentFrame(GGPOSession* session);
 bool MacadeRunRollbackIfNeeded(GGPOSession* session);
@@ -111,10 +122,15 @@ bool MacadeStoreRemoteInput(GGPOSession* session, int frame, const std::vector<u
 bool MacadeEstablishServedSession(GGPOSession* session, const char* quark, int serverport);
 bool MacadeEstablishDirectSession(GGPOSession* session, int localport, const char* remoteip, int remoteport);
 bool MacadeEstablishStreamingSession(GGPOSession* session, const char* quark, int serverport);
+bool MacadeStartStreamingTCPIfNeeded(GGPOSession* session);
 void MacadeHandleTCPStreamRecord(GGPOSession* session, int code, const unsigned char* payload, unsigned int payloadSize);
+void MacadeHandleTCPChatRecord(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize);
 bool MacadeHandleTCPMatchInfoRecord(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize);
 bool MacadeLoadStreamingInitialState(GGPOSession* session, int timeoutMs);
 void MacadePollTCP(GGPOSession* session, int timeoutMs);
+bool MacadeSendTCPChat(GGPOSession* session, const char* text);
+bool MacadeHandleGameEvent(GGPOSession* session, GGPOClientGameEventType type, void* data);
+void MacadeReplayRecordInput(GGPOSession* session, const unsigned char* bytes, int size);
 void MacadeSendTCPFrameBatch(GGPOSession* session);
 bool MacadePollUDP(GGPOSession* session, int timeoutMs);
 void MacadeSendUDPInput(GGPOSession* session, const unsigned char* bytes, int size, int frame);

@@ -64,7 +64,10 @@ void MacadeHandleTCPStreamRecord(GGPOSession* session, int code, const unsigned 
 
 bool MacadeLoadStreamingInitialState(GGPOSession* session, int timeoutMs)
 {
-	if (session == NULL || !session->isSpectator || session->callbacks.load_game_state == NULL) return false;
+	if (session == NULL) { MacadeLog("Macade GGPO: stream initial state unavailable; no session\n"); return false; }
+	if (!session->isSpectator) { MacadeLog("Macade GGPO: stream initial state unavailable; session is not spectator\n"); return false; }
+	if (session->callbacks.load_game_state == NULL) { MacadeLog("Macade GGPO: stream initial state unavailable; load callback missing\n"); return false; }
+	MacadeLog("Macade GGPO: waiting for stream initial gamebuffer timeout=%d\n", timeoutMs);
 	int elapsedMs = 0;
 	while (!session->streamInitialStateReceived && elapsedMs < timeoutMs) {
 		MacadePollTCP(session, 250);

@@ -45,6 +45,7 @@ Public components: `fightcade-fbneo`, `fightcade-snes9x`, `fightcade-detectors`,
 | runtime.abstraction | `docs/ggpo-runtime-abstraction-design.md` | Phase 4 native runtime module boundaries for rollback, UDP, TCP, rendezvous, stream, callbacks, and API shims. |
 | parity.improvement.plan | `docs/fightcade-parity-improvement-plan.md` | Actionable Phase 5-10 order for diagnostics, ownership split, rollback migration, UDP/TCP parity, and evidence-gated closure. |
 | pcap.current | `/Users/jayian/Downloads/fight.pcapng` | Current official capture; contains one failed/direct-fallback served attempt and one successful direct served attempt. |
+| pcap.spectate | `/Users/jayian/Downloads/spectate.pcapng` | Current official spectator capture; proves spectator TCP connects to remote port `7000`, sends command `0`, then commands `20` and `12`, and receives server `-12` gamebuffer plus recurring `-13` frame batches. |
 | pcap.summary | not currently tracked | Analyzer output was removed with `.build`; regenerate from `/Users/jayian/Downloads/fight.pcapng` after restoring analyzer tooling. |
 | historical.proxy | external reference, not currently tracked | Context for proxy/punch/useports; not sole authority. |
 | public.ggpo | external `pond3r/ggpo` checkout | MIT rollback/sync internals only; not currently vendored. |
@@ -127,7 +128,7 @@ ROM downloader default index: `https://fightcade.download/fc2json.zip`, override
 | served | `quark:served,{gameid},{quarkid}.{playerid},{port},{delay},{ranked}` | Implemented subset. |
 | training | `quark:training,{gameid},{quarkid}.{playerid},{port},{delay}` | Maps to Training; server-derived metadata required. |
 | direct | `quark:direct,{gameid},{localPort},{host},{remotePort},{player},{delay},{ranked}` | Implemented, needs live validation. |
-| stream | `quark:stream,{gameid},{quarkid}.2,{port}` | Implemented subset, needs live validation. |
+| stream | `quark:stream,{gameid},{quarkid}.2,{port}` | Implemented subset; port must be the lobby-advertised stream port. Needs live validation. |
 | replay | Win32-recognized route | Not implemented; keep unavailable. |
 | synctest | DLL export, not Fightcade live network | Not implemented; local-only future work. |
 
@@ -250,8 +251,8 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | TCP `-7` loopback | Successful direct captures show `127.0.0.1:7001`. | Ignore outside open-port fallback. |
 | TCP `-7` public | Failed/open-port captures can expose public endpoint. | Apply only after explicit fallback. |
 | Direct route | `ggpo_start_session`, UDP only. | No Fightcade TCP command server. |
-| Stream route | TCP command `20`, `12`; server `-12`, `-13`. | Keep separate from served gameplay. |
-| Replay | Local playback; command `19` upload can be triggered by game events. | Keep unavailable until verified. |
+| Stream route | TCP startup command `0`, then spectator commands `20`, `12`; server `-12`, `-13`. | Keep separate from served gameplay. |
+| Replay | Local playback remains unavailable; command `19` upload is implemented for completed ranked sets from DLL static evidence. | Validate against a finished-match capture before treating server acceptance as proven. |
 | Synctest | Local deterministic save/load/advance. | Keep local-only. |
 
 ## Current Macade Coverage
@@ -261,15 +262,15 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | Fightcade session | Login/autologin WebSocket, launcher status, channels, chat, challenges, `start`. |
 | Runtime launch | Native FBNeo SDL2, embedded child process, shared-memory video, input socket. |
 | Native run loop | Netplay frame/input ordering now follows Fightcade Win32 more closely by advancing frame counters before network input sync; embedded/netplay SDL adds a timer fallback when audio-buffer advancement does not produce frames, using millisecond clock units to match the SDL pacing formula. `ggpo_idle(timeout)` treats timeout as a total idle budget for active play, draining TCP nonblocking and waiting on UDP only, after live sampling showed per-transport waits could visibly stall gameplay. Embedded input bypasses SDL's per-frame event pump because Macade forwards input through its own socket and hidden-window sampling showed AppKit event work in the hot path. Early driver initialization suppresses SDL audio until after driver/ROM setup, matching Fightcade Win32 startup sequencing. |
-| Routes | served/training/direct/stream parsing. |
+| Routes | served/training/direct/stream parsing. Native training now accepts the Win32 `quark:training` route and uses the served backend with unranked metadata; full training Lua behavior is blocked because the trimmed SDL runtime currently builds `luaengine_stub.cpp` and does not ship the training script assets. |
 | Served startup | UDP master, peer address, 10-round token punch, restricted/fixed fallback attempts, `useports` continuation, TCP `-7` open-port peer handling, TCP startup. |
 | UDP gameplay | Type `3` input send/receive with ack-based pending-output pruning; type `1/2`, `4/5` probes/replies. Remote-player analog/DIP decode preserves Fightcade's per-player common-input slot advance even though common inputs are ignored for remote players. |
 | Prediction/rollback | Bounded last-input prediction, saved-state history, rollback replay via `advance_frame`; rollback replay advances FBNeo's `nCurrentFrame` before synchronized input and leaves `nFramesEmulated` unchanged, matching Fightcade Win32 callback behavior. |
-| TCP ongoing | Command `15` chat/control subset, `17` frame batches, `18` snapshots. |
-| Stats/events | `ggpo_set_frame_delay`, partial `ggpo_get_stats`, partial client events. |
+| TCP ongoing | Command `15` chat/control send, incoming `-8` chat/control event emission, `17` frame batches, `18` snapshots, and command `19` ranked replay upload. |
+| Stats/events | `ggpo_set_frame_delay`, partial `ggpo_get_stats`, client score/winner/finished replay events, destructive rollback state logging via `log_game_state`. |
 | Direct | Binds requested port and peer; uses UDP input/rollback path; needs validation. |
-| Stream | TCP startup, `-12` gamebuffer, `-13` frame playback; needs validation. |
-| Unsupported | replay, synctest, full command-control, command `19`, complete events/stats/timesync. |
+| Stream | Swift launch uses the lobby-advertised stream port. Official `FUN_10028d90` constructs `SpectatorBackend` and starts TCP connection setup before ROM load, but official `FUN_10028ed0` sends stream startup from spectator idle: command `0` is sent when `TcpProtocol` reports connected, then commands `20` and `12` are sent once from spectator idle. Macade now defers stream command `0` until spectator `ggpo_idle`, sends `20`/`12` after the positive command `0` response, handles `-12` gamebuffer and `-13` frame playback, logs TCP close/malformed-record cases, prevents macOS `SIGPIPE` socket crashes, uses a dedicated embedded spectator loop that polls `ggpo_idle` until the initial stream state is loaded before entering `RunIdle` frames, and loads the initial gamebuffer once received. Live spectating now plays, but current playback is stuttery and the overlay is not visible. |
+| Unsupported | local replay playback, synctest, full training Lua/movie replay subsystems, complete events/stats/timesync. These remain blocked rather than faked until the local replay backend, synctest backend migration, Lua build assets, or runtime evidence are available. |
 
 ## Parity Gaps
 
@@ -280,9 +281,9 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | 3 | UDP ack-window pruning, resend cadence, stale input handling, quality cadence, interruption, disconnect timing incomplete. |
 | 4 | Timesync wait-frame/state behavior partial. |
 | 5 | `ggpo_get_stats` incomplete. |
-| 6 | `ggpo_client_set_game_event` incomplete: start/avatar/score/winner/finished/command `19`. |
-| 7 | Client callback mapping incomplete. |
-| 8 | Direct and stream need live validation. |
+| 6 | `ggpo_client_set_game_event` still needs live command `19` server-acceptance validation and fuller event-field parity outside score/winner/finished upload. |
+| 7 | Client callback mapping incomplete outside matchinfo, spectator count, chat, disconnect, and core peer/running events. |
+| 8 | Direct still needs live validation; stream plays but needs stutter and overlay fixes. |
 | 9 | Replay and synctest unavailable. |
 
 ## Network Flow Parity Plan
@@ -296,8 +297,8 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | 5 | UDP reliability parity | Match official UDP resend cadence, ack pruning, stale/missing input behavior, quality/sync cadence, interruption notification, and disconnect timeout under artificial loss/delay. |
 | 6 | Timesync parity | Port public GGPO timesync wait-frame logic where Fightcade DLL behavior agrees; validate against captures with asymmetric delay. |
 | 7 | Stats and callbacks | Populate `ggpo_get_stats` and client/GGPO event callbacks to match official overlay/perfmon behavior. |
-| 8 | Game events and command `19` | Implement score/winner/finished/replay-upload behavior only after finished-match capture or runtime trace confirms payload semantics. |
-| 9 | Direct and stream validation | Prove direct route uses UDP only; prove stream route command `20/12` plus `-12/-13` playback and spectator-count handling. |
+| 8 | Game events and command `19` | Validate static-evidence score/winner/finished replay upload against a completed ranked capture, then refine any payload or timing differences. |
+| 9 | Direct and stream validation | Prove direct route uses UDP only; refine stream playback pacing and spectator overlay after live `20/12` plus `-12/-13` playback validation. |
 
 ## Research Findings For Next Implementation
 
@@ -306,15 +307,16 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | Analyzer | Current rerun decodes 11284 payload packets, 2122 flows, 2356 protocol records, and now reports per-session UDP input windows, ack progression, gap/overlap/repeat/malformed counts, per-kind UDP timing, and TCP command cadence. | Use these focused summaries as Phase A acceptance data and extend them for controlled loss/delay captures. |
 | Current pcap attempt 1 | `1785164991594-5611.1` gets peer `172.7.214.252:59733`, sends many token probes, sends `useports` about 11 seconds after registration, then TCP `-7` reports `172.7.214.252:6000`. | Treat as partial failed-path evidence, not proof that open-port mode reaches gameplay. |
 | Current pcap attempt 2 | `1785165334663-5955.1` completes token exchange with `196.200.146.10:6006`, then carries 6021 UDP packets for about 131 seconds. | This is the primary served happy-path acceptance fixture. |
+| Spectator pcap | `/Users/jayian/Downloads/spectate.pcapng` contains official spectator sessions from local `172.20.10.3:6004` to `141.94.138.123:7000`; stream id example `1785362280459-6720.2`. Official spectator startup sends command `0`, receives a positive ack, sends commands `20` and `12`, then receives large `-12` gamebuffer and recurring `-13` frame batches. Paired captures `/Users/jayian/Downloads/fightcade.pcapng` and `/Users/jayian/Downloads/macade.pcapng` for stream `1785380864870-1970.2` on TCP `7001` show identical Macade/Fightcade client command records and both receive server records `1`, `2`, `3`, `-11`, `-10`, `-12`, and recurring `-13`. | The official capture proves a stream advertised on `7000` uses remote TCP `7000`; live Macade probing on stream `1785379025356-5388.2` proved a stream advertised on `7001` must use remote TCP `7001`. Use the lobby-advertised stream port. The paired captures show Macade's remaining spectate issue is after successful registration, not command payload or port selection. |
 | UDP type mix | Successful peer flow: type `3` count 5520, type `4` count 241, type `5` count 234, type `1` count 10, type `2` count 10, token packets 6. Median type `3` spacing is about 20-22 ms per direction; successful type `3` windows show no gaps or malformed packets and monotonic ack progression in both directions. Quality report/reply cadence is about 1000 ms. | Use these counts/cadences as initial smoke thresholds, not exact constants. |
-| Native runtime | Current pcap decodes one startup command `17` frame batch before `C2`; native runtime and Swift scaffolding send that order. Native served fallback sends `useports/<quark>` after verified punch failure and applies public TCP `-7` endpoint notices only while in open-port fallback mode. SDL netplay run-loop parity was tightened after lagging matches reached `RunMessageLoop`: frame counters now advance before network input sync, rollback replay advances `nCurrentFrame` before synchronized input without increasing `nFramesEmulated`, embedded/netplay can fall back to timer-driven frames if SDL audio does not advance, the fallback clock is milliseconds rather than microseconds, active-play `ggpo_idle` no longer blocks once per transport, embedded input skips SDL event pumping, and early driver init no longer opens SDL audio before ROM setup. | Keep tests/tools aligned with analyzer output before relying on them for parity; live-validate open-port fallback gameplay and the embedded SDL run-loop fallback before closing the gap. |
+| Native runtime | Current pcap decodes one startup command `17` frame batch before `C2`; native runtime and Swift scaffolding send that order. Native served fallback sends `useports/<quark>` after verified punch failure and applies public TCP `-7` endpoint notices only while in open-port fallback mode. SDL netplay run-loop parity was tightened after lagging matches reached `RunMessageLoop`: frame counters now advance before network input sync, rollback replay advances `nCurrentFrame` before synchronized input without increasing `nFramesEmulated`, embedded/netplay can fall back to timer-driven frames if SDL audio does not advance, the fallback clock is milliseconds rather than microseconds, active-play `ggpo_idle` no longer blocks once per transport, embedded input skips SDL event pumping, and `DrvInit` is restored to the public Fightcade SDL structure without Macade network setup or net speed tweaks. Native runtime now accepts `quark:training`, sends real command `15` chat/control records, emits incoming `-8` chat events, implements the rollback `log_game_state` diagnostic callback, loads detectors after savestate setup, restores stream flags after driver init, sends TCP command frames as official-style split writes (`u32_be length`, then sequence/command/payload), emits Swift spectator routes with the lobby-advertised stream port, defers stream startup command `0` to spectator idle instead of construction, sends stream `20`/`12` once after command `0` response, drives embedded spectator sessions through a dedicated loop that polls `ggpo_idle` until TCP `-12` is loaded before `RunIdle` frame execution, suppresses macOS `SIGPIPE` on TCP sockets, and sends command `19` GGPOTV replay uploads for completed ranked FT sets. Live stream playback works but is stuttery and does not show the overlay. Latest verified bundled runtime SHA-256 is `b698a0d17f3174dfd869213953bbec2f8df2627072549a0d73a48822b43cfe33`. | Keep tests/tools aligned with analyzer output before relying on them for parity; live-validate open-port fallback gameplay, chat/control behavior, training route startup, command `19` acceptance, direct route, stream pacing, and spectator overlay before closing the gap. |
 | Runtime diagnostics | Native runtime now logs a bounded close-time session summary with UDP send/resend/receive, sync, quality, TCP record/batch/snapshot, prediction, rollback, saved-state, byte, disconnect, and fatal-desync counters. | Correlate native summaries with analyzer output during live validation and loss/delay tests. |
-| Runtime ownership split | Current direct source keeps exported `ggpo_*` shims, client event emission, rollback helpers, and API lifecycle in `src/macade/macade_ggpo_client.cpp`; `src/macade/macade_ggpo_handshake.cpp` owns served rendezvous/TCP startup and is 499 lines. The abandoned `macade_ggpo_api.cpp`/`macade_ggpo_tcp.cpp` split is not present in the build. | Perform behavior-preserving splits before importing public GGPO rollback/input code. |
+| Runtime ownership split | Current direct source keeps exported `ggpo_*` shims, client event emission, rollback helpers, and API lifecycle in `src/macade/macade_ggpo_client.cpp`; `src/macade/macade_ggpo_handshake.cpp` owns served rendezvous/TCP startup and is 500 lines. The abandoned `macade_ggpo_api.cpp`/`macade_ggpo_tcp.cpp` split is not present in the build. | Perform behavior-preserving splits before importing public GGPO rollback/input code or adding handshake behavior. |
 | Rollback harness | not currently tracked | Recreate the deterministic frame-delay, prediction, mismatch, and rollback harness before Phase C rollback/input migration. |
 | TCP implementation | Current native `ConnectTCP` is blocking and fails immediately on connect error; DLL has socket bind, nonblocking connect, WSA event handling, close path, and disconnect event logging. | TCP retry/error parity needs deeper static/dynamic evidence before implementation. |
 | UDP implementation | Current native UDP implements type `1/2/3/4/5`, prunes pending local UDP output frames strictly less than incoming type `3` ack frames, resends every 200 ms, sends quality every 1000 ms, sends sync every 2000 ms, interrupts at 5000 ms, and disconnects at 30000 ms. Served rendezvous uses 10 half-second punch rounds, `±512` port scan, restricted/fixed `6004` retries, and no LAN-broadcast-only path. Public GGPO uses similar running retry, quality, and notify/shutdown constants, but Fightcade packets are modified. | Validate cadence constants against Fightcade DLL captures rather than blindly porting public GGPO. |
 | Timesync | Current runtime records frame advantage in stats but does not delay frames using public GGPO `TimeSync::recommend_frame_wait_duration`. | Port wait-frame logic only after measuring Fightcade behavior under asymmetric delay. |
-| Stats/events | Current `ggpo_get_stats` is partial; `ggpo_client_set_game_event` updates overlay scores only and does not send command `19`. | Need official runtime trace or finished-match pcap before implementing full event semantics. |
+| Stats/events | Current `ggpo_get_stats` is partial. `ggpo_client_set_game_event` now handles `STARTING`, player avatar strings, score updates, winner storage, and `FINISHED` command `19` upload. Replay upload builds a `GGPOTV` metadata header plus zlib-compressed initial state and input payload per DLL static evidence. | Need completed ranked-match validation to confirm command `19` timing, metadata, server acceptance, and any missing event fields. |
 
 ## Unknown Evidence Collection
 
@@ -325,9 +327,9 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | UDP resend/ack exactness | Capture analyzer does not yet decode contiguous frame windows, retransmits, or ack pruning. | Enhance analyzer, then run official sessions with controlled loss/delay. |
 | Timesync wait behavior | Packet capture alone does not show emulator frame sleeps or local input-idle decisions. | Combine pcap with official overlay/perfmon video or instrumented DLL call tracing. |
 | `ggpo_get_stats` fields | Stats are internal API outputs, not fully visible on wire. | Hook or wrap `ggpo_get_stats` in official FBNeo/Wine and log returned struct fields per second. |
-| Game events/command `19` | Need finished/ranked/replay-upload artifact; current pcap does not include command `19`. | Capture a completed ranked set and inspect TCP command `19` plus any replay files. |
+| Game events/command `19` | Static evidence is implemented, but current pcap does not include command `19` and server acceptance is unproven. | Capture a completed ranked set and inspect TCP command `19`, backend response, and any replay files. |
 | Direct route | No current direct `quark:direct` capture. | Launch official direct mode in a controlled two-client setup and capture UDP only. |
-| Stream route | No current spectator capture. | Join as spectator with official client and capture TCP command `20/12`, `-12`, `-13`. |
+| Stream route | Official spectator capture proves command/record order. Macade live probing showed command `0` ack and `20/12` registration on the lobby-advertised port, while forcing `7000` for a `7001` stream only produced the command `0` ack. | Retest Macade spectator launch against a live stream with log checks for the advertised remote port, command `0` ack, delayed `20/12`, server `-12`, and recurring `-13`. |
 
 ## User Evidence Collection Plan
 
@@ -336,9 +338,9 @@ The user's role is to collect official Fightcade evidence that cannot be produce
 1. Capture open-port fallback evidence: run two official Fightcade clients where direct UDP is likely to fail, capture both sides if possible, start a served match, wait until gameplay starts or failure is final, and save pcap plus server IP, peer IPs, match id, player side, delay, and ranked flag. Goal: prove what happens after `useports`.
 2. Capture TCP retry/disconnect behavior: run official Fightcade in Windows, start Wireshark or `tshark`, temporarily block `ggpo.fightcade.com:<serverPort>` TCP with Windows firewall, start a match, unblock TCP, and save pcap plus timing notes. Goal: learn official connect retry, timeout, and disconnect behavior.
 3. Capture UDP loss/delay behavior: use clumsy on Windows or router `tc netem`, test `0%`, `2%`, and `5%` packet loss, test asymmetric delay such as one side +80 ms, and save pcaps for each scenario. Goal: learn resend, ack, quality, sync, interruption, and timeout behavior.
-4. Capture completed match behavior: play a full ranked or FT set in official Fightcade, let post-match flow finish completely, and save pcap. Goal: find command `19`, winner/score/final-state behavior, and replay-upload behavior.
+4. Capture completed match behavior: play a full ranked or FT set in official Fightcade, let post-match flow finish completely, and save pcap. Goal: validate command `19`, winner/score/final-state behavior, and replay-upload acceptance.
 5. Capture direct mode: launch official direct mode between two controlled clients and capture both sides. Goal: verify direct route uses UDP only and no Fightcade TCP command server.
-6. Capture spectator mode: join an active match as spectator and capture from join through at least 60 seconds. Goal: verify command `20`, command `12`, server `-12`, server `-13`, and spectator-count behavior.
+6. Capture additional spectator mode if stream behavior diverges: join an active match as spectator and capture from join through at least 60 seconds. Goal: compare against `/Users/jayian/Downloads/spectate.pcapng` for command `0`, command `20`, command `12`, server `-12`, server `-13`, and spectator-count behavior.
 7. Provide artifacts: `.pcapng` files, short notes for each capture, Fightcade version, game id, which machine was player 1/player 2/spectator, and any firewall/loss/delay settings used.
 
 ## Public GGPO Boundary
@@ -369,7 +371,7 @@ Mapping checklist: command `17/18` cadence, UDP type `3` contiguity/bitstream, U
 
 Detailed Phase 4 runtime abstraction design is `docs/ggpo-runtime-abstraction-design.md`. Runtime migration should split the current native GGPO state into `MacadeGGPOApi`, `MacadeSession`, `MacadeCallbacks`, `MacadeRollbackCore`, `MacadeFightcadeUDP`, `MacadeServedRendezvous`, `MacadeFightcadeTCP`, `MacadeStreamRuntime`, and `MacadeDiagnostics` before porting public-GGPO rollback/input code.
 
-Detailed parity implementation order is `docs/fightcade-parity-improvement-plan.md`. Start with analyzer/runtime diagnostics and behavior-preserving ownership splits, then migrate rollback/input queues, then pursue UDP reliability and TCP state parity, leaving open-port fallback, timesync waits, command `19`, direct, stream, replay, and synctest evidence-gated.
+Detailed parity implementation order is `docs/fightcade-parity-improvement-plan.md`. Start with analyzer/runtime diagnostics and behavior-preserving ownership splits, then migrate rollback/input queues, then pursue UDP reliability and TCP state parity, leaving open-port fallback, timesync waits, command `19` live validation, direct, stream, replay playback, and synctest evidence-gated.
 
 Key ownership rule: UDP/TCP modules exchange decoded frame inputs and typed events with `MacadeSession`; they must not own saved states or rollback decisions. `MacadeCallbacks` should be the only module calling FBNeo GGPO callbacks directly.
 
@@ -404,4 +406,4 @@ Do not log by default: password, session cookie, launcher token, encrypted locat
 2. Migrate rollback/input queues from public GGPO only after those ownership boundaries are split and the rollback harness remains green.
 3. Validate UDP reliability with controlled official loss/delay captures before changing resend, interruption, or timesync behavior.
 4. Implement TCP connect/retry/disconnect parity after static review and official retry/disconnect evidence.
-5. Keep open-port fallback gameplay, `ggpo_get_stats`, command `19`, direct, stream, replay, and synctest evidence-gated.
+5. Keep open-port fallback gameplay, `ggpo_get_stats`, command `19` live validation, direct, stream, replay playback, and synctest evidence-gated.
