@@ -13,6 +13,25 @@ struct FightcadeEmbeddedVideoFrame: Sendable {
     let bytes: Data
 }
 
+struct FightcadeEmbeddedMappedVideoFrame {
+    let width: Int
+    let height: Int
+    let pitch: Int
+    let bytesPerPixel: Int
+    let pixelFormat: UInt32
+    let frameIndex: UInt64
+    let spectatorCount: Int
+    let overlayState: FightcadeEmbeddedOverlayState?
+    let baseAddress: UnsafeRawPointer
+    let byteCount: Int
+}
+
+enum FightcadeEmbeddedVideoFrameRead<Value> {
+    case missing
+    case duplicate
+    case frame(Value)
+}
+
 struct FightcadeEmbeddedOverlayState: Equatable, Sendable {
     let isEnabled: Bool
     let isSpectator: Bool
@@ -135,6 +154,61 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
                 overlayState: overlayState,
                 bytes: bytes
             )
+        }
+    }
+
+    func withNextFrame<Value>(after lastFrameIndex: UInt64, _ body: (FightcadeEmbeddedMappedVideoFrame) -> Value) -> FightcadeEmbeddedVideoFrameRead<Value> {
+        lock.withLock {
+            guard !isClosed else { return .missing }
+
+            let magic = loadUInt32(Header.magic)
+            let frameIndex = loadUInt64(Header.frameIndex)
+            guard magic == Header.expectedMagic, frameIndex > 0 else {
+                return .missing
+            }
+            guard frameIndex != lastFrameIndex else {
+                return .duplicate
+            }
+
+            let width = Int(loadUInt32(Header.width))
+            let height = Int(loadUInt32(Header.height))
+            let pitch = Int(loadUInt32(Header.pitch))
+            let bytesPerPixel = Int(loadUInt32(Header.bytesPerPixel))
+            let pixelFormat = loadUInt32(Header.pixelFormat)
+            let slotCapacity = Int(loadUInt32(Header.slotCapacity))
+            let slotCount = max(1, Int(loadUInt32(Header.slotCount)))
+            let writeSlot = Int(loadUInt32(Header.writeSlot)) % slotCount
+            let spectatorCount = Int(loadUInt32(Header.spectatorCount))
+            let byteLength = pitch * height
+
+            guard width > 0,
+                  height > 0,
+                  pitch > 0,
+                  bytesPerPixel > 0,
+                  byteLength > 0,
+                  byteLength <= slotCapacity else {
+                return .missing
+            }
+
+            let offset = Header.size + writeSlot * slotCapacity
+            guard offset >= Header.size, offset + byteLength <= byteCount else {
+                return .missing
+            }
+
+            let source = UnsafeRawPointer(pointer.advanced(by: offset))
+            let frame = FightcadeEmbeddedMappedVideoFrame(
+                width: width,
+                height: height,
+                pitch: pitch,
+                bytesPerPixel: bytesPerPixel,
+                pixelFormat: pixelFormat,
+                frameIndex: frameIndex,
+                spectatorCount: spectatorCount,
+                overlayState: loadOverlayState(),
+                baseAddress: source,
+                byteCount: byteLength
+            )
+            return .frame(body(frame))
         }
     }
 

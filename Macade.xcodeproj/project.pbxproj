@@ -85,6 +85,9 @@
 		BF00000B000000000000003A /* FightcadeEmbeddedVideoStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */; };
 		BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */; };
 		BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */; };
+		BF00000B0000000000000045 /* EmbeddedEmulatorSessionControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000045 /* EmbeddedEmulatorSessionControls.swift */; };
+		BF00000B0000000000000046 /* EmbeddedVideoDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */; };
+		BF00000B0000000000000047 /* EmbeddedVideoNSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */; };
 		BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */; };
 		BF00000B000000000000003D /* PlayerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003D /* PlayerListView.swift */; };
 		BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003E /* PlayerDetailPane.swift */; };
@@ -190,6 +193,9 @@
 		BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEmbeddedVideoStream.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+EmbeddedEmulation.swift"; sourceTree = "<group>"; };
 		BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedEmulatorPanel.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000045 /* EmbeddedEmulatorSessionControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedEmulatorSessionControls.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoDiagnostics.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoNSView.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoUpload.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003D /* PlayerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerListView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003E /* PlayerDetailPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailPane.swift; sourceTree = "<group>"; };
@@ -468,6 +474,9 @@
 				BF00000C000000000000003F /* EmbeddedChatInputController.swift */,
 				BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */,
 				BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */,
+				BF00000C0000000000000045 /* EmbeddedEmulatorSessionControls.swift */,
+				BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */,
+				BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */,
 				BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */,
 				BF00000C0000000000000040 /* SDLScancodeMapper.swift */,
 				BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */,
@@ -645,6 +654,9 @@
 				BF00000B000000000000003A /* FightcadeEmbeddedVideoStream.swift in Sources */,
 				BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */,
 				BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */,
+				BF00000B0000000000000045 /* EmbeddedEmulatorSessionControls.swift in Sources */,
+				BF00000B0000000000000046 /* EmbeddedVideoDiagnostics.swift in Sources */,
+				BF00000B0000000000000047 /* EmbeddedVideoNSView.swift in Sources */,
 				BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */,
 				BF00000B000000000000003D /* PlayerListView.swift in Sources */,
 				BF00000B0000000000000042 /* PlayerRow.swift in Sources */,

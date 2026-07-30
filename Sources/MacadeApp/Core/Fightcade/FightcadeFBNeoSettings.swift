@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let fightcadeFBNeoSettingsDidChange = Notification.Name("fightcadeFBNeoSettingsDidChange")
+}
+
 struct FightcadeFBNeoSettings: Equatable, Sendable {
     static let supportedSampleRates = [44_100, 48_000, 96_000]
     static let supportedInterpolationModes = [0, 1, 3]

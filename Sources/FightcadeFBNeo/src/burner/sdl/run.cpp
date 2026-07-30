@@ -519,8 +519,6 @@ int RunIdle()
 		macadeRunIdleAudioLogCount++;
 		if (soundStatus) return 1;
 		if (!kNetGame || MacadeQuarkLocalTrainingActive()) return 0;
-		MacadeQuarkRunIdle(1);
-		didNetIdle = true;
 		if (macadeRunFrameCount != framesBeforeAudio) {
 			nNormalLast = GetTime();
 			nNormalFrac = 0;
