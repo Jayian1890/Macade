@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import QuartzCore
 
 struct EmbeddedEmulatorPanel: View {
     let session: FightcadeEmbeddedSession
@@ -298,6 +299,12 @@ private final class EmbeddedVideoNSView: NSView {
         imageLayer.contentsGravity = .resizeAspect
         imageLayer.magnificationFilter = .nearest
         imageLayer.minificationFilter = .nearest
+        imageLayer.actions = [
+            "bounds": NSNull(),
+            "contents": NSNull(),
+            "frame": NSNull(),
+            "position": NSNull()
+        ]
         layer?.addSublayer(imageLayer)
         reloadVideoSettings()
     }
@@ -343,11 +350,14 @@ private final class EmbeddedVideoNSView: NSView {
 
     private func startTimer() {
         guard timer == nil else { return }
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
                 self?.drawLatestFrame()
             }
         }
+        timer.tolerance = 0
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     private func stopTimer() {
@@ -364,7 +374,10 @@ private final class EmbeddedVideoNSView: NSView {
         if session?.overlayState != frame.overlayState {
             session?.overlayState = frame.overlayState
         }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         imageLayer.contents = makeImage(from: frame)
+        CATransaction.commit()
     }
 
     private func reloadVideoSettings() {

@@ -1,5 +1,6 @@
 #include "burner.h"
 #include "sdl2_inprint.h"
+#include "macade_embedded.h"
 #include "macade_overlay.h"
 
 #include <stdio.h>
@@ -30,6 +31,30 @@ struct OverlayState {
 };
 
 static OverlayState gOverlay;
+
+static void PublishOverlay()
+{
+	MacadeEmbeddedOverlayState state;
+	memset(&state, 0, sizeof(state));
+	state.enabled = gOverlay.enabled ? 1 : 0;
+	state.spectator = gOverlay.spectator;
+	state.ranked = gOverlay.ranked;
+	state.player = gOverlay.player;
+	state.spectators = gOverlay.spectators;
+	state.ping = gOverlay.ping;
+	state.delay = gOverlay.delay;
+	state.systemFrames = gOverlay.systemFrames;
+	state.chatInputActive = gOverlay.chatInputActive;
+	snprintf(state.systemMessage, sizeof(state.systemMessage), "%s", gOverlay.systemMessage);
+	snprintf(state.chatInput, sizeof(state.chatInput), "%s", gOverlay.chatInput);
+	for (int i = 0; i < 2; i++) {
+		snprintf(state.players[i].name, sizeof(state.players[i].name), "%s", gOverlay.players[i].name);
+		snprintf(state.players[i].country, sizeof(state.players[i].country), "%s", gOverlay.players[i].country);
+		state.players[i].rank = gOverlay.players[i].rank;
+		state.players[i].score = gOverlay.players[i].score;
+	}
+	MacadeEmbeddedPublishOverlay(&state);
+}
 
 static const char* RankLabel(int rank)
 {
@@ -89,6 +114,7 @@ void MacadeOverlayReset()
 	memset(&gOverlay, 0, sizeof(gOverlay));
 	gOverlay.players[0].rank = -1;
 	gOverlay.players[1].rank = -1;
+	PublishOverlay();
 }
 
 void MacadeOverlaySetSession(int spectator, int ranked, int player)
@@ -97,6 +123,7 @@ void MacadeOverlaySetSession(int spectator, int ranked, int player)
 	gOverlay.spectator = spectator;
 	gOverlay.ranked = ranked;
 	gOverlay.player = player;
+	PublishOverlay();
 }
 
 void MacadeOverlaySetGameInfo(const char* player1, const char* player2, int spectator, int ranked, int player)
@@ -104,12 +131,14 @@ void MacadeOverlaySetGameInfo(const char* player1, const char* player2, int spec
 	MacadeOverlaySetSession(spectator, ranked, player);
 	ParsePlayer(player1, &gOverlay.players[0]);
 	ParsePlayer(player2, &gOverlay.players[1]);
+	PublishOverlay();
 }
 
 void MacadeOverlaySetScores(int player1Score, int player2Score)
 {
 	gOverlay.players[0].score = player1Score < 0 ? 0 : player1Score;
 	gOverlay.players[1].score = player2Score < 0 ? 0 : player2Score;
+	PublishOverlay();
 }
 
 void MacadeOverlayGetScores(int* player1Score, int* player2Score)
@@ -121,6 +150,7 @@ void MacadeOverlayGetScores(int* player1Score, int* player2Score)
 void MacadeOverlaySetSpectators(int count)
 {
 	gOverlay.spectators = count < 0 ? 0 : count;
+	PublishOverlay();
 }
 
 void MacadeOverlaySetSystemMessage(const char* message)
@@ -128,10 +158,12 @@ void MacadeOverlaySetSystemMessage(const char* message)
 	if (message == NULL || message[0] == 0) {
 		gOverlay.systemMessage[0] = 0;
 		gOverlay.systemFrames = 0;
+		PublishOverlay();
 		return;
 	}
 	snprintf(gOverlay.systemMessage, sizeof(gOverlay.systemMessage), "%s", message);
 	gOverlay.systemFrames = 180;
+	PublishOverlay();
 }
 
 void MacadeOverlaySetChatInput(const char* text, int active)
@@ -139,6 +171,7 @@ void MacadeOverlaySetChatInput(const char* text, int active)
 	gOverlay.chatInputActive = active ? 1 : 0;
 	if (text == NULL) text = "";
 	snprintf(gOverlay.chatInput, sizeof(gOverlay.chatInput), "%s", text);
+	PublishOverlay();
 }
 
 void MacadeOverlaySetStats(double fps, int ping, int delay)
@@ -146,6 +179,7 @@ void MacadeOverlaySetStats(double fps, int ping, int delay)
 	gOverlay.fps = fps;
 	gOverlay.ping = ping;
 	gOverlay.delay = delay;
+	PublishOverlay();
 }
 
 static void DrawTextRight(SDL_Renderer* renderer, const char* text, int x, int y)

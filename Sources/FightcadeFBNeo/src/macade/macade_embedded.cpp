@@ -11,6 +11,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "macade_embedded.h"
+
 static const uint32_t kMagic = 0x5644434d;
 static const int kHeaderSize = 4096;
 static const int kSlotCount = 3;
@@ -31,6 +33,14 @@ static void Store64(int offset, uint64_t value)
 {
 	if (gVideo == NULL || offset < 0 || (size_t)offset + 8 > gVideoBytes) return;
 	memcpy(gVideo + offset, &value, 8);
+}
+
+static void StoreString(int offset, int length, const char* value)
+{
+	if (gVideo == NULL || offset < 0 || length <= 0 || (size_t)offset + (size_t)length > gVideoBytes) return;
+	memset(gVideo + offset, 0, (size_t)length);
+	if (value == NULL || value[0] == 0) return;
+	strncpy((char*)gVideo + offset, value, (size_t)length - 1);
 }
 
 bool MacadeEmbeddedEnabled()
@@ -127,6 +137,33 @@ void MacadeEmbeddedPublishFrame(const void* pixels, int width, int height, int p
 	Store32(40, slot);
 	Store32(44, 1);
 	Store64(48, ++gFrameIndex);
+}
+
+void MacadeEmbeddedPublishOverlay(const MacadeEmbeddedOverlayState* state)
+{
+	EnsureVideo();
+	if (gVideo == NULL || state == NULL) return;
+	Store32(56, (uint32_t)(state->spectators < 0 ? 0 : state->spectators));
+	Store32(60, (uint32_t)(gFrameIndex + 1));
+	Store32(64, state->enabled ? 1 : 0);
+	Store32(68, state->spectator ? 1 : 0);
+	Store32(72, (uint32_t)state->ranked);
+	Store32(76, (uint32_t)state->player);
+	Store32(80, (uint32_t)(state->spectators < 0 ? 0 : state->spectators));
+	Store32(84, (uint32_t)(state->ping < 0 ? 0 : state->ping));
+	Store32(88, (uint32_t)(state->delay < 0 ? 0 : state->delay));
+	Store32(92, (uint32_t)(state->systemFrames < 0 ? 0 : state->systemFrames));
+	Store32(96, (uint32_t)(state->chatFrames < 0 ? 0 : state->chatFrames));
+	Store32(100, state->chatInputActive ? 1 : 0);
+	StoreString(104, 160, state->systemMessage);
+	StoreString(264, 160, state->chatInput);
+	for (int i = 0; i < 2; i++) {
+		int offset = 3112 + i * 152;
+		StoreString(offset, 128, state->players[i].name);
+		StoreString(offset + 128, 16, state->players[i].country);
+		Store32(offset + 144, (uint32_t)state->players[i].rank);
+		Store32(offset + 148, (uint32_t)state->players[i].score);
+	}
 }
 
 void MacadeEmbeddedPublishRendererFrame(SDL_Renderer*, int, int)
