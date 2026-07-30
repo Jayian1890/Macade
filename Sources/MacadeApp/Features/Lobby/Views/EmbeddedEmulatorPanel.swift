@@ -407,6 +407,10 @@ private final class EmbeddedVideoNSView: NSView {
     }
 
     nonisolated private static func makeImage(from frame: FightcadeEmbeddedVideoFrame, scanlinesEnabled: Bool) -> CGImage? {
+        if frame.bytesPerPixel == 2, !scanlinesEnabled {
+            return makeRGB565Image(from: frame)
+        }
+
         var rgba = [UInt8](repeating: 0, count: frame.width * frame.height * 4)
 
         for y in 0..<frame.height {
@@ -451,6 +455,26 @@ private final class EmbeddedVideoNSView: NSView {
             bytesPerRow: frame.width * 4,
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+            provider: provider,
+            decode: nil,
+            shouldInterpolate: false,
+            intent: .defaultIntent
+        )
+    }
+
+    nonisolated private static func makeRGB565Image(from frame: FightcadeEmbeddedVideoFrame) -> CGImage? {
+        guard let provider = CGDataProvider(data: Data(frame.bytes) as CFData) else {
+            return nil
+        }
+
+        return CGImage(
+            width: frame.width,
+            height: frame.height,
+            bitsPerComponent: 5,
+            bitsPerPixel: 16,
+            bytesPerRow: frame.pitch,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue | CGBitmapInfo.byteOrder16Little.rawValue),
             provider: provider,
             decode: nil,
             shouldInterpolate: false,
