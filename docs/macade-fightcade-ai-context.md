@@ -106,7 +106,7 @@ Expected layout:
 ```text
 FightcadeRuntime/
   manifest.json
-  emulators/fbneo/fcadefbneo
+  emulators/fbneo/macfbneo
   emulators/fbneo/lib/libSDL2-2.0.0.dylib
   emulators/fbneo/lib/libSDL3.dylib
   detector/*.inf
@@ -260,7 +260,7 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | Area | Current status |
 | --- | --- |
 | Fightcade session | Login/autologin WebSocket, launcher status, channels, chat, challenges, `start`. |
-| Runtime launch | Native FBNeo SDL2, embedded child process, shared-memory video, input socket. Swift launcher now gates `fcadefbneo` startup so only one FBNeo runtime process is allowed at a time, terminating stale/orphaned existing `fcadefbneo` processes before launching a new one. |
+| Runtime launch | Native FBNeo SDL2, embedded child process, shared-memory video, input socket. Bundled FBNeo runtime executable is named `macfbneo`. Swift launcher gates `macfbneo` startup so only one FBNeo runtime process is allowed at a time, terminating stale/orphaned existing `macfbneo` or old `fcadefbneo` processes before launching a new one. |
 | Native run loop | Netplay frame/input ordering now follows Fightcade Win32 more closely by advancing frame counters before network input sync; embedded/netplay SDL adds a timer fallback when audio-buffer advancement does not produce frames, using millisecond clock units to match the SDL pacing formula. `ggpo_idle(timeout)` treats timeout as a total idle budget for active play, draining TCP nonblocking and waiting on UDP only, after live sampling showed per-transport waits could visibly stall gameplay. Embedded input bypasses SDL's per-frame event pump because Macade forwards input through its own socket and hidden-window sampling showed AppKit event work in the hot path. Early driver initialization suppresses SDL audio until after driver/ROM setup, matching Fightcade Win32 startup sequencing. |
 | Routes | served/training/direct/stream parsing. Native training now accepts the Win32 `quark:training` route and uses the served backend with unranked metadata; full training Lua behavior is blocked because the trimmed SDL runtime currently builds `luaengine_stub.cpp` and does not ship the training script assets. |
 | Served startup | UDP master, peer address, 10-round token punch, restricted/fixed fallback attempts, `useports` continuation, TCP `-7` open-port peer handling, TCP startup. |
@@ -269,7 +269,7 @@ Type `3`: `u8 type=3`, `i32_le startFrame`, `i32_le ackFrame`, `u16_le compresse
 | TCP ongoing | Command `15` chat/control send, incoming `-8` chat/control event emission, `17` frame batches, `18` snapshots, and command `19` ranked replay upload. |
 | Stats/events | `ggpo_set_frame_delay`, partial `ggpo_get_stats`, client score/winner/finished replay events, destructive rollback state logging via `log_game_state`. |
 | Direct | Binds requested port and peer; uses UDP input/rollback path; needs validation. |
-| Stream | Swift launch uses the lobby-advertised stream port. Official `FUN_10028d90` constructs `SpectatorBackend` and starts TCP connection setup before ROM load, but official `FUN_10028ed0` sends stream startup from spectator idle: command `0` is sent when `TcpProtocol` reports connected, then commands `20` and `12` are sent once from spectator idle. Macade now defers stream command `0` until spectator `ggpo_idle`, sends `20`/`12` after the positive command `0` response, handles `-12` gamebuffer and `-13` frame playback, logs TCP close/malformed-record cases, prevents macOS `SIGPIPE` socket crashes, uses a dedicated embedded spectator loop that polls `ggpo_idle` until the initial stream state is loaded before entering timer-driven `RunIdle` frames, and loads the initial gamebuffer once received. Live spectating now plays; native overlay state is published to the existing SwiftUI overlay header, and Swift video presentation now uses an `MTKView` with a reusable RGB565 Metal texture instead of per-frame `CGImage` creation. |
+| Stream | Swift launch uses the lobby-advertised stream port. Official `FUN_10028d90` constructs `SpectatorBackend` and starts TCP connection setup before ROM load, but official `FUN_10028ed0` sends stream startup from spectator idle: command `0` is sent when `TcpProtocol` reports connected, then commands `20` and `12` are sent once from spectator idle. Macade now defers stream command `0` until spectator `ggpo_idle`, sends `20`/`12` after the positive command `0` response, handles `-12` gamebuffer and `-13` frame playback, logs TCP close/malformed-record cases, prevents macOS `SIGPIPE` socket crashes, uses a dedicated embedded spectator loop that polls `ggpo_idle` until the initial stream state is loaded before entering timer-driven `RunIdle` frames, and loads the initial gamebuffer once received. Live spectating now plays; native overlay state is published to the existing SwiftUI overlay header, and Swift video presentation now uses an `MTKView` with reusable RGB565/BGRA Metal textures instead of per-frame `CGImage` creation. |
 | Unsupported | local replay playback, synctest, full training Lua/movie replay subsystems, complete events/stats/timesync. These remain blocked rather than faked until the local replay backend, synctest backend migration, Lua build assets, or runtime evidence are available. |
 
 ## Parity Gaps

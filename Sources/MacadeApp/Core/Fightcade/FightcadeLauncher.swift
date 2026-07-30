@@ -359,9 +359,9 @@ struct FightcadeLauncher: FightcadeLaunching {
         switch normalized {
         case "fbneo":
             relativePaths = [
-                "emulators/fbneo/fcadefbneo",
+                "emulators/fbneo/macfbneo",
                 "emulators/fbneo/fbneo",
-                "emulator/fbneo/fcadefbneo",
+                "emulator/fbneo/macfbneo",
                 "emulator/fbneo/fbneo"
             ]
         default:
@@ -381,21 +381,21 @@ struct FightcadeLauncher: FightcadeLaunching {
     }
 
     private func enforceSingleFBNeoProcess(executable: URL, launchLog: FightcadeLaunchLog) {
-        guard executable.lastPathComponent == "fcadefbneo" else { return }
-        processRegistry.terminateAll(reason: "single fcadefbneo launch", graceSeconds: 0.75)
+        guard executable.lastPathComponent == "macfbneo" else { return }
+        processRegistry.terminateAll(reason: "single macfbneo launch", graceSeconds: 0.75)
 
-        let processIDs = runningProcessIDs(named: executable.lastPathComponent)
+        let processIDs = ["macfbneo", "fcadefbneo"].flatMap(runningProcessIDs(named:))
         guard !processIDs.isEmpty else { return }
 
         for processID in processIDs {
-            launchLog.write("Macade process gate terminating existing fcadefbneo pid=\(processID) before launch\n")
+            launchLog.write("Macade process gate terminating existing FBNeo runtime pid=\(processID) before launch\n")
             kill(processID, SIGTERM)
         }
 
         waitForExit(processIDs, graceSeconds: 0.75)
 
         for processID in processIDs where kill(processID, 0) == 0 {
-            launchLog.write("Macade process gate force killing existing fcadefbneo pid=\(processID) before launch\n")
+            launchLog.write("Macade process gate force killing existing FBNeo runtime pid=\(processID) before launch\n")
             kill(processID, SIGKILL)
         }
 

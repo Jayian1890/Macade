@@ -293,6 +293,7 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     private var pipelineState: MTLRenderPipelineState?
     private var frameTexture: MTLTexture?
     private var frameTextureSize = CGSize.zero
+    private var frameTexturePixelFormat: MTLPixelFormat = .invalid
     private var lastFrameIndex: UInt64 = 0
     private var scanlinesEnabled = false
     private var videoStream: FightcadeEmbeddedVideoStream?
@@ -356,13 +357,13 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         guard let videoStream,
               let frame = videoStream.snapshot(),
               frame.frameIndex != lastFrameIndex,
+              upload(frame: frame),
               let drawable = currentDrawable,
               let descriptor = currentRenderPassDescriptor,
               let commandBuffer = commandQueue?.makeCommandBuffer(),
               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor),
               let pipelineState else { return }
 
-        guard upload(frame: frame) else { return }
         lastFrameIndex = frame.frameIndex
         if session?.overlayState != frame.overlayState {
             session?.overlayState = frame.overlayState
@@ -384,12 +385,22 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     }
 
     private func upload(frame: FightcadeEmbeddedVideoFrame) -> Bool {
-        guard frame.bytesPerPixel == 2 else { return false }
-        if frameTexture == nil || frameTextureSize.width != CGFloat(frame.width) || frameTextureSize.height != CGFloat(frame.height) {
-            let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .b5g6r5Unorm, width: frame.width, height: frame.height, mipmapped: false)
+        let pixelFormat: MTLPixelFormat
+        switch frame.bytesPerPixel {
+        case 2:
+            pixelFormat = .b5g6r5Unorm
+        case 4:
+            pixelFormat = .bgra8Unorm
+        default:
+            return false
+        }
+
+        if frameTexture == nil || frameTextureSize.width != CGFloat(frame.width) || frameTextureSize.height != CGFloat(frame.height) || frameTexturePixelFormat != pixelFormat {
+            let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat, width: frame.width, height: frame.height, mipmapped: false)
             descriptor.usage = [.shaderRead]
             frameTexture = device?.makeTexture(descriptor: descriptor)
             frameTextureSize = CGSize(width: frame.width, height: frame.height)
+            frameTexturePixelFormat = pixelFormat
         }
         guard let frameTexture else { return false }
         frame.bytes.withUnsafeBytes { bytes in
@@ -438,6 +449,7 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         fragment half4 fragment_main(VertexOut in [[stage_in]], texture2d<half> frame [[texture(0)]], constant uint &scanlines [[buffer(0)]]) {
             constexpr sampler frameSampler(address::clamp_to_edge, filter::nearest);
             half4 color = frame.sample(frameSampler, in.texCoord);
+            color.a = 1.0h;
             uint row = min(uint(in.texCoord.y * frame.get_height()), frame.get_height() - 1);
             if (scanlines != 0 && (row & 1) != 0) {
                 color.rgb *= 0.55h;
