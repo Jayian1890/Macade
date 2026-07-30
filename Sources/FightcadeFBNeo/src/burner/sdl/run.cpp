@@ -43,6 +43,7 @@ extern void MacadeQuarkRunIdle(int ms);
 extern bool MacadeQuarkIncrementFrame();
 extern void MacadeDetectorUpdate();
 extern int MacadeNetworkGetInput();
+extern int MacadeSDLSoundCommitFrame();
 struct GGPOSession;
 extern GGPOSession* ggpo;
 extern "C" bool ggpo_client_chat(GGPOSession*, char*);
@@ -337,6 +338,8 @@ static int RunFrame(int bDraw, int bPause)
 	{
 		return 1;
 	}
+	bool commitEmbeddedSpectatorAudio = MacadeEmbeddedEnabled() && kNetSpectator && bAudPlaying && !bPause && nAudNextSound != NULL;
+	if (commitEmbeddedSpectatorAudio) pBurnSoundOut = nAudNextSound;
 
 	if (bPause)
 	{
@@ -401,6 +404,7 @@ static int RunFrame(int bDraw, int bPause)
 	if (!bPause && kNetGame) {
 		MacadeDetectorUpdate();
 	}
+	if (commitEmbeddedSpectatorAudio) MacadeSDLSoundCommitFrame();
 	macadeRunFrameCount++;
 
 	if (bAppShowFPS) {

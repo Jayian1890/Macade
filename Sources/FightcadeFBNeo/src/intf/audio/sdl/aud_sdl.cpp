@@ -115,6 +115,18 @@ static int SDLSoundCheck()
 	return 0;
 }
 
+int MacadeSDLSoundCommitFrame()
+{
+	if (!bAudPlaying || SDLAudBuffer == NULL || nAudNextSound == NULL || nAudSegLen <= 0) return 0;
+	if (nAudDSPModule[0]) DspDo(nAudNextSound, nAudSegLen);
+
+	SDL_LockAudio();
+	WRAP_INC(nSDLFillSeg);
+	memcpy((char*)SDLAudBuffer + nSDLFillSeg * (nAudSegLen << 2), nAudNextSound, nAudSegLen << 2);
+	SDL_UnlockAudio();
+	return 0;
+}
+
 static int SDLSoundExit()
 {
 	DspExit();
