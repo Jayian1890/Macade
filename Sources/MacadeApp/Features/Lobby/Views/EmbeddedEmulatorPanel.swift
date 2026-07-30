@@ -284,13 +284,17 @@ private final class EmbeddedVideoNSView: NSView {
             guard oldValue !== session else { return }
             EmbeddedInputEventRouter.shared.unbind(session: oldValue)
             EmbeddedInputEventRouter.shared.bind(session: session)
+            videoStream = session?.videoStream
         }
     }
 
     private let imageLayer = CALayer()
+    private let renderQueue = DispatchQueue(label: "com.macade.embedded-video.render", qos: .userInteractive)
     private var timer: Timer?
     private var lastFrameIndex: UInt64 = 0
+    private var isRendering = false
     private var scanlinesEnabled = false
+    private var videoStream: FightcadeEmbeddedVideoStream?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -366,25 +370,43 @@ private final class EmbeddedVideoNSView: NSView {
     }
 
     private func drawLatestFrame() {
-        guard let frame = session?.videoStream.snapshot(), frame.frameIndex != lastFrameIndex else {
+        guard !isRendering, let videoStream else {
             return
         }
 
-        lastFrameIndex = frame.frameIndex
-        if session?.overlayState != frame.overlayState {
-            session?.overlayState = frame.overlayState
+        let previousFrameIndex = lastFrameIndex
+        let scanlinesEnabled = scanlinesEnabled
+        isRendering = true
+        renderQueue.async { [weak self, videoStream, previousFrameIndex, scanlinesEnabled] in
+            guard let frame = videoStream.snapshot(), frame.frameIndex != previousFrameIndex else {
+                DispatchQueue.main.async {
+                    self?.isRendering = false
+                }
+                return
+            }
+
+            let image = Self.makeImage(from: frame, scanlinesEnabled: scanlinesEnabled)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.isRendering = false
+                guard frame.frameIndex > self.lastFrameIndex else { return }
+                self.lastFrameIndex = frame.frameIndex
+                if self.session?.overlayState != frame.overlayState {
+                    self.session?.overlayState = frame.overlayState
+                }
+                CATransaction.begin()
+                CATransaction.setDisableActions(true)
+                self.imageLayer.contents = image
+                CATransaction.commit()
+            }
         }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        imageLayer.contents = makeImage(from: frame)
-        CATransaction.commit()
     }
 
     private func reloadVideoSettings() {
         scanlinesEnabled = (try? FightcadeFBNeoSettingsStore().load().scanlines) ?? false
     }
 
-    private func makeImage(from frame: FightcadeEmbeddedVideoFrame) -> CGImage? {
+    nonisolated private static func makeImage(from frame: FightcadeEmbeddedVideoFrame, scanlinesEnabled: Bool) -> CGImage? {
         var rgba = [UInt8](repeating: 0, count: frame.width * frame.height * 4)
 
         for y in 0..<frame.height {
