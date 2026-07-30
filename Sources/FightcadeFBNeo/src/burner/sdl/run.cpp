@@ -38,6 +38,7 @@ extern SDL_Renderer* sdlRenderer;
 extern void ingame_gui_start(SDL_Renderer* renderer);
 #endif
 extern int kNetGame;
+extern int kNetSpectator;
 extern void MacadeQuarkRunIdle(int ms);
 extern bool MacadeQuarkIncrementFrame();
 extern void MacadeDetectorUpdate();
@@ -492,7 +493,8 @@ int RunIdle()
 	int nTime, nCount;
 	bool didNetIdle = false;
 
-	if (bAudPlaying)
+	bool useTimerDrivenEmbeddedSpectator = MacadeEmbeddedEnabled() && kNetSpectator;
+	if (bAudPlaying && !useTimerDrivenEmbeddedSpectator)
 	{
 		// Run with sound
 		int framesBeforeAudio = macadeRunFrameCount;
