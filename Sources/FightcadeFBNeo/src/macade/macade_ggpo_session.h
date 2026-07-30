@@ -72,8 +72,6 @@ struct GGPOSession {
 	int streamFrameBatchCount = 0;
 	int streamGameBufferCount = 0;
 	int streamSpectatorCount = 0;
-	int streamBufferLogCount = 0;
-	bool streamBuffering = true;
 	unsigned int udpSyncNonce = 0;
 	unsigned int udpQualityNonce = 0;
 	long long udpSyncSentAtMs = 0;

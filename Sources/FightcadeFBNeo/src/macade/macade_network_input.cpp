@@ -22,9 +22,6 @@ static unsigned char gControls[kInputSize];
 static int gNetworkGetInputLogCount = 0;
 static int gNetworkReplayFrameLogCount = 0;
 
-extern UINT32 nFramesEmulated;
-extern UINT32 nCurrentFrame;
-
 static bool InputNameHasPrefix(const BurnInputInfo& input, const char* prefix)
 {
 	return input.szName != NULL && strncasecmp(input.szName, prefix, strlen(prefix)) == 0;
@@ -223,10 +220,6 @@ int MacadeNetworkGetInput()
 	}
 	gNetworkGetInputLogCount++;
 	if (!synchronized) {
-		if (!ggpo->fatalDesync && !ggpo->networkDisconnected) {
-			if (nFramesEmulated > 0) nFramesEmulated--;
-			if (nCurrentFrame > 0) nCurrentFrame--;
-		}
 		return (ggpo->fatalDesync || ggpo->networkDisconnected) ? 1 : 2;
 	}
 	MacadeApplySynchronizedControls(blockSize);
