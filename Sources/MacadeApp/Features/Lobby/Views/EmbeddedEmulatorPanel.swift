@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import QuartzCore
+import Accelerate
 
 struct EmbeddedEmulatorPanel: View {
     let session: FightcadeEmbeddedSession
@@ -410,7 +411,7 @@ private final class EmbeddedVideoNSView: NSView {
 
     nonisolated private static func makeImage(from frame: FightcadeEmbeddedVideoFrame, scanlinesEnabled: Bool) -> CGImage? {
         if frame.bytesPerPixel == 2, !scanlinesEnabled {
-            return makeRGB565Image(from: frame)
+            return makeBGRAImage(fromRGB565: frame)
         }
 
         var rgba = [UInt8](repeating: 0, count: frame.width * frame.height * 4)
@@ -464,19 +465,42 @@ private final class EmbeddedVideoNSView: NSView {
         )
     }
 
-    nonisolated private static func makeRGB565Image(from frame: FightcadeEmbeddedVideoFrame) -> CGImage? {
-        guard let provider = CGDataProvider(data: frame.bytes as CFData) else {
+    nonisolated private static func makeBGRAImage(fromRGB565 frame: FightcadeEmbeddedVideoFrame) -> CGImage? {
+        var bgra = Data(count: frame.width * frame.height * 4)
+        let result = frame.bytes.withUnsafeBytes { sourceBuffer in
+            bgra.withUnsafeMutableBytes { targetBuffer in
+                guard let sourceBase = sourceBuffer.baseAddress,
+                      let targetBase = targetBuffer.baseAddress else {
+                    return kvImageInvalidParameter
+                }
+                var source = vImage_Buffer(
+                    data: UnsafeMutableRawPointer(mutating: sourceBase),
+                    height: vImagePixelCount(frame.height),
+                    width: vImagePixelCount(frame.width),
+                    rowBytes: frame.pitch
+                )
+                var target = vImage_Buffer(
+                    data: targetBase,
+                    height: vImagePixelCount(frame.height),
+                    width: vImagePixelCount(frame.width),
+                    rowBytes: frame.width * 4
+                )
+                return vImageConvert_RGB565toBGRA8888(255, &source, &target, vImage_Flags(kvImageNoFlags))
+            }
+        }
+        guard result == kvImageNoError,
+              let provider = CGDataProvider(data: bgra as CFData) else {
             return nil
         }
 
         return CGImage(
             width: frame.width,
             height: frame.height,
-            bitsPerComponent: 5,
-            bitsPerPixel: 16,
-            bytesPerRow: frame.pitch,
+            bitsPerComponent: 8,
+            bitsPerPixel: 32,
+            bytesPerRow: frame.width * 4,
             space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue | CGBitmapInfo.byteOrder16Little.rawValue),
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue),
             provider: provider,
             decode: nil,
             shouldInterpolate: false,
