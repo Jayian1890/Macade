@@ -290,7 +290,7 @@ private final class EmbeddedVideoNSView: NSView {
 
     private let imageLayer = CALayer()
     private let renderQueue = DispatchQueue(label: "com.macade.embedded-video.render", qos: .userInteractive)
-    private var timer: Timer?
+    private var displayLink: CADisplayLink?
     private var lastFrameIndex: UInt64 = 0
     private var isRendering = false
     private var scanlinesEnabled = false
@@ -327,10 +327,10 @@ private final class EmbeddedVideoNSView: NSView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if window == nil {
-            stopTimer()
+            stopDisplayLink()
             EmbeddedInputEventRouter.shared.unbind(session: session)
         } else {
-            startTimer()
+            startDisplayLink()
             EmbeddedInputEventRouter.shared.bind(session: session)
             window?.makeFirstResponder(self)
         }
@@ -352,21 +352,21 @@ private final class EmbeddedVideoNSView: NSView {
         }
     }
 
-    private func startTimer() {
-        guard timer == nil else { return }
-        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.drawLatestFrame()
-            }
-        }
-        timer.tolerance = 0
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
+    private func startDisplayLink() {
+        guard displayLink == nil else { return }
+        let displayLink = CADisplayLink(target: self, selector: #selector(displayLinkDidFire))
+        displayLink.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 60, preferred: 60)
+        displayLink.add(to: .main, forMode: .common)
+        self.displayLink = displayLink
     }
 
-    private func stopTimer() {
-        timer?.invalidate()
-        timer = nil
+    private func stopDisplayLink() {
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+
+    @objc private func displayLinkDidFire() {
+        drawLatestFrame()
     }
 
     private func drawLatestFrame() {
