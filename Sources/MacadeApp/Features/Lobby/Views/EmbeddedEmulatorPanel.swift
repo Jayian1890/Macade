@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 import QuartzCore
-import Accelerate
+import MetalKit
 
 struct EmbeddedEmulatorPanel: View {
     let session: FightcadeEmbeddedSession
@@ -279,7 +279,7 @@ private struct FightcadeEmbeddedVideoView: NSViewRepresentable {
     }
 }
 
-private final class EmbeddedVideoNSView: NSView {
+private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     var session: FightcadeEmbeddedSession? {
         didSet {
             guard oldValue !== session else { return }
@@ -289,49 +289,46 @@ private final class EmbeddedVideoNSView: NSView {
         }
     }
 
-    private let imageLayer = CALayer()
-    private let renderQueue = DispatchQueue(label: "com.macade.embedded-video.render", qos: .userInteractive)
-    private var displayLink: CADisplayLink?
+    private var commandQueue: MTLCommandQueue?
+    private var pipelineState: MTLRenderPipelineState?
+    private var frameTexture: MTLTexture?
+    private var frameTextureSize = CGSize.zero
     private var lastFrameIndex: UInt64 = 0
-    private var isRendering = false
     private var scanlinesEnabled = false
     private var videoStream: FightcadeEmbeddedVideoStream?
 
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        wantsLayer = true
-        layer?.backgroundColor = NSColor.black.cgColor
-        imageLayer.contentsGravity = .resizeAspect
-        imageLayer.magnificationFilter = .nearest
-        imageLayer.minificationFilter = .nearest
-        imageLayer.actions = [
-            "bounds": NSNull(),
-            "contents": NSNull(),
-            "frame": NSNull(),
-            "position": NSNull()
-        ]
-        layer?.addSublayer(imageLayer)
-        reloadVideoSettings()
+    init() {
+        let device = MTLCreateSystemDefaultDevice()
+        super.init(frame: .zero, device: device)
+        configureMetalView(device: device)
     }
 
-    required init?(coder: NSCoder) {
-        nil
+    required init(coder: NSCoder) {
+        super.init(coder: coder)
+        configureMetalView(device: device)
+    }
+
+    private func configureMetalView(device: MTLDevice?) {
+        colorPixelFormat = .bgra8Unorm
+        clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 1)
+        framebufferOnly = true
+        presentsWithTransaction = false
+        enableSetNeedsDisplay = false
+        isPaused = false
+        preferredFramesPerSecond = 60
+        commandQueue = device?.makeCommandQueue()
+        pipelineState = Self.makePipeline(device: device, pixelFormat: colorPixelFormat)
+        delegate = self
+        reloadVideoSettings()
     }
 
     override var acceptsFirstResponder: Bool { true }
 
-    override func layout() {
-        super.layout()
-        imageLayer.frame = bounds
-    }
-
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if window == nil {
-            stopDisplayLink()
             EmbeddedInputEventRouter.shared.unbind(session: session)
         } else {
-            startDisplayLink()
             EmbeddedInputEventRouter.shared.bind(session: session)
             window?.makeFirstResponder(self)
         }
@@ -353,158 +350,108 @@ private final class EmbeddedVideoNSView: NSView {
         }
     }
 
-    private func startDisplayLink() {
-        guard displayLink == nil else { return }
-        let displayLink = CADisplayLink(target: self, selector: #selector(displayLinkDidFire))
-        displayLink.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 60, preferred: 60)
-        displayLink.add(to: .main, forMode: .common)
-        self.displayLink = displayLink
-    }
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { }
 
-    private func stopDisplayLink() {
-        displayLink?.invalidate()
-        displayLink = nil
-    }
+    func draw(in view: MTKView) {
+        guard let videoStream,
+              let frame = videoStream.snapshot(),
+              frame.frameIndex != lastFrameIndex,
+              let drawable = currentDrawable,
+              let descriptor = currentRenderPassDescriptor,
+              let commandBuffer = commandQueue?.makeCommandBuffer(),
+              let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor),
+              let pipelineState else { return }
 
-    @objc private func displayLinkDidFire() {
-        drawLatestFrame()
-    }
-
-    private func drawLatestFrame() {
-        guard !isRendering, let videoStream else {
-            return
+        guard upload(frame: frame) else { return }
+        lastFrameIndex = frame.frameIndex
+        if session?.overlayState != frame.overlayState {
+            session?.overlayState = frame.overlayState
         }
 
-        let previousFrameIndex = lastFrameIndex
-        let scanlinesEnabled = scanlinesEnabled
-        isRendering = true
-        renderQueue.async { [weak self, videoStream, previousFrameIndex, scanlinesEnabled] in
-            autoreleasepool {
-                guard let frame = videoStream.snapshot(), frame.frameIndex != previousFrameIndex else {
-                    DispatchQueue.main.async {
-                        self?.isRendering = false
-                    }
-                    return
-                }
-
-                let image = Self.makeImage(from: frame, scanlinesEnabled: scanlinesEnabled)
-                DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    self.isRendering = false
-                    guard frame.frameIndex > self.lastFrameIndex else { return }
-                    self.lastFrameIndex = frame.frameIndex
-                    if self.session?.overlayState != frame.overlayState {
-                        self.session?.overlayState = frame.overlayState
-                    }
-                    CATransaction.begin()
-                    CATransaction.setDisableActions(true)
-                    self.imageLayer.contents = image
-                    CATransaction.commit()
-                }
-            }
-        }
+        var scanlines = scanlinesEnabled ? UInt32(1) : UInt32(0)
+        encoder.setViewport(Self.viewport(for: frame, drawableSize: drawableSize))
+        encoder.setRenderPipelineState(pipelineState)
+        encoder.setFragmentTexture(frameTexture, index: 0)
+        encoder.setFragmentBytes(&scanlines, length: MemoryLayout<UInt32>.size, index: 0)
+        encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
+        encoder.endEncoding()
+        commandBuffer.present(drawable)
+        commandBuffer.commit()
     }
 
     private func reloadVideoSettings() {
         scanlinesEnabled = (try? FightcadeFBNeoSettingsStore().load().scanlines) ?? false
     }
 
-    nonisolated private static func makeImage(from frame: FightcadeEmbeddedVideoFrame, scanlinesEnabled: Bool) -> CGImage? {
-        if frame.bytesPerPixel == 2, !scanlinesEnabled {
-            return makeBGRAImage(fromRGB565: frame)
+    private func upload(frame: FightcadeEmbeddedVideoFrame) -> Bool {
+        guard frame.bytesPerPixel == 2 else { return false }
+        if frameTexture == nil || frameTextureSize.width != CGFloat(frame.width) || frameTextureSize.height != CGFloat(frame.height) {
+            let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .b5g6r5Unorm, width: frame.width, height: frame.height, mipmapped: false)
+            descriptor.usage = [.shaderRead]
+            frameTexture = device?.makeTexture(descriptor: descriptor)
+            frameTextureSize = CGSize(width: frame.width, height: frame.height)
         }
-
-        var rgba = [UInt8](repeating: 0, count: frame.width * frame.height * 4)
-
-        for y in 0..<frame.height {
-            let sourceRow = y * frame.pitch
-            let targetRow = y * frame.width * 4
-
-            for x in 0..<frame.width {
-                let source = sourceRow + x * frame.bytesPerPixel
-                let target = targetRow + x * 4
-                guard source + frame.bytesPerPixel <= frame.bytes.count else { continue }
-
-                if frame.bytesPerPixel == 2 {
-                    let value = UInt16(frame.bytes[source]) | (UInt16(frame.bytes[source + 1]) << 8)
-                    rgba[target] = UInt8(((value >> 11) & 0x1F) * 255 / 31)
-                    rgba[target + 1] = UInt8(((value >> 5) & 0x3F) * 255 / 63)
-                    rgba[target + 2] = UInt8((value & 0x1F) * 255 / 31)
-                    rgba[target + 3] = 255
-                } else {
-                    rgba[target] = frame.bytes[source + 2]
-                    rgba[target + 1] = frame.bytes[source + 1]
-                    rgba[target + 2] = frame.bytes[source]
-                    rgba[target + 3] = 255
-                }
-
-                if scanlinesEnabled && y.isMultiple(of: 2) == false {
-                    rgba[target] = UInt8((UInt16(rgba[target]) * 11) / 20)
-                    rgba[target + 1] = UInt8((UInt16(rgba[target + 1]) * 11) / 20)
-                    rgba[target + 2] = UInt8((UInt16(rgba[target + 2]) * 11) / 20)
-                }
+        guard let frameTexture else { return false }
+        frame.bytes.withUnsafeBytes { bytes in
+            if let baseAddress = bytes.baseAddress {
+                frameTexture.replace(region: MTLRegionMake2D(0, 0, frame.width, frame.height), mipmapLevel: 0, withBytes: baseAddress, bytesPerRow: frame.pitch)
             }
         }
-
-        guard let provider = CGDataProvider(data: Data(rgba) as CFData) else {
-            return nil
-        }
-
-        return CGImage(
-            width: frame.width,
-            height: frame.height,
-            bitsPerComponent: 8,
-            bitsPerPixel: 32,
-            bytesPerRow: frame.width * 4,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
-            provider: provider,
-            decode: nil,
-            shouldInterpolate: false,
-            intent: .defaultIntent
-        )
+        return true
     }
 
-    nonisolated private static func makeBGRAImage(fromRGB565 frame: FightcadeEmbeddedVideoFrame) -> CGImage? {
-        var bgra = Data(count: frame.width * frame.height * 4)
-        let result = frame.bytes.withUnsafeBytes { sourceBuffer in
-            bgra.withUnsafeMutableBytes { targetBuffer in
-                guard let sourceBase = sourceBuffer.baseAddress,
-                      let targetBase = targetBuffer.baseAddress else {
-                    return kvImageInvalidParameter
-                }
-                var source = vImage_Buffer(
-                    data: UnsafeMutableRawPointer(mutating: sourceBase),
-                    height: vImagePixelCount(frame.height),
-                    width: vImagePixelCount(frame.width),
-                    rowBytes: frame.pitch
-                )
-                var target = vImage_Buffer(
-                    data: targetBase,
-                    height: vImagePixelCount(frame.height),
-                    width: vImagePixelCount(frame.width),
-                    rowBytes: frame.width * 4
-                )
-                return vImageConvert_RGB565toBGRA8888(255, &source, &target, vImage_Flags(kvImageNoFlags))
-            }
+    private static func viewport(for frame: FightcadeEmbeddedVideoFrame, drawableSize: CGSize) -> MTLViewport {
+        let sourceAspect = Double(frame.width) / Double(frame.height)
+        let drawableAspect = Double(drawableSize.width) / Double(drawableSize.height)
+        let width: Double
+        let height: Double
+        if drawableAspect > sourceAspect {
+            height = Double(drawableSize.height)
+            width = height * sourceAspect
+        } else {
+            width = Double(drawableSize.width)
+            height = width / sourceAspect
         }
-        guard result == kvImageNoError,
-              let provider = CGDataProvider(data: bgra as CFData) else {
-            return nil
+        return MTLViewport(originX: (Double(drawableSize.width) - width) / 2, originY: (Double(drawableSize.height) - height) / 2, width: width, height: height, znear: 0, zfar: 1)
+    }
+
+    private static func makePipeline(device: MTLDevice?, pixelFormat: MTLPixelFormat) -> MTLRenderPipelineState? {
+        guard let device else { return nil }
+        let source = """
+        #include <metal_stdlib>
+        using namespace metal;
+
+        struct VertexOut {
+            float4 position [[position]];
+            float2 texCoord;
+        };
+
+        vertex VertexOut vertex_main(uint vertexID [[vertex_id]]) {
+            float2 positions[4] = { float2(-1.0, -1.0), float2(1.0, -1.0), float2(-1.0, 1.0), float2(1.0, 1.0) };
+            float2 texCoords[4] = { float2(0.0, 1.0), float2(1.0, 1.0), float2(0.0, 0.0), float2(1.0, 0.0) };
+            VertexOut out;
+            out.position = float4(positions[vertexID], 0.0, 1.0);
+            out.texCoord = texCoords[vertexID];
+            return out;
         }
 
-        return CGImage(
-            width: frame.width,
-            height: frame.height,
-            bitsPerComponent: 8,
-            bitsPerPixel: 32,
-            bytesPerRow: frame.width * 4,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue),
-            provider: provider,
-            decode: nil,
-            shouldInterpolate: false,
-            intent: .defaultIntent
-        )
+        fragment half4 fragment_main(VertexOut in [[stage_in]], texture2d<half> frame [[texture(0)]], constant uint &scanlines [[buffer(0)]]) {
+            constexpr sampler frameSampler(address::clamp_to_edge, filter::nearest);
+            half4 color = frame.sample(frameSampler, in.texCoord);
+            uint row = min(uint(in.texCoord.y * frame.get_height()), frame.get_height() - 1);
+            if (scanlines != 0 && (row & 1) != 0) {
+                color.rgb *= 0.55h;
+            }
+            return color;
+        }
+        """
+        guard let library = try? device.makeLibrary(source: source, options: nil),
+              let vertex = library.makeFunction(name: "vertex_main"),
+              let fragment = library.makeFunction(name: "fragment_main") else { return nil }
+        let descriptor = MTLRenderPipelineDescriptor()
+        descriptor.vertexFunction = vertex
+        descriptor.fragmentFunction = fragment
+        descriptor.colorAttachments[0].pixelFormat = pixelFormat
+        return try? device.makeRenderPipelineState(descriptor: descriptor)
     }
 }
