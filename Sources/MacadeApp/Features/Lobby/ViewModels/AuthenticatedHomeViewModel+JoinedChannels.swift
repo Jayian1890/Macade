@@ -17,14 +17,19 @@ extension AuthenticatedHomeViewModel {
                 welcomeMessage: dashboard?.welcomeMessage,
                 channels: cachedChannels
             ),
-            restoringJoinedChannels: false
+            restoringJoinedChannels: true,
+            joiningRestoredChannels: false
         )
     }
 
-    func applyDashboard(_ loadedDashboard: FightcadeDashboard, restoringJoinedChannels: Bool) {
+    func applyDashboard(
+        _ loadedDashboard: FightcadeDashboard,
+        restoringJoinedChannels: Bool,
+        joiningRestoredChannels: Bool = true
+    ) {
         dashboard = loadedDashboard
         if restoringJoinedChannels {
-            restoreJoinedChannels(from: loadedDashboard)
+            restoreJoinedChannels(from: loadedDashboard, joiningServerChannels: joiningRestoredChannels)
         }
         selectFirstChannelIfNeeded(from: loadedDashboard.channels)
     }
@@ -37,7 +42,7 @@ extension AuthenticatedHomeViewModel {
         }
     }
 
-    func restoreJoinedChannels(from dashboard: FightcadeDashboard) {
+    func restoreJoinedChannels(from dashboard: FightcadeDashboard, joiningServerChannels: Bool) {
         let savedIDs = joinedChannelStore.joinedChannelIDs(for: session)
         guard !savedIDs.isEmpty else {
             return
@@ -49,11 +54,16 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
+        joinedChannelIDs.formUnion(channels.map(\.id))
         selectedChannelID = channels.first?.id
         isShowingChannelBrowser = false
 
+        guard joiningServerChannels else {
+            return
+        }
+
         for channel in channels {
-            join(channel)
+            join(channel, forcingServerJoin: true)
         }
     }
 

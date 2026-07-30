@@ -10,5 +10,6 @@ void MacadeOverlayGetScores(int* player1Score, int* player2Score);
 void MacadeOverlaySetSpectators(int count);
 void MacadeOverlaySetSystemMessage(const char* message);
 void MacadeOverlaySetChatInput(const char* text, int active);
+void MacadeOverlayAddChatLine(const char* name, const char* text);
 void MacadeOverlaySetStats(double fps, int ping, int delay);
 void MacadeOverlayRender(SDL_Renderer* renderer);

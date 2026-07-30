@@ -37,6 +37,7 @@
 		BF00000B000000000000000C /* ChannelDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000C /* ChannelDetailView.swift */; };
 		BF00000B000000000000000D /* ChannelBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000D /* ChannelBrowserView.swift */; };
 		BF00000B000000000000000E /* FightcadeChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000E /* FightcadeChatMessage.swift */; };
+		BF00000B00000000000000B1 /* FightcadeChatMention.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B1 /* FightcadeChatMention.swift */; };
 		BF00000B000000000000000F /* FightcadeLobbyEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000F /* FightcadeLobbyEvent.swift */; };
 		BF00000B0000000000000010 /* FightcadeLobbyPayloadParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */; };
 		BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000011 /* FightcadeLauncher.swift */; };
@@ -82,6 +83,7 @@
 		BF00000B000000000000003A /* FightcadeEmbeddedVideoStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */; };
 		BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */; };
 		BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */; };
+		BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */; };
 		BF00000B000000000000003D /* PlayerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003D /* PlayerListView.swift */; };
 		BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003E /* PlayerDetailPane.swift */; };
 		BF00000B0000000000000042 /* PlayerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000042 /* PlayerRow.swift */; };
@@ -138,6 +140,7 @@
 		BF00000C000000000000000C /* ChannelDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelDetailView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000000D /* ChannelBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000000E /* FightcadeChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChatMessage.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000B1 /* FightcadeChatMention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChatMention.swift; sourceTree = "<group>"; };
 		BF00000C000000000000000F /* FightcadeLobbyEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyEvent.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyPayloadParser.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000011 /* FightcadeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLauncher.swift; sourceTree = "<group>"; };
@@ -183,6 +186,7 @@
 		BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEmbeddedVideoStream.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+EmbeddedEmulation.swift"; sourceTree = "<group>"; };
 		BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedEmulatorPanel.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoUpload.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003D /* PlayerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerListView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003E /* PlayerDetailPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailPane.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000042 /* PlayerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRow.swift; sourceTree = "<group>"; };
@@ -402,6 +406,7 @@
 				BF00000C00000000000000A6 /* FightcadeChannelBrowserModels.swift */,
 				BF00000C0000000000000005 /* FightcadeChannel.swift */,
 				BF00000C000000000000000E /* FightcadeChatMessage.swift */,
+				BF00000C00000000000000B1 /* FightcadeChatMention.swift */,
 				BF00000C0000000000000006 /* FightcadeDashboard.swift */,
 				BF00000C000000000000000F /* FightcadeLobbyEvent.swift */,
 			);
@@ -457,6 +462,7 @@
 				BF00000C000000000000003F /* EmbeddedChatInputController.swift */,
 				BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */,
 				BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */,
+				BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */,
 				BF00000C0000000000000040 /* SDLScancodeMapper.swift */,
 				BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */,
 				BF00000C000000000000003D /* PlayerListView.swift */,
@@ -610,6 +616,7 @@
 				BF00000B00000000000000AE /* MacadeSettingsViewModel.swift in Sources */,
 				BF00000B00000000000000AF /* MacadeSettingsView.swift in Sources */,
 				BF00000B000000000000000E /* FightcadeChatMessage.swift in Sources */,
+				BF00000B00000000000000B1 /* FightcadeChatMention.swift in Sources */,
 				BF00000B000000000000000F /* FightcadeLobbyEvent.swift in Sources */,
 				BF00000B0000000000000010 /* FightcadeLobbyPayloadParser.swift in Sources */,
 				BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */,
@@ -630,6 +637,7 @@
 				BF00000B000000000000003A /* FightcadeEmbeddedVideoStream.swift in Sources */,
 				BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */,
 				BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */,
+				BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */,
 				BF00000B000000000000003D /* PlayerListView.swift in Sources */,
 				BF00000B0000000000000042 /* PlayerRow.swift in Sources */,
 				BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */,

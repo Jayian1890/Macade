@@ -48,7 +48,7 @@ struct PlayerRow: View {
                     viewModel.challenge(user, in: channel)
                 }
 
-                ForEach(3...20, id: \.self) { rounds in
+                ForEach(FightcadeChallenge.rankedValues, id: \.self) { rounds in
                     Button("FT\(rounds)") {
                         viewModel.challenge(user, in: channel, ranked: rounds)
                     }

@@ -12,6 +12,10 @@
 #include <unistd.h>
 
 #include "macade_embedded.h"
+#include "macade_ggpo_session.h"
+#include "macade_overlay.h"
+
+extern GGPOSession* ggpo;
 
 static const uint32_t kMagic = 0x5644434d;
 static const int kHeaderSize = 4096;
@@ -22,6 +26,57 @@ static unsigned char* gVideo = NULL;
 static size_t gVideoBytes = 0;
 static uint64_t gFrameIndex = 0;
 static unsigned char gKeys[1024] = { 0 };
+
+static int HexValue(char value)
+{
+	if (value >= '0' && value <= '9') return value - '0';
+	if (value >= 'a' && value <= 'f') return value - 'a' + 10;
+	if (value >= 'A' && value <= 'F') return value - 'A' + 10;
+	return -1;
+}
+
+static bool DecodeHexText(const char* hex, char* out, int outSize)
+{
+	if (hex == NULL || out == NULL || outSize <= 0) return false;
+	int output = 0;
+	for (int input = 0; hex[input] != 0; input += 2) {
+		if (hex[input + 1] == 0 || output + 1 >= outSize) return false;
+		int high = HexValue(hex[input]);
+		int low = HexValue(hex[input + 1]);
+		if (high < 0 || low < 0) return false;
+		out[output++] = (char)((high << 4) | low);
+	}
+	out[output] = 0;
+	return true;
+}
+
+static void HandleInputMessage(const char* message)
+{
+	int pressed = 0; int scancode = 0;
+	if (sscanf(message, "key %d %d", &pressed, &scancode) == 2 && scancode >= 0 && scancode < (int)sizeof(gKeys)) {
+		gKeys[scancode] = pressed ? 1 : 0;
+		return;
+	}
+	if (strcmp(message, "chatBegin") == 0) {
+		MacadeOverlaySetChatInput("", 1);
+		return;
+	}
+	if (strcmp(message, "chatCancel") == 0) {
+		MacadeOverlaySetChatInput("", 0);
+		return;
+	}
+	char text[160];
+	if (strncmp(message, "chatUpdate ", 11) == 0 && DecodeHexText(message + 11, text, sizeof(text))) {
+		MacadeOverlaySetChatInput(text, 1);
+		return;
+	}
+	if (strncmp(message, "chatSubmit ", 11) == 0 && DecodeHexText(message + 11, text, sizeof(text))) {
+		MacadeOverlaySetChatInput("", 0);
+		if (text[0] != 0 && ggpo != NULL) {
+			ggpo_client_chat(ggpo, text);
+		}
+	}
+}
 
 static void Store32(int offset, uint32_t value)
 {
@@ -107,8 +162,7 @@ void MacadeEmbeddedPumpInput()
 		char buffer[512]; ssize_t count = recv(gInputFd, buffer, sizeof(buffer) - 1, 0);
 		if (count <= 0) return;
 		buffer[count] = 0;
-		int pressed = 0; int scancode = 0;
-		if (sscanf(buffer, "key %d %d", &pressed, &scancode) == 2 && scancode >= 0 && scancode < (int)sizeof(gKeys)) gKeys[scancode] = pressed ? 1 : 0;
+		HandleInputMessage(buffer);
 	}
 }
 
@@ -157,6 +211,11 @@ void MacadeEmbeddedPublishOverlay(const MacadeEmbeddedOverlayState* state)
 	Store32(100, state->chatInputActive ? 1 : 0);
 	StoreString(104, 160, state->systemMessage);
 	StoreString(264, 160, state->chatInput);
+	for (int i = 0; i < 7; i++) {
+		int offset = 424 + i * 384;
+		StoreString(offset, 128, state->chatLines[i].name);
+		StoreString(offset + 128, 256, state->chatLines[i].text);
+	}
 	for (int i = 0; i < 2; i++) {
 		int offset = 3112 + i * 152;
 		StoreString(offset, 128, state->players[i].name);

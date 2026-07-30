@@ -271,6 +271,9 @@ static bool __cdecl MacadeOnEvent(GGPOEvent* info)
 		case GGPOCLIENT_EVENTCODE_SPECTATOR_COUNT_CHANGED:
 			MacadeOverlaySetSpectators(event->u.spectator_count_changed.count);
 			break;
+		case GGPOCLIENT_EVENTCODE_CHAT:
+			MacadeOverlayAddChatLine(event->u.chat.username, event->u.chat.text);
+			break;
 		case GGPOCLIENT_EVENTCODE_DISCONNECTED:
 			MacadeOverlaySetSystemMessage("Disconnected!");
 			break;

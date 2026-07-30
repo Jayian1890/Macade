@@ -90,10 +90,7 @@ static bool MacadeChatHasText()
 static void MacadeChatSubmit()
 {
 	if (MacadeChatHasText() && kNetGame && ggpo != NULL) {
-		char command[kMacadeChatInputMax + 2];
-		command[0] = 'T';
-		snprintf(command + 1, sizeof(command) - 1, "%s", gMacadeChatText);
-		ggpo_client_chat(ggpo, command);
+		ggpo_client_chat(ggpo, gMacadeChatText);
 	}
 	MacadeChatCancel();
 }

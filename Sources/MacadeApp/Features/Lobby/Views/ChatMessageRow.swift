@@ -31,8 +31,7 @@ struct ChatMessageRow: View {
                         .onHover { isHoveringName = $0 }
                         .help(nameHelp)
                         .contextMenu {
-                            Button("Challenge Unranked", action: challengeFromChat)
-                                .disabled(!canChallengeFromChat)
+                            challengeMenu
                         }
 
                     if let rank = chatUser?.displayRank, message.kind != .system {
@@ -47,16 +46,30 @@ struct ChatMessageRow: View {
                     challengeControl
                 }
 
-                Text(message.body)
+                mentionText
                     .font(.system(size: 15, weight: message.kind == .system ? .semibold : .medium, design: .rounded))
-                    .foregroundStyle(message.kind == .system ? MacadeColor.inkMuted.opacity(0.86) : MacadeColor.ink)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.horizontal, mentionsCurrentUser ? 6 : 0)
+        .padding(.vertical, mentionsCurrentUser ? 4 : 0)
+        .background(mentionsCurrentUser ? MacadeColor.warning.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 10))
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var mentionText: Text {
+        let segments = FightcadeChatMention.segments(
+            in: message.body,
+            candidates: mentionCandidates,
+            currentUserAliases: currentUserAliases
+        )
+
+        return segments.reduce(Text("")) { result, segment in
+            result + styledText(for: segment)
+        }
     }
 
     @ViewBuilder
@@ -81,12 +94,38 @@ struct ChatMessageRow: View {
         }
     }
 
+    @ViewBuilder
+    private var challengeMenu: some View {
+        Menu("Challenge") {
+            Button("Unranked", action: challengeFromChat)
+
+            ForEach(FightcadeChallenge.rankedValues, id: \.self) { rounds in
+                Button("FT\(rounds)") {
+                    challengeFromChat(ranked: rounds)
+                }
+            }
+        }
+        .disabled(!canChallengeFromChat)
+    }
+
     private var canChallengeFromChat: Bool {
         message.kind == .user && viewModel.canChallenge(message.username, in: channel)
     }
 
     private var chatUser: FightcadeChannelUser? {
         viewModel.user(named: message.username, in: channel)
+    }
+
+    private var mentionCandidates: [String] {
+        viewModel.selectedChannelUsers.map(\.name) + currentUserAliases
+    }
+
+    private var currentUserAliases: [String] {
+        [viewModel.session.displayName, viewModel.session.username]
+    }
+
+    private var mentionsCurrentUser: Bool {
+        viewModel.messageMentionsCurrentUser(message)
     }
 
     private var nameHelp: String {
@@ -116,10 +155,25 @@ struct ChatMessageRow: View {
     }
 
     private func challengeFromChat() {
+        challengeFromChat(ranked: 0)
+    }
+
+    private func challengeFromChat(ranked: Int) {
         guard canChallengeFromChat else {
             return
         }
 
-        viewModel.challenge(message.username, in: channel)
+        viewModel.challenge(message.username, in: channel, ranked: ranked)
+    }
+
+    private func styledText(for segment: FightcadeChatMentionSegment) -> Text {
+        guard segment.isMention else {
+            return Text(segment.text)
+                .foregroundColor(message.kind == .system ? MacadeColor.inkMuted.opacity(0.86) : MacadeColor.ink)
+        }
+
+        return Text(segment.text)
+            .fontWeight(.black)
+            .foregroundColor(segment.isCurrentUser ? MacadeColor.warning : MacadeColor.neonCyan)
     }
 }

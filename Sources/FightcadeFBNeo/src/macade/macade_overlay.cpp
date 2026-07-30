@@ -14,6 +14,11 @@ struct OverlayPlayer {
 	int score;
 };
 
+struct OverlayChatLine {
+	char name[128];
+	char text[256];
+};
+
 struct OverlayState {
 	bool enabled;
 	int spectator;
@@ -24,9 +29,11 @@ struct OverlayState {
 	int ping;
 	int delay;
 	int systemFrames;
+	int chatFrames;
 	int chatInputActive;
 	char systemMessage[160];
 	char chatInput[160];
+	OverlayChatLine chatLines[7];
 	OverlayPlayer players[2];
 };
 
@@ -44,9 +51,14 @@ static void PublishOverlay()
 	state.ping = gOverlay.ping;
 	state.delay = gOverlay.delay;
 	state.systemFrames = gOverlay.systemFrames;
+	state.chatFrames = gOverlay.chatFrames;
 	state.chatInputActive = gOverlay.chatInputActive;
 	snprintf(state.systemMessage, sizeof(state.systemMessage), "%s", gOverlay.systemMessage);
 	snprintf(state.chatInput, sizeof(state.chatInput), "%s", gOverlay.chatInput);
+	for (int i = 0; i < 7; i++) {
+		snprintf(state.chatLines[i].name, sizeof(state.chatLines[i].name), "%s", gOverlay.chatLines[i].name);
+		snprintf(state.chatLines[i].text, sizeof(state.chatLines[i].text), "%s", gOverlay.chatLines[i].text);
+	}
 	for (int i = 0; i < 2; i++) {
 		snprintf(state.players[i].name, sizeof(state.players[i].name), "%s", gOverlay.players[i].name);
 		snprintf(state.players[i].country, sizeof(state.players[i].country), "%s", gOverlay.players[i].country);
@@ -174,11 +186,22 @@ void MacadeOverlaySetChatInput(const char* text, int active)
 	PublishOverlay();
 }
 
+void MacadeOverlayAddChatLine(const char* name, const char* text)
+{
+	if (text == NULL || text[0] == 0) return;
+	for (int i = 6; i > 0; i--) gOverlay.chatLines[i] = gOverlay.chatLines[i - 1];
+	snprintf(gOverlay.chatLines[0].name, sizeof(gOverlay.chatLines[0].name), "%s", name == NULL || name[0] == 0 ? "Player" : name);
+	snprintf(gOverlay.chatLines[0].text, sizeof(gOverlay.chatLines[0].text), "%s", text);
+	gOverlay.chatFrames = 360;
+	PublishOverlay();
+}
+
 void MacadeOverlaySetStats(double fps, int ping, int delay)
 {
 	gOverlay.fps = fps;
 	gOverlay.ping = ping;
 	gOverlay.delay = delay;
+	if (gOverlay.chatFrames > 0 && !gOverlay.chatInputActive) gOverlay.chatFrames--;
 	PublishOverlay();
 }
 

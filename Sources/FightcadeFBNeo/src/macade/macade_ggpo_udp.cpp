@@ -273,7 +273,8 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 			int payloadBytes = (bitCount + 7) / 8;
 			if (inputBytes > 0 && inputBytes <= 64 && count >= 12 + payloadBytes) {
 				if (session->lastRemoteInput.size() != (size_t)inputBytes) session->lastRemoteInput.assign(inputBytes, 0);
-				if (startFrame > 0 && session->remoteInputs.find(startFrame - 1) == session->remoteInputs.end() && startFrame != session->remoteLastFrame + 1) {
+				int expectedFrame = session->remoteLastFrame < 0 ? startFrame : session->remoteLastFrame + 1;
+				if (startFrame > expectedFrame) {
 					MacadeLog("Macade GGPO: UDP input batch missing base frame start=%d remoteLast=%d; waiting for resend\n", startFrame, session->remoteLastFrame);
 					continue;
 				}
@@ -305,8 +306,8 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 						if (index >= 0 && index < inputBytes * 8) SetInputBit(current, index, value);
 					}
 					if (malformed) break;
-					if (frame == session->remoteLastFrame + 1 + (int)decodedFrames.size()) decodedFrames.push_back(std::make_pair(frame, current));
-					else if (frame > session->remoteLastFrame + 1 + (int)decodedFrames.size()) {
+					if (frame == expectedFrame + (int)decodedFrames.size()) decodedFrames.push_back(std::make_pair(frame, current));
+					else if (frame > expectedFrame + (int)decodedFrames.size()) {
 						MacadeLog("Macade GGPO: UDP input batch gap frame=%d remoteLast=%d decoded=%zu\n", frame, session->remoteLastFrame, decodedFrames.size());
 						malformed = true;
 						break;

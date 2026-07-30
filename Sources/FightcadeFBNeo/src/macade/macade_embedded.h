@@ -9,6 +9,11 @@ struct MacadeEmbeddedOverlayPlayer {
 	int score;
 };
 
+struct MacadeEmbeddedOverlayChatLine {
+	char name[128];
+	char text[256];
+};
+
 struct MacadeEmbeddedOverlayState {
 	int enabled;
 	int spectator;
@@ -22,6 +27,7 @@ struct MacadeEmbeddedOverlayState {
 	int chatInputActive;
 	char systemMessage[160];
 	char chatInput[160];
+	MacadeEmbeddedOverlayChatLine chatLines[7];
 	MacadeEmbeddedOverlayPlayer players[2];
 };
 

@@ -116,13 +116,6 @@ static bool RecvFrom(int fd, unsigned char* buffer, int capacity, sockaddr_in* f
 	if (received <= 0) return false;
 	*count = (int)received; return true;
 }
-static void SendUsePortsToMaster(int fd, const sockaddr_in* master, const char* quark)
-{
-	char payload[192]; snprintf(payload, sizeof(payload), "useports/%s", quark);
-	sendto(fd, payload, strlen(payload), 0, (const sockaddr*)master, sizeof(*master));
-	MacadeLog("Macade GGPO: UDP master fallback sent payload=%s\n", payload);
-}
-
 static bool MasterUDP(GGPOSession* session, const char* quark, int serverport)
 {
 	sockaddr_in master;
@@ -139,7 +132,7 @@ static bool MasterUDP(GGPOSession* session, const char* quark, int serverport)
 	if (count != (int)strlen(expected) || memcmp(buffer, expected, count) != 0) return false;
 	sendto(session->udpFd, "ok", 2, 0, (sockaddr*)&master, sizeof(master));
 	MacadeLog("Macade GGPO: UDP master ok acknowledged\n");
-	if (!RecvFrom(session->udpFd, buffer, sizeof(buffer), &from, 25000, &count)) { SendUsePortsToMaster(session->udpFd, &master, quark); session->openPortFallback = true; session->hasPeer = false; return true; }
+	if (!RecvFrom(session->udpFd, buffer, sizeof(buffer), &from, 25000, &count)) { MacadeLog("Macade GGPO: UDP master peer timeout\n"); return false; }
 	if (count >= 2 && buffer[0] == '0' && buffer[1] == '.') {
 		session->peer = from;
 		session->hasPeer = true;
@@ -471,13 +464,7 @@ bool MacadeEstablishServedSession(GGPOSession* session, const char* quark, int s
 	session->udpFd = BindUDP();
 	if (session->udpFd < 0) return false;
 	if (!MasterUDP(session, quark, serverport)) return false;
-	if (session->hasPeer && !HolePunch(session, quark)) {
-		sockaddr_in master;
-		if (Resolve(kMasterHost, serverport, SOCK_DGRAM, IPPROTO_UDP, &master)) SendUsePortsToMaster(session->udpFd, &master, quark);
-		session->openPortFallback = true;
-		session->hasPeer = false;
-		MacadeLog("Macade GGPO: UDP punch failed; continuing with open-port fallback\n");
-	}
+	if (session->hasPeer && !HolePunch(session, quark)) { MacadeLog("Macade GGPO: UDP punch failed; direct path unavailable\n"); return false; }
 	session->tcpFd = ConnectTCP(serverport);
 	if (session->tcpFd < 0) { MacadeLog("Macade GGPO: TCP connect failed after UDP punch\n"); return false; }
 	StartTCP(session, quark);

@@ -145,7 +145,7 @@ private struct NativeEmulatorOverlay: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10)
                 .frame(height: 18)
-                .background(.black.opacity(0.56), in: Capsule())
+                .background(.black.opacity(0.76), in: Capsule())
                 .position(x: size.width / 2, y: topY + 14)
         }
     }
@@ -162,7 +162,7 @@ private struct NativeEmulatorOverlay: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10)
                     .frame(height: 20)
-                    .background(.black.opacity(0.58), in: Capsule())
+                    .background(.black.opacity(0.78), in: Capsule())
             }
         }
         .lineLimit(1)
@@ -177,7 +177,7 @@ private struct NativeEmulatorOverlay: View {
                 .foregroundStyle(MacadeColor.neonCyan)
                 .padding(.horizontal, 10)
                 .frame(height: 22)
-                .background(.black.opacity(0.58), in: Capsule())
+                .background(.black.opacity(0.78), in: Capsule())
                 .position(x: size.width / 2, y: max(18, size.height - 18))
         }
     }
@@ -196,7 +196,7 @@ private struct NativeEmulatorOverlay: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
             .frame(width: min(360, max(120, size.width - 16)), alignment: .leading)
-            .background(.black.opacity(0.62), in: RoundedRectangle(cornerRadius: 8))
+            .background(.black.opacity(0.82), in: RoundedRectangle(cornerRadius: 8))
             .position(
                 x: min(360, max(120, size.width - 16)) / 2 + 8,
                 y: max(20, size.height - chatHeight / 2 - 8)
@@ -270,17 +270,17 @@ private struct OverlayPlayerBox: View {
     var body: some View {
         VStack(spacing: 1) {
             Text("\(prefix) \(player.displayName)\(isLocalPlayer ? " *" : "")")
-                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .font(.system(size: 12, weight: .black, design: .monospaced))
                 .foregroundStyle(.white)
                 .lineLimit(1)
 
             Text("\(player.score)")
-                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .font(.system(size: 13, weight: .black, design: .monospaced))
                 .foregroundStyle(MacadeColor.neonCyan)
         }
-        .padding(.horizontal, 6)
-        .frame(width: width, height: 34)
-        .background(.black.opacity(0.56), in: RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal, 8)
+        .frame(width: width, height: 40)
+        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -315,6 +315,7 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     private var frameTexturePixelFormat: MTLPixelFormat = .invalid
     private var lastFrameIndex: UInt64 = 0
     private var scanlinesEnabled = false
+    private let videoUpload = EmbeddedVideoUpload()
     private var videoStream: FightcadeEmbeddedVideoStream?
 
     init() {
@@ -404,15 +405,7 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     }
 
     private func upload(frame: FightcadeEmbeddedVideoFrame) -> Bool {
-        let pixelFormat: MTLPixelFormat
-        switch frame.bytesPerPixel {
-        case 2:
-            pixelFormat = .b5g6r5Unorm
-        case 4:
-            pixelFormat = .bgra8Unorm
-        default:
-            return false
-        }
+        guard let pixelFormat = EmbeddedVideoUpload.pixelFormat(for: frame) else { return false }
 
         if frameTexture == nil || frameTextureSize.width != CGFloat(frame.width) || frameTextureSize.height != CGFloat(frame.height) || frameTexturePixelFormat != pixelFormat {
             let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: pixelFormat, width: frame.width, height: frame.height, mipmapped: false)
@@ -422,12 +415,7 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
             frameTexturePixelFormat = pixelFormat
         }
         guard let frameTexture else { return false }
-        frame.bytes.withUnsafeBytes { bytes in
-            if let baseAddress = bytes.baseAddress {
-                frameTexture.replace(region: MTLRegionMake2D(0, 0, frame.width, frame.height), mipmapLevel: 0, withBytes: baseAddress, bytesPerRow: frame.pitch)
-            }
-        }
-        return true
+        return videoUpload.upload(frame: frame, to: frameTexture)
     }
 
     private static func viewport(aspectRatio: Double, drawableSize: CGSize) -> MTLViewport {

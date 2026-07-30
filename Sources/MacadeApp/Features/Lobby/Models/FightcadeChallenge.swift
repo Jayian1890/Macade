@@ -1,6 +1,8 @@
 import Foundation
 
 struct FightcadeChallenge: Identifiable, Equatable, Sendable {
+    static let rankedValues = [2, 3, 5, 10, 20]
+
     let username: String
     let channelName: String
     let challengeID: Int

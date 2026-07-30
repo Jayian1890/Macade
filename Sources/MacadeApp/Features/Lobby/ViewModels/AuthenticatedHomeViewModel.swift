@@ -283,8 +283,9 @@ final class AuthenticatedHomeViewModel {
         Task { await lobbyService.disconnect() }
     }
 
-    func join(_ channel: FightcadeChannel) {
-        guard !joinedChannelIDs.contains(channel.id), !joiningChannelIDs.contains(channel.id) else {
+    func join(_ channel: FightcadeChannel, forcingServerJoin: Bool = false) {
+        guard (forcingServerJoin || !joinedChannelIDs.contains(channel.id)),
+              !joiningChannelIDs.contains(channel.id) else {
             return
         }
 
@@ -335,8 +336,10 @@ final class AuthenticatedHomeViewModel {
         case .joinedChannel(let channelName):
             joinedChannelIDs.insert(channelName)
             saveJoinedChannels()
-            selectedChannelID = channelName
-            isShowingChannelBrowser = false
+            if selectedChannelID == nil || isShowingChannelBrowser {
+                selectedChannelID = channelName
+                isShowingChannelBrowser = false
+            }
         case .leftChannel(let channelName):
             joinedChannelIDs.remove(channelName)
             saveJoinedChannels()

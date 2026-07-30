@@ -1,5 +1,8 @@
 import Foundation
 
+import AppKit
+import UserNotifications
+
 extension AuthenticatedHomeViewModel {
     func sendChat() {
         guard let channel = selectedChannel else {
@@ -56,7 +59,29 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
-        append(normalizedChatMessage(message))
+        let normalized = normalizedChatMessage(message)
+        append(normalized)
+
+        if normalized.kind == .user,
+           !isCurrentUser(normalized.username),
+           mentionsCurrentUser(normalized.body) {
+            FightcadeMentionNotifier.notify(message: normalized)
+        }
+    }
+
+    func chatMentionSuggestions(in channel: FightcadeChannel) -> [FightcadeChannelUser] {
+        FightcadeChatMention.suggestions(
+            in: chatDraft,
+            users: usersByChannel[channel.name] ?? []
+        )
+    }
+
+    func completeChatMention(_ username: String) {
+        chatDraft = FightcadeChatMention.complete(chatDraft, with: username)
+    }
+
+    func messageMentionsCurrentUser(_ message: FightcadeChatMessage) -> Bool {
+        message.kind == .user && mentionsCurrentUser(message.body)
     }
 
     private func append(_ message: FightcadeChatMessage) {
@@ -100,5 +125,52 @@ extension AuthenticatedHomeViewModel {
     private func isCurrentUser(_ username: String) -> Bool {
         username.compare(session.displayName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
             || username.compare(session.username, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+    }
+
+    private func mentionsCurrentUser(_ body: String) -> Bool {
+        FightcadeChatMention.containsMention(in: body, candidates: [session.displayName, session.username])
+    }
+}
+
+private enum FightcadeMentionNotifier {
+    static func notify(message: FightcadeChatMessage) {
+        if NSSound(named: "Ping")?.play() != true {
+            NSSound.beep()
+        }
+
+        Task {
+            let center = UNUserNotificationCenter.current()
+            let settings = await center.notificationSettings()
+            let isAuthorized: Bool
+
+            switch settings.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                isAuthorized = true
+            case .notDetermined:
+                isAuthorized = (try? await center.requestAuthorization(options: [.alert, .sound])) == true
+            case .denied:
+                isAuthorized = false
+            @unknown default:
+                isAuthorized = false
+            }
+
+            guard isAuthorized else {
+                return
+            }
+
+            let content = UNMutableNotificationContent()
+            content.title = "Mention from \(message.username)"
+            content.subtitle = message.channelName
+            content.body = message.body
+            content.sound = .default
+
+            let request = UNNotificationRequest(
+                identifier: "macade-mention-\(message.id.uuidString)",
+                content: content,
+                trigger: nil
+            )
+
+            try? await center.add(request)
+        }
     }
 }
