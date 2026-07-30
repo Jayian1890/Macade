@@ -21,6 +21,30 @@ static long long MacadeNowMilliseconds()
 	return (long long)tv.tv_sec * 1000LL + (long long)tv.tv_usec / 1000LL;
 }
 
+static bool MacadeStreamBufferReady(GGPOSession* session)
+{
+	static const size_t kStreamResumeFrames = 18;
+	static const size_t kStreamMinimumFrames = 3;
+	if (session == NULL) return false;
+	if (session->streamInputs.empty()) session->streamBuffering = true;
+	if (session->streamBuffering) {
+		MacadePollTCP(session, 16);
+		size_t queued = session->streamInputs.size();
+		if (queued < kStreamResumeFrames) {
+			if (session->streamBufferLogCount < 8 || session->streamBufferLogCount % 120 == 0) {
+				MacadeLog("Macade GGPO: stream buffering queued=%zu target=%zu read=%d received=%d\n", queued, kStreamResumeFrames, session->streamFrameReadCount, session->streamReceiveFrame);
+			}
+			session->streamBufferLogCount++;
+			return false;
+		}
+		session->streamBuffering = false;
+		MacadeLog("Macade GGPO: stream buffer resumed queued=%zu read=%d received=%d\n", queued, session->streamFrameReadCount, session->streamReceiveFrame);
+		return true;
+	}
+	if (session->streamInputs.size() < kStreamMinimumFrames) MacadePollTCP(session, 0);
+	return !session->streamInputs.empty();
+}
+
 void MacadeLog(const char* format, ...)
 {
 	va_list args;
@@ -323,10 +347,7 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 	if (session->isSpectator) {
 		if (!session->streamInitialStateLoaded) return false;
 		MacadePollTCP(session, 0);
-		if (session->streamInputs.empty()) {
-			MacadePollTCP(session, 16);
-			if (session->streamInputs.empty()) return false;
-		}
+		if (!MacadeStreamBufferReady(session)) return false;
 		int totalSize = size * players;
 		int streamPlayers = players < 2 ? players : 2;
 		int streamSize = size * streamPlayers;
