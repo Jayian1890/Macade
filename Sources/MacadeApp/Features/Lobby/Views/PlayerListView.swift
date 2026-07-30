@@ -7,8 +7,10 @@ struct PlayerListView: View {
     @State private var searchText = ""
     @State private var selectedFilter: PlayerListFilter?
     @AppStorage("playerListSort") private var selectedSortRawValue = PlayerListSort.smart.rawValue
+    @AppStorage("playerListSidebarWidth") private var playerListWidth = 300.0
     @State private var detailUserID: FightcadeChannelUser.ID?
     @State private var isDetailPaneMinimized = false
+    @State private var resizeStartWidth: Double?
 
     var body: some View {
         let state = makeListState()
@@ -34,15 +36,21 @@ struct PlayerListView: View {
 
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(state.visibleRows) { row in
-                        PlayerRow(
-                            channel: channel,
-                            row: row,
-                            viewModel: viewModel,
-                            isFocused: state.detailRow?.id == row.id
-                        ) {
-                            if activeMatchOpponentUsername == nil {
-                                detailUserID = row.id
+                    if selectedFilter == .watchable {
+                        ForEach(watchMatches(from: state.rows)) { match in
+                            WatchMatchRow(match: match, channel: channel, viewModel: viewModel)
+                        }
+                    } else {
+                        ForEach(state.visibleRows) { row in
+                            PlayerRow(
+                                channel: channel,
+                                row: row,
+                                viewModel: viewModel,
+                                isFocused: state.detailRow?.id == row.id
+                            ) {
+                                if activeMatchOpponentUsername == nil {
+                                    detailUserID = row.id
+                                }
                             }
                         }
                     }
@@ -63,15 +71,37 @@ struct PlayerListView: View {
                 .padding(.bottom, MacadeSpacing.small)
             }
         }
-        .frame(width: 300)
+        .frame(width: playerListWidth)
         .frame(maxHeight: .infinity)
         .background(MacadeColor.sidebar.opacity(0.54))
         .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(MacadeColor.divider)
-                .frame(width: 1)
+            playerListResizeHandle
         }
         .animation(.smooth(duration: 0.16), value: isDetailPaneMinimized)
+    }
+
+    private var playerListResizeHandle: some View {
+        Rectangle()
+            .fill(.clear)
+            .frame(width: 8)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let base = resizeStartWidth ?? playerListWidth
+                        resizeStartWidth = base
+                        playerListWidth = min(max(base - value.translation.width, 240), 460)
+                    }
+                    .onEnded { _ in
+                        resizeStartWidth = nil
+                    }
+            )
+            .overlay(alignment: .leading) {
+                Rectangle()
+                    .fill(MacadeColor.divider)
+                    .frame(width: 1)
+            }
+            .help("Resize player list")
     }
 
     private func makeListState() -> PlayerListState {
@@ -136,6 +166,26 @@ struct PlayerListView: View {
 
     private func filterBackground(for filter: PlayerListFilter) -> Color {
         selectedFilter == filter ? MacadeColor.neonCyan : MacadeColor.panel.opacity(0.72)
+    }
+
+    private func watchMatches(from rows: [PlayerListRowState]) -> [WatchMatchRowState] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let watchableRows = rows.filter(\.isWatchable)
+        let grouped = Dictionary(grouping: watchableRows) { row in
+            row.user.stream?.quarkID ?? row.user.id
+        }
+
+        return grouped.values.compactMap { group in
+            let sortedRows = group.sorted(by: sortRows)
+            guard query.isEmpty || sortedRows.contains(where: { $0.user.name.localizedCaseInsensitiveContains(query) }) else {
+                return nil
+            }
+
+            return WatchMatchRowState(rows: sortedRows)
+        }
+        .sorted { lhs, rhs in
+            lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
     }
 
     private func sortRows(_ lhs: PlayerListRowState, _ rhs: PlayerListRowState) -> Bool {
@@ -311,7 +361,7 @@ private struct PlayerListState {
     let detailRow: PlayerListRowState?
 }
 
-private struct PlayerListRowState: Identifiable, Equatable {
+struct PlayerListRowState: Identifiable, Equatable {
     var id: FightcadeChannelUser.ID { user.id }
 
     let user: FightcadeChannelUser
@@ -362,107 +412,5 @@ private enum PlayerListFilter: String, CaseIterable, Identifiable {
         case .away:
             row.user.isAway
         }
-    }
-}
-
-private struct PlayerRow: View {
-    let channel: FightcadeChannel
-    let row: PlayerListRowState
-    @Bindable var viewModel: AuthenticatedHomeViewModel
-    let isFocused: Bool
-    let onSelect: () -> Void
-
-    private var user: FightcadeChannelUser { row.user }
-
-    var body: some View {
-        HStack(spacing: MacadeSpacing.small) {
-            Text(user.countryFlag)
-                .font(.system(size: 13))
-                .frame(width: 22)
-
-            Text(user.name)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(nameColor)
-                .lineLimit(1)
-                .layoutPriority(1)
-
-            if row.isWatchable {
-                Image(systemName: "eye.fill")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundStyle(MacadeColor.neonCyan)
-                    .help("Watch match")
-            }
-
-            Spacer()
-
-            HStack(spacing: 4) {
-                iconPill(statusSymbolName, accent: user.statusAccent, help: statusHelpText)
-                iconPill(user.connectionSymbolName, accent: user.connectionAccent, help: user.connectionDetail)
-            }
-        }
-        .padding(.horizontal, MacadeSpacing.small)
-        .frame(height: 40)
-        .background(isFocused ? MacadeColor.panel.opacity(0.82) : .clear, in: RoundedRectangle(cornerRadius: 12))
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onSelect)
-        .onTapGesture(count: 2) {
-            if row.isWatchable {
-                viewModel.spectate(user, in: channel)
-            } else if row.isChallengeable {
-                viewModel.challenge(user, in: channel)
-            }
-        }
-        .contextMenu {
-            Button("Watch Match") {
-                viewModel.spectate(user, in: channel)
-            }
-            .disabled(!row.isWatchable)
-
-            Menu("Challenge") {
-                Button("Unranked") {
-                    viewModel.challenge(user, in: channel)
-                }
-
-                ForEach(3...20, id: \.self) { rounds in
-                    Button("FT\(rounds)") {
-                        viewModel.challenge(user, in: channel, ranked: rounds)
-                    }
-                }
-            }
-            .disabled(!row.isChallengeable)
-        }
-    }
-
-    private var nameColor: Color {
-        if row.isChallenging {
-            return MacadeColor.neonCyan
-        }
-
-        if row.isCurrentUser {
-            return MacadeColor.warning
-        }
-
-        if user.isPlaying || user.isAway {
-            return MacadeColor.inkMuted.opacity(0.58)
-        }
-
-        return row.isChallengeable || isFocused ? MacadeColor.ink : MacadeColor.inkMuted
-    }
-
-    private var statusSymbolName: String {
-        row.isCurrentUser ? "person.crop.circle.fill" : user.statusSymbolName
-    }
-
-    private var statusHelpText: String {
-        row.isCurrentUser ? "You" : user.listStatusText.capitalized
-    }
-
-    private func iconPill(_ symbolName: String, accent: Color, help: String) -> some View {
-        Image(systemName: symbolName)
-            .font(.system(size: 11, weight: .black))
-            .foregroundStyle(accent)
-            .frame(width: 20, height: 17)
-            .background(accent.opacity(0.12), in: Capsule())
-            .help(help)
     }
 }

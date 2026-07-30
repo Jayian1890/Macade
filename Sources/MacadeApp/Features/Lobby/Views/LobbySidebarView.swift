@@ -8,6 +8,7 @@ struct LobbySidebarView: View {
         VStack(alignment: .leading, spacing: MacadeSpacing.medium) {
             sidebarHeader
             filters
+            ChallengeSidebarSection(viewModel: viewModel)
             joinedSection
             Spacer(minLength: MacadeSpacing.medium)
             statusFooter
@@ -15,7 +16,7 @@ struct LobbySidebarView: View {
         }
         .padding(.horizontal, MacadeSpacing.small)
         .padding(.vertical, MacadeSpacing.medium)
-        .frame(width: 184)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MacadeColor.sidebar.opacity(0.72))
         .overlay(alignment: .trailing) {
             Rectangle()

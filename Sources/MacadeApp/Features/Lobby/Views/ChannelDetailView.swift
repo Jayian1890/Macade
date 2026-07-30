@@ -8,8 +8,6 @@ struct ChannelDetailView: View {
             VStack(spacing: 0) {
                 ChannelHeader(channel: channel, viewModel: viewModel)
 
-                ChallengeBanner(channel: channel, viewModel: viewModel)
-
                 ChannelErrorBanner(viewModel: viewModel)
 
                 HStack(spacing: 0) {

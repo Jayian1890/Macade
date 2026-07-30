@@ -1,200 +1,176 @@
 import SwiftUI
 
-struct ChallengeBanner: View {
-    let channel: FightcadeChannel
+struct ChallengeSidebarSection: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
 
     var body: some View {
-        if !incomingChallenges.isEmpty {
-            incomingStrip
-        } else if !outgoingChallenges.isEmpty {
-            outgoingStrip
+        if !viewModel.incomingChallenges.isEmpty || !viewModel.outgoingChallenges.isEmpty {
+            VStack(alignment: .leading, spacing: MacadeSpacing.small) {
+                header
+
+                if !viewModel.incomingChallenges.isEmpty {
+                    challengeGroup(
+                        title: "Incoming",
+                        icon: "bolt.horizontal.fill",
+                        accent: MacadeColor.warning,
+                        challenges: viewModel.incomingChallenges,
+                        mode: .incoming
+                    )
+                }
+
+                if !viewModel.outgoingChallenges.isEmpty {
+                    challengeGroup(
+                        title: "Sent",
+                        icon: "paperplane.fill",
+                        accent: MacadeColor.neonCyan,
+                        challenges: viewModel.outgoingChallenges,
+                        mode: .outgoing
+                    )
+                }
+            }
+            .padding(MacadeSpacing.xSmall)
+            .background(MacadeColor.panel.opacity(0.55), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(MacadeColor.warning.opacity(0.25), lineWidth: 1)
+            )
         }
     }
 
-    private var incomingChallenges: [FightcadeChallenge] {
-        viewModel.incomingChallenges.filter { $0.channelName == channel.name }
+    private var header: some View {
+        HStack(spacing: MacadeSpacing.xSmall) {
+            Image(systemName: "bolt.circle.fill")
+                .foregroundStyle(MacadeColor.warning)
+
+            Text("Challenges")
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(MacadeColor.ink)
+
+            Spacer()
+
+            Text("\(viewModel.incomingChallenges.count + viewModel.outgoingChallenges.count)")
+                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .foregroundStyle(MacadeColor.warning)
+        }
+        .padding(.horizontal, 2)
     }
 
-    private var outgoingChallenges: [FightcadeChallenge] {
-        viewModel.outgoingChallenges.filter { $0.channelName == channel.name }
-    }
+    private func challengeGroup(
+        title: String,
+        icon: String,
+        accent: Color,
+        challenges: [FightcadeChallenge],
+        mode: ChallengeSidebarCard.Mode
+    ) -> some View {
+        VStack(alignment: .leading, spacing: MacadeSpacing.xSmall) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                Text(title.uppercased())
+                Spacer()
+                Text("\(challenges.count)")
+            }
+            .font(.system(size: 9, weight: .black, design: .monospaced))
+            .foregroundStyle(accent)
+            .padding(.horizontal, 2)
 
-    private var incomingStrip: some View {
-        HStack(spacing: MacadeSpacing.small) {
-            ChallengeStripBadge(
-                icon: "bolt.horizontal.fill",
-                value: "\(incomingChallenges.count)",
-                accent: MacadeColor.warning
-            )
-            .help("Incoming challenges")
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: MacadeSpacing.xSmall) {
-                    ForEach(incomingChallenges) { challenge in
-                        ChallengeCard(
-                            challenge: challenge,
-                            user: viewModel.user(for: challenge),
-                            accent: MacadeColor.warning,
-                            primaryIcon: "checkmark",
-                            primaryHelp: "Accept",
-                            secondaryIcon: "xmark",
-                            secondaryHelp: "Reject",
-                            primaryAction: { viewModel.acceptIncomingChallenge(challenge) },
-                            secondaryAction: { viewModel.rejectIncomingChallenge(challenge) },
-                            isBusy: viewModel.isSendingChallenge
-                        )
-                    }
-                }
-                .padding(.trailing, MacadeSpacing.medium)
+            ForEach(challenges) { challenge in
+                ChallengeSidebarCard(
+                    challenge: challenge,
+                    user: viewModel.user(for: challenge),
+                    accent: accent,
+                    mode: mode,
+                    isBusy: viewModel.isSendingChallenge,
+                    openAction: { viewModel.openChallengeChannel(challenge) },
+                    acceptAction: { viewModel.acceptIncomingChallenge(challenge) },
+                    rejectAction: { viewModel.rejectIncomingChallenge(challenge) },
+                    cancelAction: { viewModel.cancelOutgoingChallenge(challenge) }
+                )
             }
         }
-        .padding(.leading, MacadeSpacing.medium)
-        .frame(height: 58)
-        .background(stripBackground(accent: MacadeColor.warning))
-        .overlay(alignment: .bottom) { divider }
-    }
-
-    private var outgoingStrip: some View {
-        HStack(spacing: MacadeSpacing.small) {
-            ChallengeStripBadge(
-                icon: "paperplane.fill",
-                value: "\(outgoingChallenges.count)",
-                accent: MacadeColor.neonCyan
-            )
-            .help("Sent challenges")
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: MacadeSpacing.xSmall) {
-                    ForEach(outgoingChallenges) { challenge in
-                        ChallengeCard(
-                            challenge: challenge,
-                            user: viewModel.user(for: challenge),
-                            accent: MacadeColor.neonCyan,
-                            primaryIcon: "xmark",
-                            primaryHelp: "Cancel",
-                            secondaryIcon: nil,
-                            secondaryHelp: nil,
-                            primaryAction: { viewModel.cancelOutgoingChallenge(challenge) },
-                            secondaryAction: nil,
-                            isBusy: viewModel.isSendingChallenge
-                        )
-                    }
-                }
-                .padding(.trailing, MacadeSpacing.medium)
-            }
-        }
-        .padding(.leading, MacadeSpacing.medium)
-        .frame(height: 58)
-        .background(stripBackground(accent: MacadeColor.neonCyan))
-        .overlay(alignment: .bottom) { divider }
-    }
-
-    private func stripBackground(accent: Color) -> some View {
-        LinearGradient(
-            colors: [accent.opacity(0.14), MacadeColor.panel.opacity(0.38), .clear],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-    }
-
-    private var divider: some View {
-        Rectangle()
-            .fill(MacadeColor.divider)
-            .frame(height: 1)
     }
 }
 
-private struct ChallengeStripBadge: View {
-    let icon: String
-    let value: String
-    let accent: Color
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .black))
-            Text(value)
-                .font(.system(size: 11, weight: .black, design: .monospaced))
-        }
-        .foregroundStyle(accent)
-        .frame(width: 44, height: 30)
-        .background(accent.opacity(0.13), in: Capsule())
-        .overlay(
-            Capsule()
-                .stroke(accent.opacity(0.45), lineWidth: 1)
-        )
+private struct ChallengeSidebarCard: View {
+    enum Mode {
+        case incoming
+        case outgoing
     }
-}
 
-private struct ChallengeCard: View {
     let challenge: FightcadeChallenge
     let user: FightcadeChannelUser?
     let accent: Color
-    let primaryIcon: String
-    let primaryHelp: String
-    let secondaryIcon: String?
-    let secondaryHelp: String?
-    let primaryAction: () -> Void
-    let secondaryAction: (() -> Void)?
+    let mode: Mode
     let isBusy: Bool
+    let openAction: () -> Void
+    let acceptAction: () -> Void
+    let rejectAction: () -> Void
+    let cancelAction: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: MacadeSpacing.xSmall) {
-                Text(challenge.username)
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundStyle(MacadeColor.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                    .layoutPriority(1)
-                    .help(challenge.username)
+        VStack(alignment: .leading, spacing: 6) {
+            Button(action: openAction) {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(user?.countryFlag ?? "")
+                            .font(.system(size: 11))
 
-                Text(challenge.ranked == 0 ? "U" : "R")
-                    .font(.system(size: 9, weight: .black, design: .monospaced))
-                    .foregroundStyle(accent)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(accent.opacity(0.14), in: Capsule())
-                    .help(challenge.ranked == 0 ? "Unranked" : "Ranked")
+                        Text(challenge.username)
+                            .font(.system(size: 12, weight: .black, design: .rounded))
+                            .foregroundStyle(MacadeColor.ink)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+
+                        Text(matchType)
+                            .font(.system(size: 9, weight: .black, design: .monospaced))
+                            .foregroundStyle(accent)
+                    }
+
+                    HStack(spacing: 5) {
+                        Text(challenge.channelName)
+                            .lineLimit(1)
+                            .help(challenge.channelName)
+
+                        Text("-")
+
+                        Text(user?.displayRank ?? "--")
+                    }
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(MacadeColor.inkMuted)
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
-            HStack(spacing: MacadeSpacing.xSmall) {
-                stat(icon: "rosette", value: user?.displayRank ?? "--", help: "Rank")
+            HStack(spacing: 6) {
                 PingQualityIcon(user?.ping, size: 9)
 
-                Spacer(minLength: MacadeSpacing.small)
+                Spacer(minLength: 0)
 
-                if let secondaryIcon, let secondaryHelp, let secondaryAction {
-                    iconButton(secondaryIcon, help: secondaryHelp, action: secondaryAction)
-                }
-
-                iconButton(primaryIcon, help: primaryHelp, action: primaryAction, prominent: true)
+                actionButtons
             }
         }
-        .padding(.horizontal, MacadeSpacing.xSmall)
-        .frame(width: cardWidth, height: 44)
-        .background(MacadeColor.panel.opacity(0.78), in: RoundedRectangle(cornerRadius: 10))
+        .padding(MacadeSpacing.xSmall)
+        .background(MacadeColor.sidebar.opacity(0.8), in: RoundedRectangle(cornerRadius: 10))
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .stroke(accent.opacity(0.38), lineWidth: 1)
         )
     }
 
-    private var cardWidth: CGFloat {
-        let nameWidth = CGFloat(challenge.username.count) * 8.5
-        return min(340, max(232, nameWidth + 92))
+    @ViewBuilder
+    private var actionButtons: some View {
+        switch mode {
+        case .incoming:
+            iconButton("xmark", help: "Reject", action: rejectAction)
+            iconButton("checkmark", help: "Accept", action: acceptAction, prominent: true)
+        case .outgoing:
+            iconButton("xmark", help: "Cancel", action: cancelAction, prominent: true)
+        }
     }
 
-    private func stat(icon: String, value: String, help: String) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.system(size: 9, weight: .bold))
-            Text(value)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-        }
-        .foregroundStyle(MacadeColor.inkMuted)
-        .help(help)
+    private var matchType: String {
+        challenge.ranked == 0 ? "UNR" : "FT\(challenge.ranked)"
     }
 
     private func iconButton(

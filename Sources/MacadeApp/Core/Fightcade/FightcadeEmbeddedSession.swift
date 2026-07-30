@@ -36,6 +36,7 @@ final class FightcadeEmbeddedSession {
     private var forceKillTask: Task<Void, Never>?
     var status: Status = .launching
     var overlayState: FightcadeEmbeddedOverlayState?
+    var videoAspectRatio = 4.0 / 3.0
 
     init(
         id: UUID,

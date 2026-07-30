@@ -13,15 +13,34 @@ struct EmbeddedEmulatorPanel: View {
         VStack(spacing: 0) {
             sessionBar
 
-            ZStack {
-                FightcadeEmbeddedVideoView(session: session)
+            GeometryReader { proxy in
+                let frame = aspectFrame(in: proxy.size)
+                ZStack {
+                    Color.black
 
-                if let overlayState = session.overlayState, overlayState.isEnabled {
-                    NativeEmulatorOverlay(state: overlayState)
+                    ZStack {
+                        FightcadeEmbeddedVideoView(session: session)
+
+                        if let overlayState = session.overlayState, overlayState.isEnabled {
+                            NativeEmulatorOverlay(state: overlayState)
+                        }
+                    }
+                    .frame(width: frame.width, height: frame.height)
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
             }
         }
         .background(.black)
+    }
+
+    private func aspectFrame(in size: CGSize) -> CGSize {
+        let aspect = CGFloat(max(session.videoAspectRatio, 0.1))
+        guard size.width > 0, size.height > 0 else { return size }
+        if size.width / size.height > aspect {
+            return CGSize(width: size.height * aspect, height: size.height)
+        }
+
+        return CGSize(width: size.width, height: size.width / aspect)
     }
 
     private var sessionBar: some View {
@@ -370,7 +389,7 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         }
 
         var scanlines = scanlinesEnabled ? UInt32(1) : UInt32(0)
-        encoder.setViewport(Self.viewport(for: frame, drawableSize: drawableSize))
+        encoder.setViewport(Self.viewport(aspectRatio: session?.videoAspectRatio ?? 4.0 / 3.0, drawableSize: drawableSize))
         encoder.setRenderPipelineState(pipelineState)
         encoder.setFragmentTexture(frameTexture, index: 0)
         encoder.setFragmentBytes(&scanlines, length: MemoryLayout<UInt32>.size, index: 0)
@@ -411,8 +430,8 @@ private final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         return true
     }
 
-    private static func viewport(for frame: FightcadeEmbeddedVideoFrame, drawableSize: CGSize) -> MTLViewport {
-        let sourceAspect = Double(frame.width) / Double(frame.height)
+    private static func viewport(aspectRatio: Double, drawableSize: CGSize) -> MTLViewport {
+        let sourceAspect = max(aspectRatio, 0.1)
         let drawableAspect = Double(drawableSize.width) / Double(drawableSize.height)
         let width: Double
         let height: Double

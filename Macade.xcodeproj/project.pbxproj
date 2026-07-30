@@ -84,6 +84,8 @@
 		BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */; };
 		BF00000B000000000000003D /* PlayerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003D /* PlayerListView.swift */; };
 		BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003E /* PlayerDetailPane.swift */; };
+		BF00000B0000000000000042 /* PlayerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000042 /* PlayerRow.swift */; };
+		BF00000B0000000000000043 /* WatchMatchRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000043 /* WatchMatchRow.swift */; };
 		BF00000B000000000000003F /* EmbeddedChatInputController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003F /* EmbeddedChatInputController.swift */; };
 		BF00000B0000000000000040 /* SDLScancodeMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000040 /* SDLScancodeMapper.swift */; };
 		BF00000B0000000000000041 /* EmbeddedInputEventRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */; };
@@ -183,6 +185,8 @@
 		BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedEmulatorPanel.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003D /* PlayerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerListView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003E /* PlayerDetailPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerDetailPane.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000042 /* PlayerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRow.swift; sourceTree = "<group>"; };
+		BF00000C0000000000000043 /* WatchMatchRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMatchRow.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003F /* EmbeddedChatInputController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedChatInputController.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000040 /* SDLScancodeMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDLScancodeMapper.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedInputEventRouter.swift; sourceTree = "<group>"; };
@@ -456,8 +460,10 @@
 				BF00000C0000000000000040 /* SDLScancodeMapper.swift */,
 				BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */,
 				BF00000C000000000000003D /* PlayerListView.swift */,
+				BF00000C0000000000000042 /* PlayerRow.swift */,
 				BF00000C000000000000003E /* PlayerDetailPane.swift */,
 				BF00000C0000000000000031 /* PingQualityIcon.swift */,
+				BF00000C0000000000000043 /* WatchMatchRow.swift */,
 				BF00000C000000000000000D /* ChannelBrowserView.swift */,
 				BF00000C0000000000000026 /* FBNeoSettingsView.swift */,
 			);
@@ -625,7 +631,9 @@
 				BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */,
 				BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */,
 				BF00000B000000000000003D /* PlayerListView.swift in Sources */,
+				BF00000B0000000000000042 /* PlayerRow.swift in Sources */,
 				BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */,
+				BF00000B0000000000000043 /* WatchMatchRow.swift in Sources */,
 				BF00000B000000000000003F /* EmbeddedChatInputController.swift in Sources */,
 				BF00000B0000000000000040 /* SDLScancodeMapper.swift in Sources */,
 				BF00000B0000000000000041 /* EmbeddedInputEventRouter.swift in Sources */,
