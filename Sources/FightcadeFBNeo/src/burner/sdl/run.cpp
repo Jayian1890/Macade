@@ -38,6 +38,7 @@ extern SDL_Renderer* sdlRenderer;
 extern void ingame_gui_start(SDL_Renderer* renderer);
 #endif
 extern int kNetGame;
+extern int kNetLua;
 extern int kNetSpectator;
 extern void MacadeQuarkRunIdle(int ms);
 extern bool MacadeQuarkIncrementFrame();
@@ -350,6 +351,10 @@ static int RunFrame(int bDraw, int bPause)
 		nFramesEmulated++;
 		nCurrentFrame++;
 		InputMake(true);
+		if (kNetLua) {
+			CallRegisteredLuaFunctions(LUACALL_BEFOREEMULATION);
+			if (FBA_LuaUsingJoypad()) FBA_LuaReadJoypad();
+		}
 		if (macadeNetplayActive) {
 			if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0) {
 				printf("Macade diagnostic: RunFrame=%d before-net bDraw=%d pause=%d emulated=%u rendered=%u\n", macadeRunFrameCount, bDraw, bPause, nFramesEmulated, nFramesRendered);
@@ -403,6 +408,10 @@ static int RunFrame(int bDraw, int bPause)
 	}
 	if (!bPause && macadeNetplayActive) {
 		MacadeDetectorUpdate();
+	}
+	if (!bPause && kNetLua) {
+		FBA_LuaFrameBoundary();
+		CallRegisteredLuaFunctions(LUACALL_AFTEREMULATION);
 	}
 	if (commitEmbeddedSpectatorAudio) MacadeSDLSoundCommitFrame();
 	macadeRunFrameCount++;

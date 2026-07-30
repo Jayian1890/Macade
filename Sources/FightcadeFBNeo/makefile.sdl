@@ -124,6 +124,7 @@ alldir	= burn \
 		cpu/z80 \
 		dep/kaillera/client \
 		dep/libs/lib7z \
+		dep/libs/lua \
 		dep/libs/libpng \
 		dep/libs/zlib \
 		dep/mingw/include \
@@ -219,8 +220,9 @@ depobj	+= \
 		bzip.o config.o drv.o inpdipsw.o main.o macade_detector.o macade_embedded.o macade_exit_diagnostics.o macade_ggpo_chat.o macade_ggpo_client.o macade_ggpo_direct.o macade_ggpo_handshake.o macade_ggpo_matchinfo.o macade_ggpo_replay.o macade_ggpo_stream.o macade_ggpo_udp.o macade_netplay_loop.o macade_network_input.o macade_overlay.o macade_quark.o macade_sdl_game.o media.o replay.o run.o stated.o \
 		stringset.o ips_manager.o support_paths.o scrn.o \
 		\
-		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o luaengine_stub.o \
+		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o luaengine.o luasav.o macade_lua_gd.o \
 		misc.o sshot.o state.o statec.o zipfn.o \
+		lapi.o lauxlib.o lbaselib.o lcode.o ldblib.o ldebug.o ldo.o ldump.o lfunc.o lgc.o linit.o liolib.o llex.o lmathlib.o lmem.o loadlib.o lobject.o lopcodes.o loslib.o lparser.o lstate.o lstring.o lstrlib.o ltable.o ltablib.o ltm.o lundump.o lvm.o lzio.o \
 		\
 		aud_sdl.o input_sdl2.o inp_sdl2.o sdl2_gui_common.o sdl2_gui_ingame.o sdl2_gui_stub.o sdl2_inprint.o vid_sdl2.o vid_sdl2opengl.o \
 		\
@@ -621,6 +623,10 @@ endif
 #
 #	Generic rules for C/C++ files
 #
+
+$(objdir)dep/libs/lua/%.o: $(srcdir)dep/libs/lua/%.c
+	@echo Compiling $<...
+	@$(CC) $(CFLAGS) -Wno-unused -Wno-conversion -Wno-missing-prototypes -c $< -o $@
 
 ifeq ($(MAKELEVEL),0)
 

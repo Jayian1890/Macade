@@ -606,6 +606,8 @@ static int Paint(int bValidate)
 	void* pixels;
 	int   pitch;
 
+	FBA_LuaGui(pVidImage, nVidImageWidth, nVidImageHeight, nVidImageBPP, nVidImagePitch);
+
 	if (MacadeEmbeddedEnabled()) {
 		MacadeOverlayRender(NULL);
 		MacadeEmbeddedPublishFrame(pVidImage, nVidImageWidth, nVidImageHeight, nVidImagePitch, nVidImageBPP, nVidImageDepth == 16 ? 1 : 0);

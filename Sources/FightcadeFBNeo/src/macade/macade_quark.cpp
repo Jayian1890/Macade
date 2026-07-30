@@ -22,6 +22,7 @@ char kNetQuarkId[128] = { 0 };
 int kNetLua = 0;
 static char gMacadeGame[64] = { 0 };
 static bool gMacadeLocalTraining = false;
+static bool gMacadeTrainingLuaLoaded = false;
 static bool gMacadeGameplayTrackingStarted = false;
 static int gMacadeSessionLua = 0;
 int iRanked = 0;
@@ -258,6 +259,15 @@ static void MacadeStartGameplayTracking()
 	MacadeDetectorLoad(gMacadeGame, false, iSeed);
 }
 
+static void MacadeLoadTrainingLuaIfNeeded()
+{
+	if (!gMacadeLocalTraining || gMacadeTrainingLuaLoaded) return;
+	gMacadeTrainingLuaLoaded = true;
+	int result = FBA_LoadLuaCode("fbneo-training-mode/fbneo-training-mode.lua");
+	printf("Macade quark: Fightcade training Lua load result=%d\n", result);
+	fflush(stdout);
+}
+
 static bool __cdecl MacadeOnEvent(GGPOEvent* info)
 {
 	if (info != NULL && ggpo_is_client_eventcode(info->code)) {
@@ -325,6 +335,7 @@ int MacadeQuarkHandleCommand(const char* command)
 	kNetSpectator = parsed.spectator ? 1 : 0;
 	bool localTraining = strcmp(parsed.mode, "traininglocal") == 0;
 	gMacadeLocalTraining = localTraining;
+	gMacadeTrainingLuaLoaded = false;
 	kNetLua = strcmp(parsed.mode, "served") == 0 ? 0 : 1;
 	gMacadeSessionLua = kNetLua;
 	strncpy(kNetQuarkId, parsed.quarkId, sizeof(kNetQuarkId) - 1);
@@ -385,12 +396,14 @@ int MacadeQuarkLoadStateIfAvailable()
 		fflush(stdout);
 		if (ggpo != NULL && MacadeSaveCurrentFrame(ggpo)) printf("Macade quark: rollback initial state captured frame=%d\n", ggpo->currentFrame);
 		MacadeStartGameplayTracking();
+		MacadeLoadTrainingLuaIfNeeded();
 		return result;
 	}
 	printf("Macade quark: no Fightcade savestate found for game=%s\n", gMacadeGame);
 	fflush(stdout);
 	if (ggpo != NULL && MacadeSaveCurrentFrame(ggpo)) printf("Macade quark: rollback initial state captured frame=%d\n", ggpo->currentFrame);
 	MacadeStartGameplayTracking();
+	MacadeLoadTrainingLuaIfNeeded();
 	return 1;
 }
 

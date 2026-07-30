@@ -1,0 +1,345 @@
+assert(rb,"Run fbneo-training-mode.lua") -- make sure the main script is being run
+
+-- Uses values taken from https://www.mamecheat.co.uk/
+
+REPLAY_SAVESTATE_INTERVAL = 300
+
+p1maxhealth = 0xA0
+p2maxhealth = 0xA0
+local p1maxbarsize
+local p2maxbarsize
+
+local function setSFIII3Constants()
+	p1maxbarsize = rb(0x20695B3)
+	p2maxbarsize = rb(0x20695DF)
+	p1maxmeter = rb(0x20286AD) * p1maxbarsize -- Max stocks * Max bar size
+	p2maxmeter = rb(0x20286E1) * p2maxbarsize -- Max stocks * Max bar size
+
+	p1maxstun = rb(0x020695F7)
+	p2maxstun = rb(0x0206960B)
+end
+
+setSFIII3Constants()
+
+local p1health = 0x2068D0B
+local p2health = 0x20691A3
+
+local p1meterbar = 0x20695B5
+local p1meterstocks = 0x20695BE
+
+local p2meterbar = 0x20695E1
+local p2meterstocks = 0x20695EB
+
+local p1direction = 0x2068C76
+local p2direction = 0x2068C77
+
+local p1hitstun = 0x20288A8
+local p2hitstun = 0x20288A9
+
+local p1stunbar = 0x020695FD
+local p2stunbar = 0x02069611
+
+translationtable = {
+	"left",
+	"right",
+	"up",
+	"down",
+	"button1",
+	"button2",
+	"button3",
+	"button4",
+	"button5",
+	"button6",
+	"coin",
+	"start",
+	["Left"] = 1,
+	["Right"] = 2,
+	["Up"] = 3,
+	["Down"] = 4,
+	["Weak Punch"] = 5,
+	["Medium Punch"] = 6,
+	["Strong Punch"] = 7,
+	["Weak Kick"] = 8,
+	["Medium Kick"] = 9,
+	["Strong Kick"] = 10,
+	["Coin"] = 11,
+	["Start"] = 12,
+}
+
+gamedefaultconfig = {
+	hud = {
+		combotext = {
+			y=42,
+		},
+		health = {
+			P1 = {
+				x = 9,
+				y = 17,
+				enabled = true,
+			},
+			P2 = {
+				x = 364,
+				y = 17,
+				enabled = true,
+			}
+		},
+		meter = {
+			P1 = {
+				x = 41,
+				y = 210,
+				enabled = true,
+			},
+			P2 = {
+				x = 334,
+				y = 210,
+				enabled = true,
+			}
+		}
+	},
+	gamevars = {
+		P1 = {
+			maxhealth = p1maxhealth,
+			maxmeter = p1maxmeter
+		},
+		P2 = {
+			maxhealth = p2maxhealth,
+			maxmeter = p2maxmeter
+		}
+	},
+	combovars = {
+		P1 = {
+			instantrefillhealth = false,
+			refillhealthenabled = true,
+			instantrefillmeter = false,
+			refillmeterenabled = true,
+		},
+		P2 = {
+			instantrefillhealth = false,
+			refillhealthenabled = true,
+			instantrefillmeter = false,
+			refillmeterenabled = true,
+		}
+	}
+}
+
+local sfiii3 = { stun = { P1 = {}, P2 = {}, hud = { P1 = {}, P2 = {} } } }
+local colours = {}
+
+function playerOneFacingLeft()
+	return rb(p1direction)==0
+end
+
+function playerTwoFacingLeft()
+	return rb(p2direction)==1
+end
+
+function playerOneInHitstun()
+	return rb(p1hitstun)~=0
+end
+
+function playerTwoInHitstun()
+	return rb(p2hitstun)~=0
+end
+
+function readPlayerOneHealth()
+	return rb(p1health)
+end
+
+function writePlayerOneHealth(health)
+	wb(p1health, health)
+end
+
+function readPlayerTwoHealth()
+	return rb(p2health)
+end
+
+function writePlayerTwoHealth(health)
+	wb(p2health, health)
+end
+
+function readPlayerOneMeter()
+	return rb(p1meterstocks)*p1maxbarsize + rb(p1meterbar)
+end
+
+function writePlayerOneMeter(meter)
+	if meter > p1maxmeter then
+		meter = p1maxmeter
+	end
+	local bar = meter%p1maxbarsize
+	local stocks = meter/p1maxbarsize
+	wb(p1meterbar, bar)
+	wb(p1meterstocks, stocks)
+end
+
+function readPlayerTwoMeter()
+	return rb(p2meterstocks)*p2maxbarsize + rb(p2meterbar)
+end
+
+function writePlayerTwoMeter(meter)
+	if meter > p2maxmeter then
+		meter = p2maxmeter
+	end
+	local bar = meter%p2maxbarsize
+	local stocks = meter/p2maxbarsize
+	wb(p2meterbar, bar)
+	wb(p2meterstocks, stocks)
+end
+
+local function readPlayerOneStun()
+	return rb(p1stunbar)
+end
+
+local function readPlayerTwoStun()
+	return rb(p2stunbar)
+end
+
+local function writePlayerOneStun(stun)
+	wb(p1stunbar, stun)
+end
+
+local function writePlayerTwoStun(stun)
+	wb(p2stunbar, stun)
+end
+
+local timer = 0x2011377
+local timemax = 0x63
+
+local function clockControl() -- We should only ever need to write to the clock once a round like this rather than every frame
+	wb(timer, timemax-1)
+	wb(0x2028682, 0x0) -- stops timer flash
+	ww(0x2028688, 0xFFFF) -- how many frames must pass before decrementing the clock, it should take over a day for the timer to reduce from 99 seconds to 0
+end
+clockControl()
+
+local _reloadguipages = false
+
+local function newRound()
+	setSFIII3Constants() -- get new character data
+	setGameConstants() -- update the training mode with that data
+	clockControl() -- update timer
+	-- Make sure the stun values fit the character
+	if sfiii3.stun.P1.value > p1maxstun then
+		changeConfig("sfiii3stunp1", p1maxstun)
+	end
+	if sfiii3.stun.P2.value > p2maxstun then
+		changeConfig("sfiii3stunp2", p2maxstun)
+	end
+	_reloadguipages = true -- if reloading the gui is called here, the script crashes during savestate loading for some reason. Reload the gui during the next Run instance instead
+end
+
+function Run() -- runs every frame
+	if (rb(timer) == timemax) then
+		newRound()
+	end
+	if sfiii3.stun.P1.enabled then
+		if sfiii3.stun.P1.aftercombo then
+			if not playerOneInHitstun() then
+				writePlayerOneStun(sfiii3.stun.P1.value)
+			end
+		else
+			writePlayerOneStun(sfiii3.stun.P1.value)
+		end
+	end
+
+	if sfiii3.stun.P2.enabled then
+		if sfiii3.stun.P2.aftercombo then
+			if not playerTwoInHitstun() then
+				writePlayerTwoStun(sfiii3.stun.P2.value)
+			end
+		else
+			writePlayerTwoStun(sfiii3.stun.P2.value)
+		end
+	end
+	if _reloadguipages then
+		_reloadguipages = false
+		reloadGUIPages() -- reset the GUI so it reflects the new values
+	end
+end
+
+function OnSaveStateLoad()
+	newRound()
+end
+
+initConfigTable("sfiii3", sfiii3, "config")
+
+createConfigItem("sfiii3stunenabledp1", true, sfiii3.stun.P1, "enabled")
+createConfigItem("sfiii3stunenabledp2", true, sfiii3.stun.P2, "enabled")
+createConfigItem("sfiii3stunaftercombop1", true, sfiii3.stun.P1, "aftercombo")
+createConfigItem("sfiii3stunaftercombop2", true, sfiii3.stun.P2, "aftercombo")
+createConfigItem("sfiii3stunp1", 0, sfiii3.stun.P1, "value")
+createConfigItem("sfiii3stunp2", 0, sfiii3.stun.P2, "value")
+createConfigItem("sfiii3stunxp1", 84, sfiii3.stun.hud.P1, "x")
+createConfigItem("sfiii3stunxp2", 285, sfiii3.stun.hud.P2, "x")
+createConfigItem("sfiii3stunyp1", 24, sfiii3.stun.hud.P1, "y")
+createConfigItem("sfiii3stunyp2", 24, sfiii3.stun.hud.P2, "y")
+createConfigItem("sfiii3stunhudenabledp1", true, sfiii3.stun.hud.P1, "enabled")
+createConfigItem("sfiii3stunhudenabledp2", true, sfiii3.stun.hud.P2, "enabled")
+
+initConfigTable("sfiii3", colours, "colourconfig")
+createConfigItem("coloursfiii3stunp1", 0xFF0000FF, colours, "stunp1", colours, "Stun Colour P1")
+createConfigItem("coloursfiii3stunp2", 0x00FFFFFF, colours, "stunp2", colours, "Stun Colour P2")
+
+createHUDElement(
+	"p1stun",
+	function(n)
+		if n then
+			changeConfig("sfiii3stunxp1", n)
+		end
+		return sfiii3.stun.hud.P1.x
+	end,
+	function(n)
+		if n then
+			changeConfig("sfiii3stunyp1", n)
+		end
+		return sfiii3.stun.hud.P1.y
+	end,
+	function(n)
+		if n~=nil then
+			changeConfig("sfiii3stunenabledp1", n)
+		end
+		return sfiii3.stun.P1.enabled
+	end,
+	function()
+		resetConfig("sfiii3stunxp1")
+		resetConfig("sfiii3stunyp1")
+		resetConfig("sfiii3stunenabledp1")
+	end,
+	function()
+		gui.text(sfiii3.stun.hud.P1.x, sfiii3.stun.hud.P1.y, readPlayerOneStun(), colours.stunp1)
+	end,
+	function()
+		gui.text(sfiii3.stun.hud.P1.x, sfiii3.stun.hud.P1.y, readPlayerOneStun(), hud.previewcolour)
+	end
+)
+createHUDElement(
+	"p2stun",
+	function(n)
+		if n then
+			changeConfig("sfiii3stunxp2", n)
+		end
+		return sfiii3.stun.hud.P2.x
+	end,
+	function(n)
+		if n then
+			changeConfig("sfiii3stunyp2", n)
+		end
+		return sfiii3.stun.hud.P2.y
+	end,
+	function(n)
+		if n~=nil then
+			changeConfig("sfiii3stunenabledp2", n)
+		end
+		return sfiii3.stun.P2.enabled
+	end,
+	function()
+		resetConfig("sfiii3stunxp2")
+		resetConfig("sfiii3stunyp2")
+		resetConfig("sfiii3stunenabledp2")
+	end,
+	function()
+		gui.text(sfiii3.stun.hud.P2.x, sfiii3.stun.hud.P2.y, readPlayerTwoStun(), colours.stunp2)
+	end,
+	function()
+		gui.text(sfiii3.stun.hud.P2.x, sfiii3.stun.hud.P2.y, readPlayerTwoStun(), hud.previewcolour)
+	end
+)
