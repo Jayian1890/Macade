@@ -10,7 +10,7 @@ struct FightcadeEmbeddedVideoFrame: Sendable {
     let frameIndex: UInt64
     let spectatorCount: Int
     let overlayState: FightcadeEmbeddedOverlayState?
-    let bytes: [UInt8]
+    let bytes: Data
 }
 
 struct FightcadeEmbeddedOverlayState: Equatable, Sendable {
@@ -122,8 +122,8 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
                 return nil
             }
 
-            let source = pointer.advanced(by: offset).assumingMemoryBound(to: UInt8.self)
-            let bytes = Array(UnsafeBufferPointer(start: source, count: byteLength))
+            let source = pointer.advanced(by: offset)
+            let bytes = Data(bytes: source, count: byteLength)
             return FightcadeEmbeddedVideoFrame(
                 width: width,
                 height: height,

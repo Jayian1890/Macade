@@ -378,26 +378,28 @@ private final class EmbeddedVideoNSView: NSView {
         let scanlinesEnabled = scanlinesEnabled
         isRendering = true
         renderQueue.async { [weak self, videoStream, previousFrameIndex, scanlinesEnabled] in
-            guard let frame = videoStream.snapshot(), frame.frameIndex != previousFrameIndex else {
-                DispatchQueue.main.async {
-                    self?.isRendering = false
+            autoreleasepool {
+                guard let frame = videoStream.snapshot(), frame.frameIndex != previousFrameIndex else {
+                    DispatchQueue.main.async {
+                        self?.isRendering = false
+                    }
+                    return
                 }
-                return
-            }
 
-            let image = Self.makeImage(from: frame, scanlinesEnabled: scanlinesEnabled)
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                self.isRendering = false
-                guard frame.frameIndex > self.lastFrameIndex else { return }
-                self.lastFrameIndex = frame.frameIndex
-                if self.session?.overlayState != frame.overlayState {
-                    self.session?.overlayState = frame.overlayState
+                let image = Self.makeImage(from: frame, scanlinesEnabled: scanlinesEnabled)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    self.isRendering = false
+                    guard frame.frameIndex > self.lastFrameIndex else { return }
+                    self.lastFrameIndex = frame.frameIndex
+                    if self.session?.overlayState != frame.overlayState {
+                        self.session?.overlayState = frame.overlayState
+                    }
+                    CATransaction.begin()
+                    CATransaction.setDisableActions(true)
+                    self.imageLayer.contents = image
+                    CATransaction.commit()
                 }
-                CATransaction.begin()
-                CATransaction.setDisableActions(true)
-                self.imageLayer.contents = image
-                CATransaction.commit()
             }
         }
     }
@@ -463,7 +465,7 @@ private final class EmbeddedVideoNSView: NSView {
     }
 
     nonisolated private static func makeRGB565Image(from frame: FightcadeEmbeddedVideoFrame) -> CGImage? {
-        guard let provider = CGDataProvider(data: Data(frame.bytes) as CFData) else {
+        guard let provider = CGDataProvider(data: frame.bytes as CFData) else {
             return nil
         }
 
