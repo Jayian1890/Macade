@@ -39,6 +39,15 @@ struct FightcadeTrainingLaunch: Equatable, Sendable {
     }
 }
 
+struct FightcadeLocalTrainingLaunch: Equatable, Sendable {
+    let emulator: String
+    let gameID: String
+
+    var command: String {
+        "macade:training,\(gameID)"
+    }
+}
+
 struct FightcadeDirectLaunch: Equatable, Sendable {
     let emulator: String
     let gameID: String

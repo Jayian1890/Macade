@@ -21,6 +21,7 @@ void MacadeQuarkRestoreNetworkFlags();
 char kNetQuarkId[128] = { 0 };
 int kNetLua = 0;
 static char gMacadeGame[64] = { 0 };
+static bool gMacadeLocalTraining = false;
 static bool gMacadeGameplayTrackingStarted = false;
 static int gMacadeSessionLua = 0;
 int iRanked = 0;
@@ -97,6 +98,13 @@ static bool MacadeParseQuarkCommand(const char* command, MacadeQuarkCommand* par
 	if (sscanf(command, "quark:training,%63[^,],%127[^,],%d,%d%n", parsed->game, parsed->quarkId, &parsed->port, &parsed->delay, &consumed) == 4 && command[consumed] == '\0') {
 		strncpy(parsed->mode, "training", sizeof(parsed->mode) - 1);
 		parsed->player = MacadeQuarkPlayer(parsed->quarkId);
+		return true;
+	}
+	consumed = 0;
+	if (sscanf(command, "macade:training,%63[^,]%n", parsed->game, &consumed) == 1 && command[consumed] == '\0') {
+		strncpy(parsed->mode, "traininglocal", sizeof(parsed->mode) - 1);
+		parsed->player = 0;
+		parsed->delay = 0;
 		return true;
 	}
 	consumed = 0;
@@ -315,6 +323,8 @@ int MacadeQuarkHandleCommand(const char* command)
 	kNetVersion = NET_VERSION;
 	kNetGame = 1;
 	kNetSpectator = parsed.spectator ? 1 : 0;
+	bool localTraining = strcmp(parsed.mode, "traininglocal") == 0;
+	gMacadeLocalTraining = localTraining;
 	kNetLua = strcmp(parsed.mode, "served") == 0 ? 0 : 1;
 	gMacadeSessionLua = kNetLua;
 	strncpy(kNetQuarkId, parsed.quarkId, sizeof(kNetQuarkId) - 1);
@@ -326,7 +336,7 @@ int MacadeQuarkHandleCommand(const char* command)
 	iSeed = parsed.spectator || quarkIdLength < 2 ? 0 : MacadeQuarkHash(parsed.quarkId, quarkIdLength - 2);
 	MacadeOverlayReset();
 	MacadeOverlaySetSession(parsed.spectator ? 1 : 0, parsed.ranked, parsed.player);
-	MacadeOverlaySetSystemMessage("Connecting...");
+	MacadeOverlaySetSystemMessage(localTraining ? "Training" : "Connecting...");
 	gMacadeGameplayTrackingStarted = false;
 	printf("Macade quark: parsed command\nMacade quark: mode=%s\nMacade quark: game=%s\nMacade quark: quarkId=%s\n", parsed.mode, parsed.game, parsed.quarkId);
 	printf("Macade quark: port=%d\nMacade quark: remoteHost=%s\nMacade quark: remotePort=%d\nMacade quark: delay=%d\nMacade quark: ranked=%d\nMacade quark: player=%d\nMacade quark: spectator=%d\nMacade quark: seed=%d\n", parsed.port, parsed.remoteHost, parsed.remotePort, parsed.delay, parsed.ranked, parsed.player, parsed.spectator ? 1 : 0, iSeed);
@@ -339,6 +349,11 @@ int MacadeQuarkHandleCommand(const char* command)
 	cb.free_buffer = MacadeFreeBuffer;
 	cb.advance_frame = MacadeAdvanceFrame;
 	cb.on_event = MacadeOnEvent;
+	if (localTraining) {
+		printf("Macade quark: native Fightcade local training session prepared\n");
+		fflush(stdout);
+		return 0;
+	}
 	if (strcmp(parsed.mode, "direct") == 0) ggpo = ggpo_start_session(&cb, parsed.game, parsed.port, parsed.remoteHost, parsed.remotePort, parsed.player);
 	else ggpo = parsed.spectator ? ggpo_start_streaming(&cb, parsed.game, parsed.quarkId, parsed.port) : ggpo_client_connect(&cb, parsed.game, parsed.quarkId, parsed.port);
 	if (ggpo == NULL) return 2;
@@ -380,7 +395,7 @@ int MacadeQuarkLoadStateIfAvailable()
 }
 
 const char* MacadeQuarkGameName() { return gMacadeGame; }
-bool MacadeQuarkSessionActive() { return ggpo != NULL && gMacadeGame[0] != 0; }
+bool MacadeQuarkSessionActive() { return gMacadeGame[0] != 0 && (ggpo != NULL || gMacadeLocalTraining); }
 bool MacadeQuarkSessionRunning() { return ggpo != NULL && !ggpo->networkDisconnected && !ggpo->fatalDesync; }
 bool MacadeQuarkStreamInitialStateLoaded() { return ggpo != NULL && ggpo->isSpectator && ggpo->streamInitialStateLoaded; }
 void MacadeQuarkRestoreNetworkFlags()
@@ -388,7 +403,7 @@ void MacadeQuarkRestoreNetworkFlags()
 	if (!MacadeQuarkSessionActive()) return;
 	kNetVersion = NET_VERSION;
 	kNetGame = 1;
-	kNetSpectator = ggpo->isSpectator ? 1 : 0;
+	kNetSpectator = ggpo != NULL && ggpo->isSpectator ? 1 : 0;
 	kNetLua = gMacadeSessionLua;
 }
 void MacadeQuarkRunIdle(int ms) { if (ggpo != NULL) ggpo_idle(ggpo, ms); }

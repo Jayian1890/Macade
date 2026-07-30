@@ -3,6 +3,7 @@ import SwiftUI
 struct FightcadeMotdLine: Identifiable, Equatable {
     let id: Int
     let content: AttributedString
+    let isHeading: Bool
 }
 
 enum FightcadeMotdTextFormatter {
@@ -10,8 +11,18 @@ enum FightcadeMotdTextFormatter {
         body.split(separator: "\n", omittingEmptySubsequences: false)
             .enumerated()
             .map { offset, line in
-                FightcadeMotdLine(id: offset, content: attributedLine(String(line)))
+                let text = String(line)
+                return FightcadeMotdLine(
+                    id: offset,
+                    content: attributedLine(text),
+                    isHeading: isHeading(text)
+                )
             }
+    }
+
+    private static func isHeading(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.count > 2 && trimmed.first == "`" && trimmed.last == "`"
     }
 
     private static func attributedLine(_ line: String) -> AttributedString {

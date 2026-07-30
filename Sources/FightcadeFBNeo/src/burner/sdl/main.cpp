@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 	{
 		if (*argv[i] != '-' && !gamefound)
 		{
-			if (strncmp(argv[i], "quark:", 6) == 0)
+			if (strncmp(argv[i], "quark:", 6) == 0 || strncmp(argv[i], "macade:", 7) == 0)
 			{
 				int quarkStatus = MacadeQuarkHandleCommand(argv[i]);
 				if (quarkStatus != 0) {

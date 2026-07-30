@@ -52,7 +52,7 @@ struct FightcadeLauncher: FightcadeLaunching {
 
         case .training(let emulator, let gameID):
             let romURL = try ensureROMExists(emulator: emulator, gameID: gameID)
-            try launch(emulator: emulator, arguments: [gameID], runtime: runtimeRoot, expectedROM: romURL)
+            try launch(emulator: emulator, arguments: [FightcadeLocalTrainingLaunch(emulator: emulator, gameID: gameID).command], runtime: runtimeRoot, expectedROM: romURL)
 
         case .fightcadeTraining(let training):
             guard manifest.supportsQuark(emulator: training.emulator) else {

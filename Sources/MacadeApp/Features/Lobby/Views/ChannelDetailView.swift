@@ -48,6 +48,7 @@ struct ChannelDetailView: View {
 private struct ChannelChatView: View {
     let channel: FightcadeChannel
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    private let topID = "channel-chat-top"
     private let bottomID = "channel-chat-bottom"
 
     var body: some View {
@@ -55,6 +56,10 @@ private struct ChannelChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: MacadeSpacing.medium) {
+                        Color.clear
+                            .frame(height: 1)
+                            .id(topID)
+
                         if let previewURL = channel.previewURL {
                             AsyncImage(url: previewURL) { image in
                                 image
@@ -88,13 +93,13 @@ private struct ChannelChatView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .onAppear {
-                    scrollToBottom(proxy)
+                    scrollToInitialPosition(proxy)
                 }
                 .onChange(of: viewModel.selectedChannelMessages.count) { _, _ in
-                    scrollToBottom(proxy)
+                    scrollAfterMessagesChanged(proxy)
                 }
                 .onChange(of: channel.id) { _, _ in
-                    scrollToBottom(proxy)
+                    scrollToInitialPosition(proxy)
                 }
             }
 
@@ -104,9 +109,24 @@ private struct ChannelChatView: View {
         .background(chatBackground)
     }
 
-    private func scrollToBottom(_ proxy: ScrollViewProxy) {
+    private func scrollToInitialPosition(_ proxy: ScrollViewProxy) {
         DispatchQueue.main.async {
-            proxy.scrollTo(bottomID, anchor: .bottom)
+            if viewModel.selectedChannelMessages.first?.kind == .motd {
+                proxy.scrollTo(topID, anchor: .top)
+            } else {
+                proxy.scrollTo(bottomID, anchor: .bottom)
+            }
+        }
+    }
+
+    private func scrollAfterMessagesChanged(_ proxy: ScrollViewProxy) {
+        DispatchQueue.main.async {
+            let messages = viewModel.selectedChannelMessages
+            if messages.count == 1, messages.first?.kind == .motd {
+                proxy.scrollTo(topID, anchor: .top)
+            } else {
+                proxy.scrollTo(bottomID, anchor: .bottom)
+            }
         }
     }
 

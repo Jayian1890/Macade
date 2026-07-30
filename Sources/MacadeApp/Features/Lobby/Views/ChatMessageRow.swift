@@ -219,33 +219,53 @@ private struct FightcadeMotdMessageRow: View {
     let message: FightcadeChatMessage
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MacadeSpacing.medium) {
-            VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
                 ForEach(FightcadeMotdTextFormatter.lines(in: message.body)) { line in
                     Text(line.content)
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
+                        .padding(.top, line.isHeading ? 7 : 0)
                 }
             }
 
             if !message.events.isEmpty {
-                Text("EVENTS")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundStyle(MacadeColor.warning)
-                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("EVENTS")
+                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .foregroundStyle(MacadeColor.warning)
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 168), spacing: 10)], spacing: 10) {
-                    ForEach(message.events) { event in
-                        FightcadeMotdEventCard(event: event)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(alignment: .top, spacing: 10) {
+                            ForEach(message.events) { event in
+                                FightcadeMotdEventCard(event: event)
+                                    .frame(width: 204)
+                            }
+                        }
                     }
                 }
             }
         }
-        .padding(MacadeSpacing.medium)
+        .padding(.horizontal, MacadeSpacing.large)
+        .padding(.vertical, MacadeSpacing.medium)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MacadeColor.panel.opacity(0.64), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MacadeColor.warning.opacity(0.16), lineWidth: 1))
+        .background(motdBackground, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(MacadeColor.warning.opacity(0.72))
+                .frame(width: 2)
+                .padding(.vertical, 10)
+        }
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MacadeColor.warning.opacity(0.14), lineWidth: 1))
+    }
+
+    private var motdBackground: some ShapeStyle {
+        LinearGradient(
+            colors: [MacadeColor.panel.opacity(0.76), MacadeColor.deepPlum.opacity(0.20)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }
 
@@ -256,7 +276,7 @@ private struct FightcadeMotdEventCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             FightcadeArtworkImage(url: event.previewURL) { fallbackPreview }
-                .frame(height: 76)
+                .frame(height: 82)
                 .clipShape(RoundedRectangle(cornerRadius: 9))
 
             Text(event.name)
@@ -273,10 +293,12 @@ private struct FightcadeMotdEventCard: View {
                 eventButton("Info", url: event.link)
                 eventButton("Stream", url: event.stream)
             }
+            .padding(.top, 1)
         }
         .padding(8)
-        .background(MacadeColor.row.opacity(0.72), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MacadeColor.stroke, lineWidth: 1))
+        .frame(height: 238, alignment: .top)
+        .background(MacadeColor.row.opacity(0.78), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MacadeColor.stroke.opacity(0.9), lineWidth: 1))
     }
 
     private var eventDateText: String {

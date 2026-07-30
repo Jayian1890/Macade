@@ -166,7 +166,7 @@ struct FightcadeEmbeddedLaunch: Sendable, Equatable {
             mode: .training,
             emulator: emulator,
             gameID: gameID,
-            arguments: [gameID],
+            arguments: [FightcadeLocalTrainingLaunch(emulator: emulator, gameID: gameID).command],
             title: "Training · \(gameID)",
             match: nil
         )
