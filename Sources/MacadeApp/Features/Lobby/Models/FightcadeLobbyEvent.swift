@@ -77,6 +77,12 @@ struct FightcadeLiveStreamUpdate: Equatable, Sendable {
     let stream: FightcadeSpectatorStream
 }
 
+struct FightcadeChannelMotd: Equatable, Sendable {
+    let channelName: String
+    let body: String
+    let events: [FightcadeEvent]
+}
+
 enum FightcadeLobbyEvent: Sendable {
     case channelsUpdated([FightcadeChannel])
     case joinedChannel(String)
@@ -87,6 +93,7 @@ enum FightcadeLobbyEvent: Sendable {
     case userStatusUpdated(FightcadeUserStatusUpdate)
     case liveStreamUpdated(FightcadeLiveStreamUpdate)
     case chatMessage(FightcadeChatMessage)
+    case channelMotd(FightcadeChannelMotd)
     case challengeReceived(FightcadeChallenge)
     case challengeCanceled(FightcadeChallenge)
     case challengeRejected(FightcadeChallenge)

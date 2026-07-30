@@ -34,29 +34,36 @@ struct PlayerListView: View {
             .padding(.horizontal, MacadeSpacing.small)
             .padding(.bottom, MacadeSpacing.small)
 
-            ScrollView {
-                LazyVStack(spacing: 4) {
-                    if selectedFilter == .watchable {
-                        ForEach(watchMatches(from: state.rows)) { match in
-                            WatchMatchRow(match: match, channel: channel, viewModel: viewModel)
-                        }
-                    } else {
-                        ForEach(state.visibleRows) { row in
-                            PlayerRow(
-                                channel: channel,
-                                row: row,
-                                viewModel: viewModel,
-                                isFocused: state.detailRow?.id == row.id
-                            ) {
-                                if activeMatchOpponentUsername == nil {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 4) {
+                        if selectedFilter == .watchable {
+                            ForEach(watchMatches(from: state.rows)) { match in
+                                WatchMatchRow(match: match, channel: channel, viewModel: viewModel)
+                            }
+                        } else {
+                            ForEach(state.visibleRows) { row in
+                                PlayerRow(
+                                    channel: channel,
+                                    row: row,
+                                    viewModel: viewModel,
+                                    isFocused: state.detailRow?.id == row.id
+                                ) {
                                     detailUserID = row.id
                                 }
+                                .id(row.id)
                             }
                         }
                     }
+                    .padding(.horizontal, MacadeSpacing.small)
+                    .padding(.bottom, MacadeSpacing.small)
                 }
-                .padding(.horizontal, MacadeSpacing.small)
-                .padding(.bottom, MacadeSpacing.small)
+                .onAppear {
+                    applyFocusRequest(viewModel.playerListFocusRequest, proxy: proxy)
+                }
+                .onChange(of: viewModel.playerListFocusRequest) { _, request in
+                    applyFocusRequest(request, proxy: proxy)
+                }
             }
 
             if let detailRow = state.detailRow {
@@ -114,11 +121,11 @@ struct PlayerListView: View {
         let visibleRows = filteredRows.sorted(by: sortRows)
         let detailRow: PlayerListRowState?
 
-        if let activeMatchOpponentUsername,
-           let row = visibleRows.first(where: { usernameMatches($0.user.name, activeMatchOpponentUsername) }) {
-            detailRow = row
-        } else if let detailUserID,
+        if let detailUserID,
            let row = visibleRows.first(where: { $0.id == detailUserID }) {
+            detailRow = row
+        } else if let activeMatchOpponentUsername,
+                  let row = visibleRows.first(where: { usernameMatches($0.user.name, activeMatchOpponentUsername) }) {
             detailRow = row
         } else {
             detailRow = visibleRows.first { $0.isCurrentUser } ?? visibleRows.first
@@ -185,6 +192,33 @@ struct PlayerListView: View {
         }
         .sorted { lhs, rhs in
             lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+    }
+
+    private func applyFocusRequest(_ request: PlayerListFocusRequest?, proxy: ScrollViewProxy) {
+        guard let request,
+              request.channelName == channel.name,
+              let user = users.first(where: { usernameMatches($0.name, request.username) }) else {
+            return
+        }
+
+        let row = makeRow(for: user)
+        if selectedFilter == .watchable || selectedFilter?.includes(row) == false {
+            selectedFilter = nil
+        }
+
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !query.isEmpty, !user.name.localizedCaseInsensitiveContains(query) {
+            searchText = ""
+        }
+
+        detailUserID = user.id
+        isDetailPaneMinimized = false
+
+        DispatchQueue.main.async {
+            withAnimation(.smooth(duration: 0.18)) {
+                proxy.scrollTo(user.id, anchor: .center)
+            }
         }
     }
 

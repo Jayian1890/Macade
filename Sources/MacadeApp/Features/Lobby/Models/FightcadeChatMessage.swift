@@ -5,6 +5,7 @@ struct FightcadeChatMessage: Identifiable, Equatable, Sendable {
         case user
         case system
         case local
+        case motd
     }
 
     let id: UUID
@@ -12,6 +13,7 @@ struct FightcadeChatMessage: Identifiable, Equatable, Sendable {
     let username: String
     let body: String
     let kind: Kind
+    let events: [FightcadeEvent]
     let sentAt: Date
 
     init(
@@ -20,6 +22,7 @@ struct FightcadeChatMessage: Identifiable, Equatable, Sendable {
         username: String,
         body: String,
         kind: Kind,
+        events: [FightcadeEvent] = [],
         sentAt: Date = .now
     ) {
         self.id = id
@@ -27,6 +30,7 @@ struct FightcadeChatMessage: Identifiable, Equatable, Sendable {
         self.username = username
         self.body = body
         self.kind = kind
+        self.events = events
         self.sentAt = sentAt
     }
 

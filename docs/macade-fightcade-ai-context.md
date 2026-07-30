@@ -87,6 +87,8 @@ Key requests: `login`, `autologin`, `join`, `leave`, `channels`, `filteroptions`
 
 Key events: `broken`, `chat`, `msg`, `join`, `leave`, `kick`, `staway`, `stnoaway`, `chaway`, `chnoaway`, `stwlan`, `updaterank`, `stplaying`, `stnoplaying`, `quarkstats`, `challenge`, `cancel`, `reject`, `accept`, `start`.
 
+Channel `join` callback responses carry the channel MOTD and optional events. Current web bundle evidence calls `addChannelMotd(e.motd,e.events)` after setting joined users; `motd_legacy` is present in observed responses but official current UI uses `motd`. MOTD text uses Fightcade lightweight formatting markers (`*`, `_`, `~`, backtick highlight), raw `http://`/`https://` links, and optional event cards with observed fields `name`, `author`, `gameid`, `image`, `link`, `region`, `stream`, and millisecond `date`.
+
 Authoritative match handoff is server event `start`; Macade must not launch on `accept` alone or invent match IDs.
 
 ```json

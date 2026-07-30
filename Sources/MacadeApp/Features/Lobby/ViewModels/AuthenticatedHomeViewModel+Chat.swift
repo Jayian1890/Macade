@@ -3,6 +3,12 @@ import Foundation
 import AppKit
 import UserNotifications
 
+struct PlayerListFocusRequest: Equatable {
+    let id = UUID()
+    let channelName: String
+    let username: String
+}
+
 extension AuthenticatedHomeViewModel {
     func sendChat() {
         guard let channel = selectedChannel else {
@@ -69,6 +75,19 @@ extension AuthenticatedHomeViewModel {
         }
     }
 
+    func appendChannelMotd(_ motd: FightcadeChannelMotd) {
+        chatMessagesByChannel[motd.channelName]?.removeAll { $0.kind == .motd }
+        append(
+            FightcadeChatMessage(
+                channelName: motd.channelName,
+                username: "motd",
+                body: motd.body,
+                kind: .motd,
+                events: motd.events
+            )
+        )
+    }
+
     func chatMentionSuggestions(in channel: FightcadeChannel) -> [FightcadeChannelUser] {
         FightcadeChatMention.suggestions(
             in: chatDraft,
@@ -82,6 +101,16 @@ extension AuthenticatedHomeViewModel {
 
     func messageMentionsCurrentUser(_ message: FightcadeChatMessage) -> Bool {
         message.kind == .user && mentionsCurrentUser(message.body)
+    }
+
+    func focusChatUser(_ username: String, in channel: FightcadeChannel) {
+        guard user(named: username, in: channel) != nil else {
+            return
+        }
+
+        selectedChannelID = channel.id
+        isShowingChannelBrowser = false
+        playerListFocusRequest = PlayerListFocusRequest(channelName: channel.name, username: username)
     }
 
     private func append(_ message: FightcadeChatMessage) {

@@ -6,6 +6,7 @@ struct PlayerRow: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
     let isFocused: Bool
     let onSelect: () -> Void
+    @State private var isHovering = false
 
     private var user: FightcadeChannelUser { row.user }
 
@@ -27,8 +28,10 @@ struct PlayerRow: View {
         }
         .padding(.horizontal, MacadeSpacing.small)
         .frame(height: 40)
-        .background(isFocused ? MacadeColor.panel.opacity(0.82) : .clear, in: RoundedRectangle(cornerRadius: 12))
+        .background(rowBackground, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(rowStroke, lineWidth: 1))
         .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
         .onTapGesture(perform: onSelect)
         .onTapGesture(count: 2) {
             if row.isWatchable {
@@ -58,6 +61,30 @@ struct PlayerRow: View {
         }
     }
 
+    private var rowBackground: Color {
+        if isFocused {
+            return MacadeColor.panelStrong.opacity(0.82)
+        }
+
+        if isHovering {
+            return MacadeColor.panel.opacity(row.isChallengeable || row.isWatchable ? 0.72 : 0.42)
+        }
+
+        return .clear
+    }
+
+    private var rowStroke: Color {
+        guard isHovering || isFocused else {
+            return .clear
+        }
+
+        if row.isChallengeable || row.isWatchable {
+            return MacadeColor.neonCyan.opacity(0.28)
+        }
+
+        return MacadeColor.stroke.opacity(0.7)
+    }
+
     private var nameColor: Color {
         if row.isChallenging {
             return MacadeColor.neonCyan
@@ -71,7 +98,7 @@ struct PlayerRow: View {
             return MacadeColor.inkMuted.opacity(0.58)
         }
 
-        return row.isChallengeable || isFocused ? MacadeColor.ink : MacadeColor.inkMuted
+        return row.isChallengeable || isFocused || isHovering ? MacadeColor.ink : MacadeColor.inkMuted
     }
 
     @ViewBuilder

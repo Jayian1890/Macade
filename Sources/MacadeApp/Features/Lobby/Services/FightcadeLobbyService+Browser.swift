@@ -77,6 +77,7 @@ private extension FightcadeEvent {
                 author: dictionary["author"] as? String,
                 date: Date(timeIntervalSince1970: milliseconds.doubleValue / 1000),
                 gameID: gameID,
+                imageURL: (dictionary["image"] as? String).flatMap(URL.init(string:)),
                 link: (dictionary["link"] as? String).flatMap(URL.init(string:)),
                 region: dictionary["region"] as? String,
                 stream: (dictionary["stream"] as? String).flatMap(URL.init(string:))

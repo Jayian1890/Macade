@@ -119,6 +119,9 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
         canonicalChannelNames[channel.name] = joinedChannelName
         canonicalChannelNames[joinedChannelName] = joinedChannelName
         currentChannelName = joinedChannelName
+        if let motd = parser.channelMotd(in: response, channelName: joinedChannelName) {
+            emit(.channelMotd(motd))
+        }
         emit(.usersUpdated(joinedChannelName, parser.users(in: response)))
         emit(.joinedChannel(joinedChannelName))
     }

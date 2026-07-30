@@ -20,6 +20,7 @@ struct WatchMatchRow: View {
     let match: WatchMatchRowState
     let channel: FightcadeChannel
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 7) {
@@ -37,13 +38,19 @@ struct WatchMatchRow: View {
         }
         .padding(.horizontal, MacadeSpacing.small)
         .frame(height: 40)
-        .background(MacadeColor.panel.opacity(0.56), in: RoundedRectangle(cornerRadius: 12))
+        .background(MacadeColor.panel.opacity(isHovering ? 0.82 : 0.56), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(rowStroke, lineWidth: 1))
         .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
         .onTapGesture(perform: watch)
         .contextMenu {
             Button("Watch Match", action: watch)
                 .disabled(match.firstWatchableRow == nil)
         }
+    }
+
+    private var rowStroke: Color {
+        isHovering ? MacadeColor.warning.opacity(0.32) : MacadeColor.stroke.opacity(0.55)
     }
 
     private func playerLabel(_ user: FightcadeChannelUser) -> some View {

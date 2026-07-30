@@ -72,6 +72,7 @@ struct FightcadeEvent: Identifiable, Equatable, Sendable {
     let author: String?
     let date: Date
     let gameID: String
+    let imageURL: URL?
     let link: URL?
     let region: String?
     let stream: URL?
@@ -79,6 +80,10 @@ struct FightcadeEvent: Identifiable, Equatable, Sendable {
     var id: String { "\(gameID):\(date.timeIntervalSince1970):\(name)" }
 
     var previewURL: URL? {
+        if let imageURL {
+            return imageURL
+        }
+
         let imageID = gameID.replacingOccurrences(of: "fc1_", with: "")
         let previewID = ["kof9", "kof2", "kf2k"].contains { imageID.contains($0) } ? "unsupported" : imageID
         return URL(string: "https://web.fightcade.com/static/previews/\(previewID).png")

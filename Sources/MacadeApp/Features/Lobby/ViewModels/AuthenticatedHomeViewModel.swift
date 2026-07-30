@@ -39,6 +39,7 @@ final class AuthenticatedHomeViewModel {
             }
         }
     }
+    var playerListFocusRequest: PlayerListFocusRequest?
     var includeLobbyDiagnosticChatBodies: Bool {
         didSet {
             diagnosticsSettings.includesChatBodies = isLobbyDiagnosticsEnabled && includeLobbyDiagnosticChatBodies
@@ -54,7 +55,6 @@ final class AuthenticatedHomeViewModel {
     private let diagnosticsSettings: FightcadeLobbyDiagnosticsSettings
     private var eventTask: Task<Void, Never>?
     private var joiningChannelIDs = Set<FightcadeChannel.ID>()
-
     init(
         session: AuthSession,
         lobbyService: any FightcadeLobbyServicing = FightcadeLobbyService(),
@@ -367,6 +367,8 @@ final class AuthenticatedHomeViewModel {
             applyLiveStreamUpdate(update)
         case .chatMessage(let message):
             appendReceivedChatMessage(message)
+        case .channelMotd(let motd):
+            appendChannelMotd(motd)
         case .challengeReceived(let challenge):
             guard !isOutgoingChallengeEcho(challenge) else {
                 break

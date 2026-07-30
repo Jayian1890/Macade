@@ -7,6 +7,14 @@ struct ChatMessageRow: View {
     @State private var isHoveringName = false
 
     var body: some View {
+        if message.kind == .motd {
+            FightcadeMotdMessageRow(message: message)
+        } else {
+            chatRow
+        }
+    }
+
+    private var chatRow: some View {
         HStack(alignment: .top, spacing: MacadeSpacing.small) {
             Text(message.sentAt.formatted(date: .omitted, time: .shortened))
                 .font(MacadeTypography.caption)
@@ -26,7 +34,12 @@ struct ChatMessageRow: View {
                         .font(.system(size: 15, weight: .black, design: .rounded))
                         .foregroundStyle(nameColor)
                         .lineLimit(1)
+                        .padding(.horizontal, 7)
+                        .frame(height: 22)
+                        .background(chatNameBackground, in: Capsule())
+                        .overlay(Capsule().stroke(chatNameStroke, lineWidth: 1))
                         .contentShape(Rectangle())
+                        .onTapGesture(perform: focusChatUser)
                         .onTapGesture(count: 2, perform: challengeFromChat)
                         .onHover { isHoveringName = $0 }
                         .help(nameHelp)
@@ -129,7 +142,7 @@ struct ChatMessageRow: View {
     }
 
     private var nameHelp: String {
-        canChallengeFromChat ? "Double-click to challenge unranked" : "Chat author"
+        canChallengeFromChat ? "Click to show in player list. Double-click to challenge unranked" : "Click to show in player list"
     }
 
     private var nameColor: Color {
@@ -140,7 +153,21 @@ struct ChatMessageRow: View {
             MacadeColor.inkMuted
         case .user:
             canChallengeFromChat || isHoveringName ? MacadeColor.neonCyan : MacadeColor.inkMuted
+        case .motd:
+            MacadeColor.warning
         }
+    }
+
+    private var chatNameBackground: Color {
+        guard canChallengeFromChat || isHoveringName else {
+            return .clear
+        }
+
+        return MacadeColor.neonCyan.opacity(isHoveringName ? 0.18 : 0.08)
+    }
+
+    private var chatNameStroke: Color {
+        isHoveringName && canChallengeFromChat ? MacadeColor.neonCyan.opacity(0.38) : .clear
     }
 
     private var avatarBorderColor: Color {
@@ -151,11 +178,21 @@ struct ChatMessageRow: View {
             MacadeColor.inkMuted
         case .user:
             canChallengeFromChat || isHoveringName ? MacadeColor.neonCyan : MacadeColor.stroke
+        case .motd:
+            MacadeColor.warning
         }
     }
 
     private func challengeFromChat() {
         challengeFromChat(ranked: 0)
+    }
+
+    private func focusChatUser() {
+        guard message.kind == .user || message.kind == .local else {
+            return
+        }
+
+        viewModel.focusChatUser(message.username, in: channel)
     }
 
     private func challengeFromChat(ranked: Int) {
@@ -175,5 +212,103 @@ struct ChatMessageRow: View {
         return Text(segment.text)
             .fontWeight(.black)
             .foregroundColor(segment.isCurrentUser ? MacadeColor.warning : MacadeColor.neonCyan)
+    }
+}
+
+private struct FightcadeMotdMessageRow: View {
+    let message: FightcadeChatMessage
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: MacadeSpacing.medium) {
+            VStack(alignment: .leading, spacing: 5) {
+                ForEach(FightcadeMotdTextFormatter.lines(in: message.body)) { line in
+                    Text(line.content)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                }
+            }
+
+            if !message.events.isEmpty {
+                Text("EVENTS")
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundStyle(MacadeColor.warning)
+                    .padding(.top, 2)
+
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 168), spacing: 10)], spacing: 10) {
+                    ForEach(message.events) { event in
+                        FightcadeMotdEventCard(event: event)
+                    }
+                }
+            }
+        }
+        .padding(MacadeSpacing.medium)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MacadeColor.panel.opacity(0.64), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(MacadeColor.warning.opacity(0.16), lineWidth: 1))
+    }
+}
+
+private struct FightcadeMotdEventCard: View {
+    let event: FightcadeEvent
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            FightcadeArtworkImage(url: event.previewURL) { fallbackPreview }
+                .frame(height: 76)
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+
+            Text(event.name)
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(MacadeColor.ink)
+                .lineLimit(2)
+
+            Text(eventDateText)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(MacadeColor.inkMuted)
+                .lineLimit(2)
+
+            HStack(spacing: 6) {
+                eventButton("Info", url: event.link)
+                eventButton("Stream", url: event.stream)
+            }
+        }
+        .padding(8)
+        .background(MacadeColor.row.opacity(0.72), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(MacadeColor.stroke, lineWidth: 1))
+    }
+
+    private var eventDateText: String {
+        let date = event.date.formatted(date: .abbreviated, time: .shortened)
+        guard let region = event.region, !region.isEmpty else {
+            return date
+        }
+
+        return "\(date) - \(region)"
+    }
+
+    @ViewBuilder
+    private func eventButton(_ title: String, url: URL?) -> some View {
+        if let url {
+            Button(title) {
+                openURL(url)
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 10, weight: .black, design: .rounded))
+            .foregroundStyle(MacadeColor.midnight)
+            .padding(.horizontal, 8)
+            .frame(height: 22)
+            .background(MacadeColor.warning, in: Capsule())
+        }
+    }
+
+    private var fallbackPreview: some View {
+        ZStack {
+            LinearGradient(colors: [MacadeColor.arcadeBlue, MacadeColor.deepPlum], startPoint: .topLeading, endPoint: .bottomTrailing)
+            Text(event.gameID.prefix(3).uppercased())
+                .font(.system(size: 20, weight: .black, design: .monospaced))
+                .foregroundStyle(MacadeColor.ink.opacity(0.65))
+        }
     }
 }
