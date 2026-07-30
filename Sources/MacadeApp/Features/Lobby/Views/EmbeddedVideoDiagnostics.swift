@@ -35,6 +35,8 @@ final class EmbeddedVideoDiagnostics {
         guard currentSessionID != session?.id else { return }
         currentSessionID = session?.id
         resetInterval()
+        lastDrawTime = nil
+        lastFrameIndex = 0
         guard let session else {
             append("session cleared")
             return
@@ -64,7 +66,7 @@ final class EmbeddedVideoDiagnostics {
     func recordFrame(frameIndex: UInt64, snapshotMs: Double, uploadMs: Double, drawMs: Double) {
         let now = Self.now
         let drawIntervalMs = lastDrawTime.map { (now - $0) * 1_000 } ?? 0
-        let frameGap = lastFrameIndex == 0 ? 0 : frameIndex - lastFrameIndex
+        let frameGap = lastFrameIndex == 0 || frameIndex <= lastFrameIndex ? 0 : frameIndex - lastFrameIndex
         lastDrawTime = now
         lastFrameIndex = frameIndex
         renderedFrames += 1

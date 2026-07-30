@@ -1,7 +1,6 @@
 #include "macade_ggpo_session.h"
 
-#include "macade_ggpo_session.h"
-
+#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <vector>
@@ -50,6 +49,33 @@ static bool SendCommand(GGPOSession* session, unsigned int command, const std::v
 	return true;
 }
 
+static void CopyPlayerName(char* out, size_t outSize, const char* value)
+{
+	if (out == NULL || outSize == 0) return;
+	const char* fallback = "You";
+	if (value == NULL || value[0] == 0) {
+		snprintf(out, outSize, "%s", fallback);
+		return;
+	}
+	const char* end = strchr(value, '#');
+	size_t length = end == NULL ? strlen(value) : (size_t)(end - value);
+	if (length == 0) {
+		snprintf(out, outSize, "%s", fallback);
+		return;
+	}
+	if (length >= outSize) length = outSize - 1;
+	memcpy(out, value, length);
+	out[length] = 0;
+}
+
+static void EmitLocalChat(GGPOSession* session, const char* text)
+{
+	char name[128];
+	if (session->isSpectator) CopyPlayerName(name, sizeof(name), "You");
+	else CopyPlayerName(name, sizeof(name), session->playerIndex == 1 ? session->streamPlayer2 : session->streamPlayer1);
+	MacadeEmitChatEvent(session, name, text);
+}
+
 bool MacadeSendTCPChat(GGPOSession* session, const char* text)
 {
 	if (session == NULL || session->tcpFd < 0 || session->quarkId[0] == 0 || text == NULL) return false;
@@ -60,6 +86,7 @@ bool MacadeSendTCPChat(GGPOSession* session, const char* text)
 		MacadeMarkDisconnected(session);
 		return false;
 	}
+	EmitLocalChat(session, text);
 	return true;
 }
 
@@ -86,5 +113,6 @@ void MacadeHandleTCPChatRecord(GGPOSession* session, const unsigned char* payloa
 	if (!ReadStringField(payload, payloadSize, &cursor, username, sizeof(username))) return;
 	if (!ReadStringField(payload, payloadSize, &cursor, text, sizeof(text))) return;
 	if (strcmp(quark, session->quarkId) != 0) return;
+	if (strcmp(username, "Command") == 0) return;
 	MacadeEmitChatEvent(session, username, text);
 }

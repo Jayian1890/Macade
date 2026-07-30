@@ -133,7 +133,7 @@ static bool MacadeCaptureLocalControls(int* blockSize)
 		gControls[j] = *input.pVal;
 	}
 
-	*blockSize = j + 1;
+	*blockSize = j;
 	if (*blockSize <= 0 || *blockSize * kMaxPlayers > kInputSize) {
 		printf("Macade GGPO: invalid input block size=%d max=%d\n", *blockSize, kInputSize / kMaxPlayers);
 		fflush(stdout);
