@@ -1,5 +1,5 @@
 import Foundation
-
+import Darwin
 import AppKit
 
 @MainActor
@@ -266,6 +266,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
 
         do {
+            enforceSingleFBNeoProcess(executable: executable, launchLog: launchLog)
             try process.run()
             processRegistry.insert(process, log: launchLog)
             launchLog.write("Process started: pid=\(process.processIdentifier)\n")
@@ -377,6 +378,56 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
 
         return executable
+    }
+
+    private func enforceSingleFBNeoProcess(executable: URL, launchLog: FightcadeLaunchLog) {
+        guard executable.lastPathComponent == "fcadefbneo" else { return }
+        processRegistry.terminateAll(reason: "single fcadefbneo launch", graceSeconds: 0.75)
+
+        let processIDs = runningProcessIDs(named: executable.lastPathComponent)
+        guard !processIDs.isEmpty else { return }
+
+        for processID in processIDs {
+            launchLog.write("Macade process gate terminating existing fcadefbneo pid=\(processID) before launch\n")
+            kill(processID, SIGTERM)
+        }
+
+        waitForExit(processIDs, graceSeconds: 0.75)
+
+        for processID in processIDs where kill(processID, 0) == 0 {
+            launchLog.write("Macade process gate force killing existing fcadefbneo pid=\(processID) before launch\n")
+            kill(processID, SIGKILL)
+        }
+
+        waitForExit(processIDs, graceSeconds: 0.25)
+    }
+
+    private func runningProcessIDs(named name: String) -> [pid_t] {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        process.arguments = ["-x", name]
+        process.standardOutput = output
+        process.standardError = Pipe()
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return []
+        }
+
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        guard let text = String(data: data, encoding: .utf8) else { return [] }
+        return text.split(whereSeparator: \.isNewline).compactMap { pid_t(String($0)) }
+    }
+
+    private func waitForExit(_ processIDs: [pid_t], graceSeconds: TimeInterval) {
+        let deadline = Date().addingTimeInterval(graceSeconds)
+        while Date() < deadline {
+            if processIDs.allSatisfy({ kill($0, 0) != 0 }) { return }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
     }
 
     private func executableExists(_ url: URL) -> Bool {

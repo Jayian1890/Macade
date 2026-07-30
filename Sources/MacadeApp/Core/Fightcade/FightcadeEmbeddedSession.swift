@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Observation
 
 @MainActor
@@ -32,6 +33,7 @@ final class FightcadeEmbeddedSession {
 
     private var process: Process?
     private var proxyTask: Task<Void, Never>?
+    private var forceKillTask: Task<Void, Never>?
     var status: Status = .launching
     var overlayState: FightcadeEmbeddedOverlayState?
 
@@ -90,6 +92,8 @@ final class FightcadeEmbeddedSession {
     func markTerminated(status terminationStatus: Int32) {
         status = .terminated(status: terminationStatus)
         process = nil
+        forceKillTask?.cancel()
+        forceKillTask = nil
         proxyTask?.cancel()
         proxyTask = nil
         videoStream.close()
@@ -99,6 +103,8 @@ final class FightcadeEmbeddedSession {
     func markFailed(_ message: String) {
         status = .failed(message)
         process = nil
+        forceKillTask?.cancel()
+        forceKillTask = nil
         proxyTask?.cancel()
         proxyTask = nil
         videoStream.close()
@@ -107,6 +113,8 @@ final class FightcadeEmbeddedSession {
 
     func stop() {
         guard let process, process.isRunning else {
+            forceKillTask?.cancel()
+            forceKillTask = nil
             proxyTask?.cancel()
             proxyTask = nil
             videoStream.close()
@@ -118,6 +126,15 @@ final class FightcadeEmbeddedSession {
         proxyTask?.cancel()
         proxyTask = nil
         process.terminate()
+        let processID = process.processIdentifier
+        forceKillTask?.cancel()
+        forceKillTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled,
+                  self?.process?.processIdentifier == processID,
+                  self?.process?.isRunning == true else { return }
+            kill(processID, SIGKILL)
+        }
     }
 }
 
