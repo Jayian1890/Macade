@@ -27,3 +27,4 @@ ghidra-out/*
 
 # Keep macOS metadata ignored even inside allowlisted research/source trees.
 **/.DS_Store
+/Scripts/Macade.app

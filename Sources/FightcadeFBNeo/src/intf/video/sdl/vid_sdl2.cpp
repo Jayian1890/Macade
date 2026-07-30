@@ -3,7 +3,6 @@
 #include "vid_support.h"
 #include "vid_softfx.h"
 #include "macade_embedded.h"
-#include "macade_overlay.h"
 
 #include <SDL.h>
 
@@ -203,7 +202,6 @@ void RenderMessage()
 		messageFrames--;
 	}
 
-	MacadeOverlayRender(sdlRenderer);
 }
 
 static int Exit()
@@ -609,7 +607,6 @@ static int Paint(int bValidate)
 	FBA_LuaGui(pVidImage, nVidImageWidth, nVidImageHeight, nVidImageBPP, nVidImagePitch);
 
 	if (MacadeEmbeddedEnabled()) {
-		MacadeOverlayRender(NULL);
 		MacadeEmbeddedPublishFrame(pVidImage, nVidImageWidth, nVidImageHeight, nVidImagePitch, nVidImageBPP, nVidImageDepth == 16 ? 1 : 0);
 		if (macadePaintCount < 10 || macadePaintCount % 120 == 0) {
 			printf("Macade diagnostic: embedded paint=%d validate=%d sample=%u nonzero=%d bpp=%d pitch=%d\n", macadePaintCount, bValidate, MacadeSamplePixels(), MacadeCountNonZeroPixels(), nVidImageBPP, nVidImagePitch);

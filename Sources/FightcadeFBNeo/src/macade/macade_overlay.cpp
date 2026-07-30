@@ -1,5 +1,4 @@
 #include "burner.h"
-#include "sdl2_inprint.h"
 #include "macade_embedded.h"
 #include "macade_overlay.h"
 
@@ -66,17 +65,6 @@ static void PublishOverlay()
 		state.players[i].score = gOverlay.players[i].score;
 	}
 	MacadeEmbeddedPublishOverlay(&state);
-}
-
-static const char* RankLabel(int rank)
-{
-	static const char* ranks[] = { "?", "E", "D", "C", "B", "A", "S" };
-	return rank >= 0 && rank < (int)(sizeof(ranks) / sizeof(ranks[0])) ? ranks[rank] : "?";
-}
-
-static int TextWidth(const char* text)
-{
-	return text == NULL ? 0 : (int)strlen(text) * 8;
 }
 
 static int ParseInt(const char* text, int fallback)
@@ -203,60 +191,4 @@ void MacadeOverlaySetStats(double fps, int ping, int delay)
 	gOverlay.delay = delay;
 	if (gOverlay.chatFrames > 0 && !gOverlay.chatInputActive) gOverlay.chatFrames--;
 	PublishOverlay();
-}
-
-static void DrawTextRight(SDL_Renderer* renderer, const char* text, int x, int y)
-{
-	inprint_shadowed(renderer, text, x - TextWidth(text), y);
-}
-
-void MacadeOverlayRender(SDL_Renderer* renderer)
-{
-	if (renderer == NULL || !gOverlay.enabled) return;
-	int width = 0;
-	int height = 0;
-	if (SDL_GetRendererOutputSize(renderer, &width, &height) != 0 || width <= 0 || height <= 0) return;
-
-	SDL_BlendMode oldBlend;
-	SDL_GetRenderDrawBlendMode(renderer, &oldBlend);
-	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 155);
-	SDL_Rect topBar = { 0, 0, width, 48 };
-	SDL_RenderFillRect(renderer, &topBar);
-	SDL_SetRenderDrawBlendMode(renderer, oldBlend);
-
-	char left[192];
-	char right[192];
-	char center[64];
-	const OverlayPlayer& p1 = gOverlay.players[0];
-	const OverlayPlayer& p2 = gOverlay.players[1];
-	snprintf(left, sizeof(left), "%s%s%s%s%s", gOverlay.player == 0 && !gOverlay.spectator ? "* " : "", p1.name[0] ? p1.name : "Player 1", p1.rank >= 0 ? " #" : "", p1.rank >= 0 ? RankLabel(p1.rank) : "", p1.country[0] ? " " : "");
-	if (p1.country[0]) snprintf(left + strlen(left), sizeof(left) - strlen(left), "[%s]", p1.country);
-	snprintf(right, sizeof(right), "%s%s%s%s%s", p2.country[0] ? "[" : "", p2.country[0] ? p2.country : "", p2.country[0] ? "] " : "", p2.rank >= 0 ? "#" : "", p2.rank >= 0 ? RankLabel(p2.rank) : "");
-	if (p2.rank >= 0) snprintf(right + strlen(right), sizeof(right) - strlen(right), " ");
-	snprintf(right + strlen(right), sizeof(right) - strlen(right), "%s%s", p2.name[0] ? p2.name : "Player 2", gOverlay.player == 1 && !gOverlay.spectator ? " *" : "");
-	if (gOverlay.ranked > 1) snprintf(center, sizeof(center), "%d  FT%d  %d", p1.score, gOverlay.ranked, p2.score);
-	else snprintf(center, sizeof(center), "%d  VS  %d", p1.score, p2.score);
-
-	inprint_shadowed(renderer, left, 12, 10);
-	DrawTextRight(renderer, right, width - 12, 10);
-	inprint_shadowed(renderer, center, (width - TextWidth(center)) / 2, 10);
-
-	char details[192];
-	details[0] = 0;
-	if (gOverlay.spectator && gOverlay.spectators > 1) snprintf(details, sizeof(details), "Spectating | Spectators %d", gOverlay.spectators - 1);
-	else if (gOverlay.spectator) snprintf(details, sizeof(details), "Spectating");
-	else if (gOverlay.ping > 0) snprintf(details, sizeof(details), "Ping %dms | Delay %d", gOverlay.ping, gOverlay.delay);
-	else snprintf(details, sizeof(details), "Delay %d", gOverlay.delay);
-	inprint_shadowed(renderer, details, (width - TextWidth(details)) / 2, 30);
-
-	if (gOverlay.systemFrames > 0 && gOverlay.systemMessage[0]) {
-		inprint_shadowed(renderer, gOverlay.systemMessage, (width - TextWidth(gOverlay.systemMessage)) / 2, 64);
-		gOverlay.systemFrames--;
-	}
-	if (gOverlay.chatInputActive) {
-		char chat[192];
-		snprintf(chat, sizeof(chat), "> %s", gOverlay.chatInput);
-		inprint_shadowed(renderer, chat, 12, height - 28);
-	}
 }
