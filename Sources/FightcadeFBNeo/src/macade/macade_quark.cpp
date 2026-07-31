@@ -186,6 +186,13 @@ static bool __cdecl MacadeSaveState(unsigned char** buffer, int* len, int* check
 	return true;
 }
 
+static void MacadeApplyPostStateLoadFixups()
+{
+	if (!strcmp(BurnDrvGetTextA(DRV_NAME), "sfiii3nr1") && ReadValueAtHardwareAddress(0x638FC63, 1, 0) == 0x0A) {
+		WriteValueAtHardwareAddress(0x638FC63, 0x0B, 1, 0);
+	}
+}
+
 static bool __cdecl MacadeLoadState(unsigned char* buffer, int len)
 {
 	if (buffer == NULL || len <= 0) return false;
@@ -208,6 +215,7 @@ static bool __cdecl MacadeLoadState(unsigned char* buffer, int len)
 	int result = BurnAreaScan(ACB_FULLSCANL | ACB_WRITE, NULL);
 	gMacadeLoadCursor = NULL;
 	gMacadeLoadRemaining = 0;
+	if (result == 0) MacadeApplyPostStateLoadFixups();
 	return result == 0;
 }
 
