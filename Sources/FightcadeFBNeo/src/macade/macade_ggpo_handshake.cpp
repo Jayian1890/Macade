@@ -148,6 +148,18 @@ static bool MasterUDP(GGPOSession* session, const char* quark, int serverport)
 	return true;
 }
 
+static bool SendUsePortsFallback(GGPOSession* session, const char* quark, int serverport)
+{
+	if (session == NULL || session->udpFd < 0 || quark == NULL || quark[0] == 0) return false;
+	sockaddr_in master;
+	if (!Resolve(kMasterHost, serverport, SOCK_DGRAM, IPPROTO_UDP, &master)) return false;
+	char payload[192];
+	snprintf(payload, sizeof(payload), "useports/%s", quark);
+	ssize_t sent = sendto(session->udpFd, payload, strlen(payload), 0, (sockaddr*)&master, sizeof(master));
+	MacadeLog("Macade GGPO: UDP useports fallback sent payload=%s sent=%zd\n", payload, sent);
+	return sent == (ssize_t)strlen(payload);
+}
+
 static int WrappedPort(int port) { return port < 1 ? 65535 + port : (port > 65535 ? port - 65535 : port); }
 
 static void SendUDPControlReply(int fd, const sockaddr_in* to, const unsigned char* buffer, int count)
@@ -435,9 +447,15 @@ bool MacadeEstablishServedSession(GGPOSession* session, const char* quark, int s
 	session->udpFd = BindUDP();
 	if (session->udpFd < 0) return false;
 	if (!MasterUDP(session, quark, serverport)) return false;
-	if (session->hasPeer && !HolePunch(session, quark)) { MacadeLog("Macade GGPO: UDP punch failed; direct path unavailable\n"); return false; }
+	if (session->hasPeer && !HolePunch(session, quark)) {
+		MacadeLog("Macade GGPO: UDP punch failed; requesting useports fallback\n");
+		if (!SendUsePortsFallback(session, quark, serverport)) return false;
+		session->openPortFallback = true;
+		session->hasPeer = false;
+		memset(&session->peer, 0, sizeof(session->peer));
+	}
 	session->tcpFd = ConnectTCP(serverport);
-	if (session->tcpFd < 0) { MacadeLog("Macade GGPO: TCP connect failed after UDP punch\n"); return false; }
+	if (session->tcpFd < 0) { MacadeLog("Macade GGPO: TCP connect failed after UDP setup\n"); return false; }
 	StartTCP(session, quark);
 	return true;
 }
