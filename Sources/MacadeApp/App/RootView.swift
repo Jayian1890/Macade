@@ -3,6 +3,7 @@ import SwiftUI
 
 struct RootView: View {
     @State private var viewModel: RootViewModel
+    @State private var updateController = MacadeUpdateController.shared
     private let authenticationService: any AuthenticationServicing
 
     init(authenticationService: any AuthenticationServicing = FightcadeAuthenticationService()) {
@@ -30,6 +31,12 @@ struct RootView: View {
         .background(MacadeBackground())
         .task {
             await viewModel.restoreSession(authenticationService: authenticationService)
+        }
+        .task {
+            await updateController.checkAutomatically()
+        }
+        .sheet(isPresented: $updateController.isPresented) {
+            MacadeUpdateSheet(controller: updateController)
         }
     }
 }

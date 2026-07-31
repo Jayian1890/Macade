@@ -57,6 +57,7 @@ enum {
 	kOverlayPlayerCountryLength = 16,
 	kOverlayPlayerRank = 144,
 	kOverlayPlayerScore = 148,
+	kOverlayConnectionPhase = 3420,
 };
 
 static void Store32(int offset, uint32_t value)
@@ -300,6 +301,13 @@ void MacadeEmbeddedSetOverlaySystemMessage(const char* message, int frames)
 	EnsureVideo();
 	StoreString(kOverlaySystemMessage, kOverlaySystemMessageLength, message);
 	Store32(kOverlaySystemFrames, frames > 0 ? (uint32_t)frames : 0);
+	BumpOverlay();
+}
+
+void MacadeEmbeddedSetOverlayConnectionPhase(int phase)
+{
+	EnsureVideo();
+	Store32(kOverlayConnectionPhase, phase > 0 ? (uint32_t)phase : 0);
 	BumpOverlay();
 }
 

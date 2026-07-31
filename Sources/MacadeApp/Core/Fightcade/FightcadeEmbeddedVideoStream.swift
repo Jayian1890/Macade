@@ -34,6 +34,7 @@ enum FightcadeEmbeddedVideoFrameRead<Value> {
 
 struct FightcadeEmbeddedOverlayState: Equatable, Sendable {
     let isEnabled: Bool
+    let connectionPhase: Int
     let isSpectator: Bool
     let ranked: Int
     let player: Int
@@ -157,6 +158,13 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
         }
     }
 
+    func overlaySnapshot() -> FightcadeEmbeddedOverlayState? {
+        lock.withLock {
+            guard !isClosed, loadUInt32(Header.magic) == Header.expectedMagic else { return nil }
+            return loadOverlayState()
+        }
+    }
+
     func withNextFrame<Value>(after lastFrameIndex: UInt64, _ body: (FightcadeEmbeddedMappedVideoFrame) -> Value) -> FightcadeEmbeddedVideoFrameRead<Value> {
         lock.withLock {
             guard !isClosed else { return .missing }
@@ -264,6 +272,7 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
 
         return FightcadeEmbeddedOverlayState(
             isEnabled: true,
+            connectionPhase: Int(loadUInt32(Header.overlayConnectionPhase)),
             isSpectator: loadUInt32(Header.overlaySpectator) != 0,
             ranked: Int(loadUInt32(Header.overlayRanked)),
             player: Int(loadUInt32(Header.overlayPlayer)),
@@ -360,5 +369,6 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
         static let overlayPlayerCountryLength = 16
         static let overlayPlayerRank = 144
         static let overlayPlayerScore = 148
+        static let overlayConnectionPhase = overlay + 3356
     }
 }

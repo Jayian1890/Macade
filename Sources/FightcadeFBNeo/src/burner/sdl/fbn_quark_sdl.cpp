@@ -2,6 +2,7 @@
 #include "ggpoclient.h"
 #include "ggponet.h"
 #include "macade_embedded.h"
+#include "sdl_quark_detector.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -142,14 +143,19 @@ bool __cdecl ggpo_on_event_callback(GGPOEvent *info)
    if (ggpo_is_client_eventcode(info->code)) {
       GGPOClientEvent *client = reinterpret_cast<GGPOClientEvent *>(info);
       if (client->code == GGPOCLIENT_EVENTCODE_CONNECTING) {
+         MacadeEmbeddedSetOverlayConnectionPhase(1);
          MacadeEmbeddedSetOverlaySystemMessage("Connecting...", 180);
       } else if (client->code == GGPOCLIENT_EVENTCODE_CONNECTED) {
+         MacadeEmbeddedSetOverlayConnectionPhase(2);
          MacadeEmbeddedSetOverlaySystemMessage("Connected", 120);
       } else if (client->code == GGPOCLIENT_EVENTCODE_RETREIVING_MATCHINFO) {
+         MacadeEmbeddedSetOverlayConnectionPhase(3);
          MacadeEmbeddedSetOverlaySystemMessage("Retrieving Match Info...", 180);
       } else if (client->code == GGPOCLIENT_EVENTCODE_DISCONNECTED) {
+         MacadeEmbeddedSetOverlayConnectionPhase(8);
          MacadeEmbeddedSetOverlaySystemMessage("Disconnected!", 300);
       } else if (client->code == GGPOCLIENT_EVENTCODE_MATCHINFO) {
+         MacadeEmbeddedSetOverlayConnectionPhase(4);
          MacadeEmbeddedSetOverlaySystemMessage("", 0);
          MacadeEmbeddedSetOverlayGameInfo(client->u.matchinfo.p1, client->u.matchinfo.p2, kNetSpectator, ranked_match, local_player);
       } else if (client->code == GGPOCLIENT_EVENTCODE_SPECTATOR_COUNT_CHANGED) {
@@ -165,11 +171,21 @@ bool __cdecl ggpo_on_event_callback(GGPOEvent *info)
       return true;
    }
    printf("Macade quark event: code=%d\n", info->code);
-   if (info->code == GGPO_EVENTCODE_RUNNING) {
+   if (info->code == GGPO_EVENTCODE_CONNECTED_TO_PEER) {
+      MacadeEmbeddedSetOverlayConnectionPhase(5);
+      MacadeEmbeddedSetOverlaySystemMessage("Connected to Peer", 120);
+   } else if (info->code == GGPO_EVENTCODE_SYNCHRONIZING_WITH_PEER) {
+      MacadeEmbeddedSetOverlayConnectionPhase(6);
+      MacadeEmbeddedSetOverlaySystemMessage("Synchronizing with Peer...", 180);
+   } else if (info->code == GGPO_EVENTCODE_RUNNING) {
       char version[16];
       snprintf(version, sizeof(version), "%d", NET_VERSION);
       QuarkSendChatCmd(version, 'V');
+      MacadeEmbeddedSetOverlayConnectionPhase(7);
       MacadeEmbeddedSetOverlaySystemMessage("", 0);
+   } else if (info->code == GGPO_EVENTCODE_DISCONNECTED_FROM_PEER) {
+      MacadeEmbeddedSetOverlayConnectionPhase(8);
+      MacadeEmbeddedSetOverlaySystemMessage("Disconnected from Peer", 300);
    }
    return true;
 }
@@ -186,6 +202,8 @@ bool __cdecl ggpo_begin_game_callback(char *name)
 
    if (kNetSpectator) {
       nBurnDrvActive = index;
+      DetectorLoad(name, false, game_seed);
+      DetectorSetGameInfo(kNetSpectator, ranked_match);
       delay_load = true;
       return true;
    }
@@ -195,10 +213,10 @@ bool __cdecl ggpo_begin_game_callback(char *name)
       if (DrvInit(index, true) != 0) {
          return false;
       }
-      MediaInit();
-   } else {
-      MediaInit();
    }
+   DetectorLoad(name, false, game_seed);
+   DetectorSetGameInfo(kNetSpectator, ranked_match);
+   MediaInit();
    MacadeEmbeddedSetOverlayGameInfo("Player1#0,0", "Player2#0,0", 0, ranked_match, local_player);
    MacadeEmbeddedSetOverlayStats(0, frame_delay);
    return true;
@@ -232,6 +250,12 @@ bool __cdecl ggpo_save_game_state_callback(unsigned char **buffer, int *len, int
    header[3] = 0;
    header[4] = 0;
    header[5] = 0;
+   if (!kNetSpectator) {
+      int state, score1, score2, start1, start2;
+      DetectorGetState(state, score1, score2, start1, start2);
+      header[3] = state | ((score1 & 0xff) << 8) | ((score2 & 0xff) << 16) | (ranked_match << 24);
+      header[4] = (start1 & 0xff) | ((start2 & 0xff) << 8);
+   }
    memcpy(*buffer + kStateHeaderSize, acb_buffer, payload_size);
    return false;
 }
@@ -248,8 +272,21 @@ bool __cdecl ggpo_load_game_state_callback(unsigned char *buffer, int)
    }
    int *header = reinterpret_cast<int *>(buffer);
    if (header[0] == 'GGPO') {
+      int header_size = header[1];
+      int header_count = header_size / sizeof(int);
       nAcbVersion = header[2];
-      buffer += header[1];
+      int state = header[3] & 0xff;
+      int score1 = (header[3] >> 8) & 0xff;
+      int score2 = (header[3] >> 16) & 0xff;
+      int ranked = (header[3] >> 24) & 0xff;
+      int start1 = header_count > 4 ? header[4] & 0xff : 0;
+      int start2 = header_count > 4 ? (header[4] >> 8) & 0xff : 0;
+      if (kNetSpectator) {
+         ranked_match = ranked;
+         DetectorSetGameInfo(kNetSpectator, ranked_match);
+         DetectorSetState(state, score1, score2, start1, start2);
+      }
+      buffer += header_size;
    }
    acb_scan = reinterpret_cast<char *>(buffer);
    BurnAcb = write_acb;
@@ -305,6 +342,7 @@ bool QuarkInit(const char *connect)
    ranked_match = 0;
    local_player = 0;
    frame_delay = 0;
+   MacadeEmbeddedSetOverlayConnectionPhase(1);
 
    GGPOSessionCallbacks cb{};
    cb.begin_game = ggpo_begin_game_callback;

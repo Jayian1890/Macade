@@ -58,6 +58,14 @@ struct MacadeApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1120, height: 720)
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates...") {
+                    MacadeUpdateController.shared.showAndCheck()
+                }
+                .keyboardShortcut("u", modifiers: [.command])
+            }
+        }
 
         Settings {
             MacadeSettingsView()

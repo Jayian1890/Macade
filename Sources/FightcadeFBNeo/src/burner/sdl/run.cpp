@@ -4,7 +4,7 @@
 
 #include <sys/time.h>
 
-static unsigned int nDoFPS = 0;
+void DetectorUpdate(); static unsigned int nDoFPS = 0;
 bool bAltPause = 0;
 
 int bAlwaysDrawFrames = 0;
@@ -184,7 +184,7 @@ int RunFrame(int bDraw, int bPause, int bInput, int bNotifyGGPO)
 
 	if (kNetGame && bNotifyGGPO) {
 		QuarkIncrementFrame();
-	}
+	} DetectorUpdate();
 
 	if (bAppShowFPS) {
 		if (nDoFPS < nFramesRendered) {

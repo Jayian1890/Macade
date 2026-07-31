@@ -217,7 +217,7 @@ drvobj	+= \
 		d_sg1000.o
 
 depobj	+= \
-		bzip.o config.o drv.o fbn_network_sdl.o fbn_quark_sdl.o inpdipsw.o main.o macade_embedded.o media.o replay.o run.o stated.o tchar_bridge_sdl.o \
+		bzip.o config.o drv.o fbn_network_sdl.o fbn_quark_sdl.o inpdipsw.o main.o macade_embedded.o media.o replay.o run.o sdl_quark_detector.o stated.o tchar_bridge_sdl.o \
 		stringset.o ips_manager.o support_paths.o scrn.o \
 		\
 		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o \

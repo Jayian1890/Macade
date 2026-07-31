@@ -8,6 +8,7 @@ __pycache__/
 .swiftpm/
 .build/
 DerivedData/
+dist/
 *.xcuserstate
 xcuserdata/
 

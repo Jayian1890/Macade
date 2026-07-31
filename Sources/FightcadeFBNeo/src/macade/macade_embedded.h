@@ -5,6 +5,7 @@ bool MacadeEmbeddedWindowHidden();
 void MacadeEmbeddedShutdown();
 void MacadeEmbeddedPumpInput();
 void MacadeEmbeddedPublishFrame(const void* pixels, int width, int height, int pitch, int bytesPerPixel, int isRGB565);
+void MacadeEmbeddedSetOverlayConnectionPhase(int phase);
 void MacadeEmbeddedSetOverlaySystemMessage(const char* message, int frames);
 void MacadeEmbeddedSetOverlayGameInfo(const char* player1, const char* player2, int spectator, int ranked, int player);
 void MacadeEmbeddedSetOverlaySpectators(int spectators);
