@@ -604,8 +604,12 @@ int RunInit()
 	fflush(stdout);
 
 	RunReset();
-	int autoStateStatus = StatedAuto(0);
-	printf("Macade diagnostic: RunInit auto-state status=%d\n", autoStateStatus);
+	if (kNetGame && !MacadeQuarkLocalTrainingActive()) {
+		printf("Macade diagnostic: RunInit skipping auto-state for netplay\n");
+	} else {
+		int autoStateStatus = StatedAuto(0);
+		printf("Macade diagnostic: RunInit auto-state status=%d\n", autoStateStatus);
+	}
 	fflush(stdout);
 	return 0;
 }
@@ -613,7 +617,12 @@ int RunInit()
 int RunExit()
 {
 	nNormalLast = 0;
-	StatedAuto(1);
+	if (kNetGame && !MacadeQuarkLocalTrainingActive()) {
+		printf("Macade diagnostic: RunExit skipping auto-state save for netplay\n");
+		fflush(stdout);
+	} else {
+		StatedAuto(1);
+	}
 	return 0;
 }
 

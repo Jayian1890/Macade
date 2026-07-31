@@ -1,4 +1,5 @@
 #include "burner.h"
+#include "macade_embedded.h"
 
 #include <stdio.h>
 
@@ -41,6 +42,19 @@ static void MacadeRunEmbeddedSpectatorLoop()
 	fflush(stdout);
 }
 
+static void MacadeRunEmbeddedNetplayLoop()
+{
+	printf("Macade diagnostic: entering embedded netplay idle loop\n");
+	fflush(stdout);
+	RunInit();
+	while (MacadeQuarkSessionRunning() && !RunIdle()) {
+		MacadeEmbeddedPumpInput();
+	}
+	RunExit();
+	printf("Macade diagnostic: returned from embedded netplay idle loop\n");
+	fflush(stdout);
+}
+
 void DoGame(int gameToRun)
 {
 	printf("Macade diagnostic: DoGame enter index=%d net=%d\n", gameToRun, kNetGame);
@@ -72,11 +86,12 @@ void DoGame(int gameToRun)
 				printf("Macade diagnostic: DoGame net-input status=%d\n", inputStatus);
 				fflush(stdout);
 			}
-			printf("Macade diagnostic: DoGame entering RunMessageLoop\n");
+			printf("Macade diagnostic: DoGame entering run loop\n");
 			fflush(stdout);
 			if (macadeQuarkActive && kNetSpectator) MacadeRunEmbeddedSpectatorLoop();
+			else if (macadeQuarkActive && MacadeEmbeddedEnabled() && kNetGame && !MacadeQuarkLocalTrainingActive()) MacadeRunEmbeddedNetplayLoop();
 			else RunMessageLoop();
-			printf("Macade diagnostic: DoGame returned from RunMessageLoop\n");
+			printf("Macade diagnostic: DoGame returned from run loop\n");
 			fflush(stdout);
 		} else {
 			printf("Macade diagnostic: spectator stream state unavailable; aborting run loop\n");
