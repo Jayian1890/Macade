@@ -122,8 +122,9 @@ void __cdecl ggpo_close_session(GGPOSession* session)
 
 bool __cdecl ggpo_idle(GGPOSession* session, int timeout)
 {
+	if (session == NULL) return false;
 	int waitMs = timeout < 0 ? 0 : timeout;
-	if (session != NULL && session->isSpectator) {
+	if (session->isSpectator) {
 		MacadeStartStreamingTCPIfNeeded(session);
 		MacadePollTCP(session, waitMs);
 		return !session->networkDisconnected;
@@ -132,7 +133,7 @@ bool __cdecl ggpo_idle(GGPOSession* session, int timeout)
 	MacadePollTCP(session, 0);
 	MacadePollUDP(session, waitMs);
 	MacadePollTCP(session, 0);
-	return session == NULL || (!session->networkDisconnected && MacadeRunRollbackIfNeeded(session));
+	return !session->networkDisconnected && MacadeRunRollbackIfNeeded(session);
 }
 
 bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size, int players)
@@ -207,15 +208,14 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 
 bool __cdecl ggpo_advance_frame(GGPOSession* session)
 {
-	if (session != NULL) {
-		session->currentFrame++;
-		if (session->isSpectator) {
-			MacadePollTCP(session, 0);
-			return true;
-		}
-		MacadeSaveCurrentFrame(session);
-		GGPOMacTrimHistory(session);
+	if (session == NULL) return false;
+	session->currentFrame++;
+	if (session->isSpectator) {
+		MacadePollTCP(session, 0);
+		return true;
 	}
+	MacadeSaveCurrentFrame(session);
+	GGPOMacTrimHistory(session);
 	return true;
 }
 
@@ -223,7 +223,7 @@ bool __cdecl ggpo_get_stats(GGPOSession* session, GGPONetworkStats* stats)
 {
 	if (stats == NULL) return false;
 	memset(stats, 0, sizeof(*stats));
-	if (session == NULL) return true;
+	if (session == NULL) return false;
 	stats->network.predict_queue_len = (int)session->predictedRemoteInputs.size();
 	stats->network.send_queue_len = session->localAckFrame < 0 ? session->localSendHighFrame + 1 : session->localSendHighFrame - session->localAckFrame + 1;
 	if (stats->network.send_queue_len < 0) stats->network.send_queue_len = 0;
