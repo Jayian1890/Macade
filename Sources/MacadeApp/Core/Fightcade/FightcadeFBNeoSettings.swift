@@ -34,7 +34,7 @@ struct FightcadeFBNeoSettings: Equatable, Sendable {
         scanlines: false,
         softwareGamma: false,
         gamma: 1.25,
-        volume: 100,
+        volume: 50,
         sampleRate: 44_100,
         dspFilter: false,
         pcmInterpolation: 1,

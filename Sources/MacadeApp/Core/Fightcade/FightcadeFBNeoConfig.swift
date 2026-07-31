@@ -94,7 +94,7 @@ struct FightcadeFBNeoConfig {
         bVidScanlines 0
         bDoGamma 0
         nGamma 1.250000
-        nAudVolume 10000
+        nAudVolume 5000
         nAudSampleRate[0] 44100
         nAudDSPModule[0] 0
         nInterpolation 1

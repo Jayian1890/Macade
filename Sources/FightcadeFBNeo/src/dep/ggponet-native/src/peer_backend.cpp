@@ -214,11 +214,14 @@ PeerBackend *create_peer_session(GGPOSessionCallbacks *callbacks, char *game, in
    if (session == nullptr) {
       return nullptr;
    }
-   peer_backend_construct(session, &peer_vtable, callbacks, game, local_port);
+   if (!peer_backend_construct(session, &peer_vtable, callbacks, game, local_port)) {
+      delete session;
+      return nullptr;
+   }
    return session;
 }
 
-void peer_backend_construct(PeerBackend *session, const GGPOSessionVTable *vtable, GGPOSessionCallbacks *callbacks,
+bool peer_backend_construct(PeerBackend *session, const GGPOSessionVTable *vtable, GGPOSessionCallbacks *callbacks,
                             char *game, int local_port)
 {
    session->base.vtable = vtable;
@@ -241,7 +244,12 @@ void peer_backend_construct(PeerBackend *session, const GGPOSessionVTable *vtabl
    config.max_prediction_frames = 20;
    sync_init(&session->sync, &config);
    udp_protocol_bind(&session->udp, local_port);
-   session->callbacks.begin_game(game);
+   if (!session->callbacks.begin_game(game)) {
+      quark_log("begin_game failed for %s.\n", game != nullptr ? game : "");
+      peer_backend_teardown(session);
+      return false;
+   }
+   return true;
 }
 
 void peer_backend_teardown(PeerBackend *session)

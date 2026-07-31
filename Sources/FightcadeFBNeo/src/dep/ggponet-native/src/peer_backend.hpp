@@ -26,7 +26,7 @@ struct PeerBackend {
 
 PeerBackend *create_peer_session(GGPOSessionCallbacks *callbacks, char *game, int local_port);
 void peer_session_connect(PeerBackend *session, char *remote_ip, int remote_port, bool player2);
-void peer_backend_construct(PeerBackend *session, const GGPOSessionVTable *vtable, GGPOSessionCallbacks *callbacks,
+bool peer_backend_construct(PeerBackend *session, const GGPOSessionVTable *vtable, GGPOSessionCallbacks *callbacks,
                             char *game, int local_port);
 void peer_backend_teardown(PeerBackend *session);
 bool peer_backend_idle(PeerBackend *session, int timeout_ms);

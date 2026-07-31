@@ -12,8 +12,7 @@ struct EmbeddedEmulatorSessionControls: View {
     var body: some View {
         HStack(spacing: MacadeSpacing.xSmall) {
             recordMenu
-            videoMenu
-            audioMenu
+            scanlinesButton
         }
         .onAppear(perform: reloadSettings)
         .onReceive(NotificationCenter.default.publisher(for: .fightcadeFBNeoSettingsDidChange)) { _ in
@@ -42,107 +41,24 @@ struct EmbeddedEmulatorSessionControls: View {
         .help("Session log and recording status")
     }
 
-    private var videoMenu: some View {
-        Menu {
-            Toggle("Stretch to Window", isOn: boolBinding(\.stretchToWindow))
-            Toggle("Show Scanlines", isOn: boolBinding(\.scanlines))
-            Toggle("Software Brightness", isOn: boolBinding(\.softwareGamma))
-
-            Divider()
-
-            Button("Brightness +0.05") {
-                updateSettings { $0.gamma = min(2.0, $0.gamma + 0.05) }
-            }
-            Button("Brightness -0.05") {
-                updateSettings { $0.gamma = max(0.5, $0.gamma - 0.05) }
-            }
-            Button("Brightness: \(settings.gamma.formatted(.number.precision(.fractionLength(2))))") { }
-                .disabled(true)
-
-            settingsStatusItem
+    private var scanlinesButton: some View {
+        Button {
+            updateSettings { $0.scanlines.toggle() }
         } label: {
-            controlLabel("Video")
+            controlLabel("Scanlines", isActive: settings.scanlines)
         }
-        .menuStyle(.borderlessButton)
-        .help("FBNeo video settings")
-    }
-
-    private var audioMenu: some View {
-        Menu {
-            Button("Volume +5%") {
-                updateSettings { $0.volume = min(100, $0.volume + 5) }
-            }
-            Button("Volume -5%") {
-                updateSettings { $0.volume = max(0, $0.volume - 5) }
-            }
-            Button("Volume: \(settings.volume)%") { }
-                .disabled(true)
-
-            Divider()
-
-            Picker("Sample Rate", selection: intBinding(\.sampleRate)) {
-                Text("44.1 kHz").tag(44_100)
-                Text("48 kHz").tag(48_000)
-                Text("96 kHz").tag(96_000)
-            }
-
-            Toggle("DSP Filter", isOn: boolBinding(\.dspFilter))
-
-            Picker("PCM Smoothing", selection: intBinding(\.pcmInterpolation)) {
-                Text("Off").tag(0)
-                Text("Standard").tag(1)
-                Text("High").tag(3)
-            }
-
-            Picker("FM Smoothing", selection: intBinding(\.fmInterpolation)) {
-                Text("Off").tag(0)
-                Text("Standard").tag(1)
-                Text("High").tag(3)
-            }
-
-            settingsStatusItem
-        } label: {
-            controlLabel("Audio")
-        }
-        .menuStyle(.borderlessButton)
-        .help("FBNeo audio settings")
-    }
-
-    @ViewBuilder
-    private var settingsStatusItem: some View {
-        if let settingsStatus {
-            Divider()
-            Button(settingsStatus) { }
-                .disabled(true)
-        }
+        .buttonStyle(.plain)
+        .help(settingsStatus ?? (settings.scanlines ? "Disable scanlines" : "Enable scanlines"))
     }
 
     private var sessionLogExists: Bool {
         FileManager.default.fileExists(atPath: session.logURL.path)
     }
 
-    private func controlLabel(_ title: String) -> some View {
+    private func controlLabel(_ title: String, isActive: Bool = false) -> some View {
         Text(title)
             .font(.system(size: 11, weight: .black, design: .monospaced))
-            .foregroundStyle(MacadeColor.inkMuted)
-    }
-
-    private func boolBinding(_ keyPath: WritableKeyPath<FightcadeFBNeoSettings, Bool>) -> Binding<Bool> {
-        Binding(
-            get: { settings[keyPath: keyPath] },
-            set: { newValue in
-                updateSettings { $0[keyPath: keyPath] = newValue }
-            }
-        )
-    }
-
-    private func intBinding(_ keyPath: WritableKeyPath<FightcadeFBNeoSettings, Int>) -> Binding<Int> {
-        Binding(
-            get: { settings[keyPath: keyPath] },
-            set: { newValue in
-                updateSettings { $0[keyPath: keyPath] = newValue }
-            }
-        )
+            .foregroundStyle(isActive ? MacadeColor.neonCyan : MacadeColor.inkMuted)
     }
 
     private func updateSettings(_ update: (inout FightcadeFBNeoSettings) -> Void) {

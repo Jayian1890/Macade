@@ -442,7 +442,10 @@ GGPOSession *create_client_session(GGPOSessionCallbacks *callbacks, char *game, 
    }
    backend->game = game != nullptr ? game : "";
    backend->match_id = match_id != nullptr ? match_id : "";
-   peer_backend_construct(&backend->peer, &client_vtable, callbacks, backend->game.data(), kPeerLocalPort);
+   if (!peer_backend_construct(&backend->peer, &client_vtable, callbacks, backend->game.data(), kPeerLocalPort)) {
+      delete backend;
+      return nullptr;
+   }
    backend->peer.confirmed_input_hook = client_confirmed_input_hook;
    backend->socket_fd = connect_client_socket(server_port);
    backend->next_sequence = 0;

@@ -187,12 +187,11 @@ void GameDetector::Update()
       bool player2_detected = false;
       for (size_t i = 0; i < dPlayer1.size(); i++) player1_detected |= dPlayer1[i].Detected();
       for (size_t i = 0; i < dPlayer2.size(); i++) player2_detected |= dPlayer2[i].Detected();
-      if (player1_detected) {
+      if (player1_detected && !player2_detected) {
          score1++;
          DetectorSetState(ST_WAIT_START, score1, score2);
          winner = 1;
-      }
-      if (player2_detected) {
+      } else if (player2_detected && !player1_detected) {
          score2++;
          DetectorSetState(ST_WAIT_START, score1, score2);
          winner = 2;
