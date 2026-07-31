@@ -154,6 +154,7 @@ private struct ChannelChatView: View {
 private struct ChatTranslationSessionHost: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
     @State private var configuration: TranslationSession.Configuration?
+    @State private var activeSourceLanguageIdentifier: String?
     @State private var activeTargetLanguageIdentifier: String?
 
     var body: some View {
@@ -164,11 +165,13 @@ private struct ChatTranslationSessionHost: View {
                 activateIfNeeded()
             }
             .translationTask(configuration) { session in
-                guard let targetLanguageIdentifier = activeTargetLanguageIdentifier else {
+                guard let sourceLanguageIdentifier = activeSourceLanguageIdentifier,
+                      let targetLanguageIdentifier = activeTargetLanguageIdentifier else {
                     return
                 }
 
                 let requests = viewModel.chatTranslation.drainPendingRequests(
+                    sourceLanguageIdentifier: sourceLanguageIdentifier,
                     targetLanguageIdentifier: targetLanguageIdentifier,
                     limit: 8
                 )
@@ -210,17 +213,21 @@ private struct ChatTranslationSessionHost: View {
 
     private func activateIfNeeded() {
         guard viewModel.chatTranslation.preferences.isEnabled,
-              let request = viewModel.chatTranslation.nextPendingRequest else {
+              let request = viewModel.chatTranslation.nextPendingRequest,
+              let sourceLanguageIdentifier = request.sourceLanguageIdentifier else {
             return
         }
 
         let targetLanguageIdentifier = request.targetLanguageIdentifier
+        let source = Locale.Language(identifier: sourceLanguageIdentifier)
         let target = Locale.Language(identifier: targetLanguageIdentifier)
-        if activeTargetLanguageIdentifier == targetLanguageIdentifier {
+        if activeSourceLanguageIdentifier == sourceLanguageIdentifier,
+           activeTargetLanguageIdentifier == targetLanguageIdentifier {
             configuration?.invalidate()
         } else {
+            activeSourceLanguageIdentifier = sourceLanguageIdentifier
             activeTargetLanguageIdentifier = targetLanguageIdentifier
-            configuration = TranslationSession.Configuration(source: nil, target: target)
+            configuration = TranslationSession.Configuration(source: source, target: target)
         }
     }
 }
@@ -257,6 +264,8 @@ private struct ChatInput: View {
                         return .handled
                     }
 
+                translationTargetMenu
+
                 Button(action: sendChatKeepingFocus) {
                     Image(systemName: "paperplane.fill")
                         .frame(width: 28, height: 28)
@@ -283,6 +292,64 @@ private struct ChatInput: View {
 
     private var mentionSuggestions: [FightcadeChannelUser] {
         viewModel.chatMentionSuggestions(in: channel)
+    }
+
+    private var translationTargetChoices: [(id: String, name: String)] {
+        viewModel.chatTranslationTargetChoices(in: channel)
+    }
+
+    private var selectedTranslationTargetIdentifier: String? {
+        guard viewModel.chatTranslation.preferences.isEnabled else { return nil }
+        return viewModel.chatTranslation.preferences.targetLanguageIdentifier
+    }
+
+    private var translationTargetLabel: String {
+        guard let selectedTranslationTargetIdentifier else { return "Translate to" }
+        return "To \(viewModel.chatTranslationLanguageName(for: selectedTranslationTargetIdentifier))"
+    }
+
+    private var translationTargetMenu: some View {
+        Menu {
+            Button("Off") {
+                setTranslationTarget(nil)
+            }
+
+            if translationTargetChoices.isEmpty {
+                Divider()
+                Button("No detected languages") { }
+                    .disabled(true)
+            } else {
+                Divider()
+                ForEach(translationTargetChoices, id: \.id) { language in
+                    Button {
+                        setTranslationTarget(language.id)
+                    } label: {
+                        if selectedTranslationTargetIdentifier == language.id {
+                            Label(language.name, systemImage: "checkmark")
+                        } else {
+                            Text(language.name)
+                        }
+                    }
+                }
+            }
+        } label: {
+            Text(translationTargetLabel)
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .foregroundStyle(selectedTranslationTargetIdentifier == nil ? MacadeColor.inkMuted : MacadeColor.neonCyan)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .background(MacadeColor.panel.opacity(0.92), in: Capsule())
+        }
+        .menuStyle(.borderlessButton)
+        .help("Translate incoming chat to a detected channel language")
+    }
+
+    private func setTranslationTarget(_ identifier: String?) {
+        viewModel.setChatTranslationTarget(identifier, in: channel)
+        DispatchQueue.main.async {
+            isChatFocused = true
+        }
     }
 
     private func sendChatKeepingFocus() {

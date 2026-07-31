@@ -12,6 +12,7 @@ struct EmbeddedEmulatorSessionControls: View {
     var body: some View {
         HStack(spacing: MacadeSpacing.xSmall) {
             recordMenu
+            scaleMenu
             scanlinesButton
         }
         .onAppear(perform: reloadSettings)
@@ -49,6 +50,30 @@ struct EmbeddedEmulatorSessionControls: View {
         }
         .buttonStyle(.plain)
         .help(settingsStatus ?? (settings.scanlines ? "Disable scanlines" : "Enable scanlines"))
+    }
+
+    private var scaleMenu: some View {
+        Menu {
+            Button("Fit") {
+                updateSettings { $0.embeddedVideoScale = 0 }
+            }
+
+            Divider()
+
+            ForEach(1...5, id: \.self) { scale in
+                Button("\(scale)x") {
+                    updateSettings { $0.embeddedVideoScale = scale }
+                }
+            }
+        } label: {
+            controlLabel(scaleTitle, isActive: settings.embeddedVideoScale > 0)
+        }
+        .menuStyle(.borderlessButton)
+        .help("Embedded video scale")
+    }
+
+    private var scaleTitle: String {
+        settings.embeddedVideoScale > 0 ? "\(settings.embeddedVideoScale)x" : "Fit"
     }
 
     private var sessionLogExists: Bool {

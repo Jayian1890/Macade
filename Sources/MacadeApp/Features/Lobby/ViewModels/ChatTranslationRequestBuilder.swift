@@ -26,6 +26,14 @@ struct ChatTranslationRequestBuilder {
         }.value
     }
 
+    static func detectLanguage(in body: String) async -> String? {
+        await Task.detached(priority: .utility) {
+            let body = body.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard shouldTranslateChatBody(body) else { return nil }
+            return detectedLanguageIdentifier(in: body)
+        }.value
+    }
+
     private static func buildSynchronously(
         id: FightcadeChatMessage.ID,
         channelName: String,

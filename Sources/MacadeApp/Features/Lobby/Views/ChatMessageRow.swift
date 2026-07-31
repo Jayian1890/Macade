@@ -89,7 +89,8 @@ struct ChatMessageRow: View {
 
     @ViewBuilder
     private var translationText: some View {
-        if case .translated(let translation) = viewModel.chatTranslation.translationsByMessageID[message.id],
+        if viewModel.chatTranslation.preferences.isEnabled,
+           case .translated(let translation) = viewModel.chatTranslation.translationsByMessageID[message.id],
            !translation.translatedBody.isEmpty,
             translation.translatedBody != message.body {
             VStack(alignment: .leading, spacing: 3) {

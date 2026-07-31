@@ -71,6 +71,11 @@ struct FightcadeEmbeddedOverlayState: Equatable, Sendable {
     }
 }
 
+struct FightcadeEmbeddedVideoSourceSize: Equatable, Sendable {
+    let width: Int
+    let height: Int
+}
+
 final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
     static let byteCount = 64 * 1024 * 1024
 
@@ -162,6 +167,16 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
         lock.withLock {
             guard !isClosed, loadUInt32(Header.magic) == Header.expectedMagic else { return nil }
             return loadOverlayState()
+        }
+    }
+
+    func sourceSizeSnapshot() -> FightcadeEmbeddedVideoSourceSize? {
+        lock.withLock {
+            guard !isClosed, loadUInt32(Header.magic) == Header.expectedMagic else { return nil }
+            let width = Int(loadUInt32(Header.width))
+            let height = Int(loadUInt32(Header.height))
+            guard width > 0, height > 0 else { return nil }
+            return FightcadeEmbeddedVideoSourceSize(width: width, height: height)
         }
     }
 

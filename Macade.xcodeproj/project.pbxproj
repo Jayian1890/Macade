@@ -73,6 +73,7 @@
 		BF00000B000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */; };
 		BF00000B000000000000002E /* ChallengeBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002E /* ChallengeBanner.swift */; };
 		BF00000B000000000000002F /* ChatMessageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002F /* ChatMessageRow.swift */; };
+		BF00000B00000000000000C1 /* NativeEmulatorOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000C1 /* NativeEmulatorOverlay.swift */; };
 		BF00000B0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift */; };
 		BF00000B0000000000000031 /* PingQualityIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000031 /* PingQualityIcon.swift */; };
 		BF00000B0000000000000032 /* JoinedChannelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000032 /* JoinedChannelStore.swift */; };
@@ -186,6 +187,7 @@
 		BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOPeerUDPProtocol.swift; sourceTree = "<group>"; };
 		BF00000C000000000000002E /* ChallengeBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeBanner.swift; sourceTree = "<group>"; };
 		BF00000C000000000000002F /* ChatMessageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageRow.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000C1 /* NativeEmulatorOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeEmulatorOverlay.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+PlayerRefresh.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000031 /* PingQualityIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingQualityIcon.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000032 /* JoinedChannelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinedChannelStore.swift; sourceTree = "<group>"; };
@@ -488,6 +490,7 @@
 				BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */,
 				BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */,
 				BF00000C0000000000000045 /* EmbeddedEmulatorSessionControls.swift */,
+				BF00000C00000000000000C1 /* NativeEmulatorOverlay.swift */,
 				BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */,
 				BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */,
 				BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */,
@@ -698,6 +701,7 @@
 				BF00000B000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift in Sources */,
 				BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */,
 				BF00000B0000000000000045 /* EmbeddedEmulatorSessionControls.swift in Sources */,
+				BF00000B00000000000000C1 /* NativeEmulatorOverlay.swift in Sources */,
 				BF00000B0000000000000046 /* EmbeddedVideoDiagnostics.swift in Sources */,
 				BF00000B0000000000000047 /* EmbeddedVideoNSView.swift in Sources */,
 				BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */,

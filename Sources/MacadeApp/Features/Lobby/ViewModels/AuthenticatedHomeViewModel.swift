@@ -20,6 +20,7 @@ final class AuthenticatedHomeViewModel {
     var errorMessage: String?
     var chatMessagesByChannel: [String: [FightcadeChatMessage]] = [:]
     var pendingSentMessages: [String: [(body: String, sentAt: Date)]] = [:]
+    var detectedChatLanguageIdentifiersByChannel: [String: Set<String>] = [:]
     var usersByChannel: [String: [FightcadeChannelUser]] = [:]
     var incomingChallenges: [FightcadeChallenge] = []
     var outgoingChallenges: [FightcadeChallenge] = []

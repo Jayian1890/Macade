@@ -24,6 +24,8 @@ int ranked_match = 0;
 int local_player = 0;
 int frame_delay = 0;
 int game_seed = 0;
+int overlay_score1 = -1;
+int overlay_score2 = -1;
 
 char acb_buffer[16 * 1024 * 1024];
 char *acb_scan;
@@ -137,6 +139,17 @@ int write_acb(BurnArea *area)
    return 0;
 }
 
+void publish_detector_overlay_scores(bool force = false)
+{
+   int state, score1, score2, start1, start2;
+   DetectorGetState(state, score1, score2, start1, start2);
+   if (force || score1 != overlay_score1 || score2 != overlay_score2) {
+      overlay_score1 = score1;
+      overlay_score2 = score2;
+      MacadeEmbeddedSetOverlayScores(score1, score2);
+   }
+}
+
 } // namespace
 
 bool __cdecl ggpo_on_event_callback(GGPOEvent *info)
@@ -219,6 +232,7 @@ bool __cdecl ggpo_begin_game_callback(char *name)
    DetectorSetGameInfo(kNetSpectator, ranked_match);
    MediaInit();
    MacadeEmbeddedSetOverlayGameInfo("Player1#0,0", "Player2#0,0", 0, ranked_match, local_player);
+   publish_detector_overlay_scores(true);
    MacadeEmbeddedSetOverlayStats(0, frame_delay);
    return true;
 }
@@ -226,7 +240,9 @@ bool __cdecl ggpo_begin_game_callback(char *name)
 bool __cdecl ggpo_advance_frame_callback(int)
 {
    nFramesEmulated--;
-   return RunFrame(0, 0, 0, 1) == 0;
+   bool ok = RunFrame(0, 0, 0, 1) == 0;
+   if (ok) publish_detector_overlay_scores();
+   return ok;
 }
 
 bool __cdecl ggpo_save_game_state_callback(unsigned char **buffer, int *len, int *checksum, int)
@@ -286,6 +302,7 @@ bool __cdecl ggpo_load_game_state_callback(unsigned char *buffer, int)
          ranked_match = ranked;
          DetectorSetGameInfo(kNetSpectator, ranked_match);
          DetectorSetState(state, score1, score2, start1, start2);
+         publish_detector_overlay_scores(true);
       }
       buffer += header_size;
    }
@@ -343,6 +360,8 @@ bool QuarkInit(const char *connect)
    ranked_match = 0;
    local_player = 0;
    frame_delay = 0;
+   overlay_score1 = -1;
+   overlay_score2 = -1;
    MacadeEmbeddedSetOverlayConnectionPhase(1);
 
    GGPOSessionCallbacks cb{};

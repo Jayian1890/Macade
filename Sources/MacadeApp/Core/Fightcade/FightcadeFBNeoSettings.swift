@@ -13,6 +13,7 @@ struct FightcadeFBNeoSettings: Equatable, Sendable {
     static let defaultHDDPath = "support/hdd/"
 
     var stretchToWindow: Bool
+    var embeddedVideoScale: Int
     var scanlines: Bool
     var softwareGamma: Bool
     var gamma: Double
@@ -31,6 +32,7 @@ struct FightcadeFBNeoSettings: Equatable, Sendable {
 
     static let defaults = FightcadeFBNeoSettings(
         stretchToWindow: false,
+        embeddedVideoScale: 0,
         scanlines: false,
         softwareGamma: false,
         gamma: 1.25,
@@ -50,6 +52,7 @@ struct FightcadeFBNeoSettings: Equatable, Sendable {
 
     func normalized() -> FightcadeFBNeoSettings {
         var copy = self
+        copy.embeddedVideoScale = max(0, min(5, embeddedVideoScale))
         copy.gamma = max(0.5, min(2.0, gamma))
         copy.volume = max(0, min(100, volume))
         if !Self.supportedSampleRates.contains(sampleRate) {
@@ -97,6 +100,7 @@ struct FightcadeFBNeoSettingsStore: FightcadeFBNeoSettingsPersisting {
         let values = try loadConfigValues()
         var settings = FightcadeFBNeoSettings.defaults
         settings.stretchToWindow = boolValue(values["bVidFullStretch"]) ?? settings.stretchToWindow
+        settings.embeddedVideoScale = intValue(values["MacadeEmbeddedVideoScale"]) ?? settings.embeddedVideoScale
         settings.scanlines = boolValue(values["bVidScanlines"]) ?? settings.scanlines
         settings.softwareGamma = boolValue(values["bDoGamma"]) ?? settings.softwareGamma
         settings.gamma = doubleValue(values["nGamma"]) ?? settings.gamma
@@ -119,6 +123,7 @@ struct FightcadeFBNeoSettingsStore: FightcadeFBNeoSettingsPersisting {
         let settings = settings.normalized()
         let values: [String: String] = [
             "nVidSelect": "0",
+            "MacadeEmbeddedVideoScale": "\(settings.embeddedVideoScale)",
             "bVidFullStretch": boolString(settings.stretchToWindow),
             "bVidScanlines": boolString(settings.scanlines),
             "bDoGamma": boolString(settings.softwareGamma),

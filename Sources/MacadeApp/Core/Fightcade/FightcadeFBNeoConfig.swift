@@ -89,6 +89,7 @@ struct FightcadeFBNeoConfig {
         nIniVersion 0x029744
         // video mode 0 = native SDL2 renderer for Macade's bundled runtime
         nVidSelect 0
+        MacadeEmbeddedVideoScale 0
         bVidFullStretch 0
         nAutoFireRate 12
         bVidScanlines 0

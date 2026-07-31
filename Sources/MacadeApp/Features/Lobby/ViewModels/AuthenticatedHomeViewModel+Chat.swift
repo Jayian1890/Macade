@@ -63,7 +63,12 @@ final class ChatTranslationStore {
     }
 
     func enqueue(_ request: ChatTranslationRequest) {
-        guard translationsByMessageID[request.id] == nil else { return }
+        if case .pending = translationsByMessageID[request.id] { return }
+        if case .translated(let translation) = translationsByMessageID[request.id],
+           ChatTranslationPreferences.languageFamily(translation.targetLanguageIdentifier) == ChatTranslationPreferences.languageFamily(request.targetLanguageIdentifier) {
+            return
+        }
+
         translationsByMessageID[request.id] = .pending
         pendingRequests.append(request)
         requestRevision += 1
@@ -75,17 +80,17 @@ final class ChatTranslationStore {
         return requests
     }
 
-    func drainPendingRequests(sourceLanguageIdentifier: String, targetLanguageIdentifier: String) -> [ChatTranslationRequest] {
+    func drainPendingRequests(sourceLanguageIdentifier: String, targetLanguageIdentifier: String, limit: Int) -> [ChatTranslationRequest] {
         let sourceFamily = ChatTranslationPreferences.languageFamily(sourceLanguageIdentifier)
         let targetFamily = ChatTranslationPreferences.languageFamily(targetLanguageIdentifier)
         let requests = pendingRequests.filter {
             $0.sourceLanguageIdentifier.map(ChatTranslationPreferences.languageFamily) == sourceFamily
                 && ChatTranslationPreferences.languageFamily($0.targetLanguageIdentifier) == targetFamily
-        }
+        }.prefix(limit)
         pendingRequests.removeAll { request in
             requests.contains { $0.id == request.id }
         }
-        return requests
+        return Array(requests)
     }
 
     func drainPendingRequests(targetLanguageIdentifier: String, limit: Int) -> [ChatTranslationRequest] {
@@ -105,6 +110,15 @@ final class ChatTranslationStore {
 
     func fail(_ request: ChatTranslationRequest, reason: String) {
         translationsByMessageID[request.id] = .failed(reason)
+    }
+
+    func clearPendingRequests() {
+        pendingRequests.removeAll()
+        translationsByMessageID = translationsByMessageID.filter {
+            if case .pending = $0.value { return false }
+            return true
+        }
+        requestRevision += 1
     }
 
     func prune(retaining retainedMessageIDs: Set<FightcadeChatMessage.ID>) {
@@ -209,6 +223,7 @@ extension AuthenticatedHomeViewModel {
 
         let normalized = normalizedChatMessage(message)
         append(normalized)
+        detectChatLanguageIfNeeded(for: normalized)
         enqueueChatTranslationIfNeeded(for: normalized)
 
         if normalized.kind == .user,
@@ -338,6 +353,59 @@ extension AuthenticatedHomeViewModel {
                 break
             }
         }
+    }
+
+    private func detectChatLanguageIfNeeded(for message: FightcadeChatMessage) {
+        guard message.kind == .user, !isCurrentUser(message.username) else { return }
+
+        let channelName = message.channelName
+        let body = message.body
+        Task { [weak self] in
+            guard let languageIdentifier = await ChatTranslationRequestBuilder.detectLanguage(in: body) else { return }
+            self?.recordDetectedChatLanguage(languageIdentifier, channelName: channelName)
+        }
+    }
+
+    private func recordDetectedChatLanguage(_ identifier: String, channelName: String) {
+        let languageFamily = ChatTranslationPreferences.languageFamily(identifier)
+        var identifiers = detectedChatLanguageIdentifiersByChannel[channelName] ?? []
+        identifiers = identifiers.filter { ChatTranslationPreferences.languageFamily($0) != languageFamily }
+        identifiers.insert(languageFamily)
+        detectedChatLanguageIdentifiersByChannel[channelName] = identifiers
+    }
+
+    func chatTranslationTargetChoices(in channel: FightcadeChannel) -> [(id: String, name: String)] {
+        (detectedChatLanguageIdentifiersByChannel[channel.name] ?? [])
+            .map { (id: $0, name: chatTranslationLanguageName(for: $0)) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    func setChatTranslationTarget(_ identifier: String?, in channel: FightcadeChannel) {
+        let preferences = ChatTranslationPreferences(
+            isEnabled: identifier != nil,
+            targetLanguageIdentifier: identifier
+        )
+        ChatTranslationPreferencesStore().save(preferences)
+        chatTranslation.preferences = preferences
+
+        guard preferences.isEnabled else {
+            chatTranslation.clearPendingRequests()
+            return
+        }
+
+        for message in chatMessagesByChannel[channel.name] ?? [] {
+            enqueueChatTranslationIfNeeded(for: message)
+        }
+    }
+
+    func chatTranslationLanguageName(for identifier: String) -> String {
+        let normalized = identifier.replacingOccurrences(of: "_", with: "-")
+        let family = ChatTranslationPreferences.languageFamily(normalized)
+        let locale = Locale.current
+        let name = locale.localizedString(forIdentifier: normalized)
+            ?? locale.localizedString(forLanguageCode: family)
+            ?? normalized.uppercased()
+        return name.capitalized
     }
 
     private func trackPendingSentMessage(_ body: String, channelName: String) {

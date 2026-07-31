@@ -322,6 +322,14 @@ void MacadeEmbeddedSetOverlayGameInfo(const char* player1, const char* player2, 
 	BumpOverlay();
 }
 
+void MacadeEmbeddedSetOverlayScores(int score1, int score2)
+{
+	EnsureVideo();
+	Store32(kOverlayPlayers + kOverlayPlayerScore, score1 > 0 ? (uint32_t)score1 : 0);
+	Store32(kOverlayPlayers + kOverlayPlayerSize + kOverlayPlayerScore, score2 > 0 ? (uint32_t)score2 : 0);
+	BumpOverlay();
+}
+
 void MacadeEmbeddedSetOverlaySpectators(int spectators)
 {
 	EnsureVideo();
