@@ -64,6 +64,8 @@ struct ChatMessageRow: View {
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
+
+                translationText
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -82,6 +84,27 @@ struct ChatMessageRow: View {
 
         return segments.reduce(Text("")) { result, segment in
             result + styledText(for: segment)
+        }
+    }
+
+    @ViewBuilder
+    private var translationText: some View {
+        if case .translated(let translation) = viewModel.chatTranslation.translationsByMessageID[message.id],
+           !translation.translatedBody.isEmpty,
+           translation.translatedBody != message.body {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Translated to \(translation.targetLanguageIdentifier.uppercased())")
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .foregroundStyle(MacadeColor.neonCyan.opacity(0.75))
+
+                Text(translation.translatedBody)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(MacadeColor.ink.opacity(0.82))
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+            }
+            .padding(.top, 2)
         }
     }
 

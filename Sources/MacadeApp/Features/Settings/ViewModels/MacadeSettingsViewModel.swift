@@ -48,6 +48,8 @@ final class MacadeSettingsViewModel {
         }
     }
     var includeLobbyDiagnosticChatBodies = false
+    var chatTranslationEnabled = false
+    var chatTranslationTargetLanguageIdentifier = ""
     var statusMessage: String?
     var isLoaded = false
 
@@ -57,6 +59,8 @@ final class MacadeSettingsViewModel {
     private var savedForceWiredConnectionStatus = false
     private var savedLobbyDiagnosticsEnabled = false
     private var savedIncludeLobbyDiagnosticChatBodies = false
+    private var savedChatTranslationEnabled = false
+    private var savedChatTranslationTargetLanguageIdentifier = ""
 
     init(
         selectedSection: Section = .general,
@@ -73,6 +77,24 @@ final class MacadeSettingsViewModel {
             || forceWiredConnectionStatus != savedForceWiredConnectionStatus
             || lobbyDiagnosticsEnabled != savedLobbyDiagnosticsEnabled
             || includeLobbyDiagnosticChatBodies != savedIncludeLobbyDiagnosticChatBodies
+            || chatTranslationEnabled != savedChatTranslationEnabled
+            || chatTranslationTargetLanguageIdentifier != savedChatTranslationTargetLanguageIdentifier
+    }
+
+    var chatTranslationLanguageChoices: [(id: String, name: String)] {
+        [
+            ("", "System language"),
+            ("en", "English"),
+            ("es", "Spanish"),
+            ("fr", "French"),
+            ("de", "German"),
+            ("it", "Italian"),
+            ("ja", "Japanese"),
+            ("ko", "Korean"),
+            ("pt", "Portuguese"),
+            ("zh-Hans", "Chinese Simplified"),
+            ("zh-Hant", "Chinese Traditional")
+        ]
     }
 
     var lobbyDiagnosticsLogPath: String {
@@ -99,6 +121,9 @@ final class MacadeSettingsViewModel {
         forceWiredConnectionStatus = preferencesStore.forceWiredConnectionStatus
         lobbyDiagnosticsEnabled = preferencesStore.lobbyDiagnosticsEnabled
         includeLobbyDiagnosticChatBodies = preferencesStore.includeLobbyDiagnosticChatBodies
+        let translationPreferences = preferencesStore.chatTranslationPreferences
+        chatTranslationEnabled = translationPreferences.isEnabled
+        chatTranslationTargetLanguageIdentifier = translationPreferences.targetLanguageIdentifier ?? ""
         markSaved()
         isLoaded = true
     }
@@ -110,6 +135,10 @@ final class MacadeSettingsViewModel {
             preferencesStore.forceWiredConnectionStatus = forceWiredConnectionStatus
             preferencesStore.lobbyDiagnosticsEnabled = lobbyDiagnosticsEnabled
             preferencesStore.includeLobbyDiagnosticChatBodies = lobbyDiagnosticsEnabled && includeLobbyDiagnosticChatBodies
+            preferencesStore.chatTranslationPreferences = ChatTranslationPreferences(
+                isEnabled: chatTranslationEnabled,
+                targetLanguageIdentifier: chatTranslationTargetLanguageIdentifier.nonEmpty
+            )
             includeLobbyDiagnosticChatBodies = preferencesStore.includeLobbyDiagnosticChatBodies
             markSaved()
             statusMessage = "Settings saved."
@@ -123,6 +152,8 @@ final class MacadeSettingsViewModel {
         forceWiredConnectionStatus = savedForceWiredConnectionStatus
         lobbyDiagnosticsEnabled = savedLobbyDiagnosticsEnabled
         includeLobbyDiagnosticChatBodies = savedIncludeLobbyDiagnosticChatBodies
+        chatTranslationEnabled = savedChatTranslationEnabled
+        chatTranslationTargetLanguageIdentifier = savedChatTranslationTargetLanguageIdentifier
         statusMessage = nil
     }
 
@@ -141,5 +172,7 @@ final class MacadeSettingsViewModel {
         savedForceWiredConnectionStatus = forceWiredConnectionStatus
         savedLobbyDiagnosticsEnabled = lobbyDiagnosticsEnabled
         savedIncludeLobbyDiagnosticChatBodies = includeLobbyDiagnosticChatBodies
+        savedChatTranslationEnabled = chatTranslationEnabled
+        savedChatTranslationTargetLanguageIdentifier = chatTranslationTargetLanguageIdentifier
     }
 }

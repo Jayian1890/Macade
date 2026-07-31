@@ -1,5 +1,7 @@
 import Foundation
 
+import AppKit
+
 extension AuthenticatedHomeViewModel {
     func canChallenge(_ user: FightcadeChannelUser) -> Bool {
         guard let selectedChannel else {
@@ -204,6 +206,12 @@ extension AuthenticatedHomeViewModel {
     func rememberIncomingChallenge(_ challenge: FightcadeChallenge) {
         incomingChallenges.removeAll { $0.id == challenge.id }
         incomingChallenges.insert(challenge, at: 0)
+    }
+
+    func playIncomingChallengeSound() {
+        if NSSound(named: "Ping")?.play() != true {
+            NSSound.beep()
+        }
     }
 
     func rememberOutgoingChallenge(_ challenge: FightcadeChallenge) {

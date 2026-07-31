@@ -151,13 +151,25 @@ struct MacadeSettingsView: View {
 }
 
 private struct GeneralSettingsSection: View {
-    let viewModel: MacadeSettingsViewModel
+    @Bindable var viewModel: MacadeSettingsViewModel
 
     var body: some View {
         SettingsSection(title: "General", subtitle: "Macade keeps Fightcade compatibility while using a native macOS interface.") {
             SettingsInfoRow(title: "Emulator settings", detail: "Video, audio, gameplay, and controller changes are applied the next time FBNeo starts.")
             SettingsInfoRow(title: "Runtime", detail: "Macade uses its bundled native FBNeo runtime and writes user settings to Application Support.")
             SettingsInfoRow(title: "Privacy", detail: "Diagnostics are off by default. Chat text is never logged unless you enable it.")
+            Toggle("Translate channel chat automatically", isOn: $viewModel.chatTranslationEnabled)
+
+            Picker("Chat translation target", selection: $viewModel.chatTranslationTargetLanguageIdentifier) {
+                ForEach(viewModel.chatTranslationLanguageChoices, id: \.id) { language in
+                    Text(language.name).tag(language.id)
+                }
+            }
+            .disabled(!viewModel.chatTranslationEnabled)
+
+            Text("Uses Apple's native translation on incoming channel chat. Translations are displayed locally and are never sent back to Fightcade.")
+                .font(MacadeTypography.caption)
+                .foregroundStyle(MacadeColor.inkMuted)
         }
     }
 }

@@ -1,9 +1,115 @@
 import Foundation
 
 import AppKit
+import NaturalLanguage
 import UserNotifications
 
 private let channelChatScrollbackLimit = 500
+private let chatTranslationMaximumCharacters = 500
+
+struct ChatTranslationPreferences: Equatable, Sendable {
+    var isEnabled = false
+    var targetLanguageIdentifier: String?
+
+    var resolvedTargetLanguageIdentifier: String {
+        targetLanguageIdentifier?.nonEmpty ?? Locale.preferredLanguages.first ?? "en"
+    }
+
+    var resolvedTargetLanguage: Locale.Language {
+        Locale.Language(identifier: resolvedTargetLanguageIdentifier)
+    }
+}
+
+struct ChatMessageTranslation: Equatable, Sendable {
+    let messageID: FightcadeChatMessage.ID
+    let sourceLanguageIdentifier: String?
+    let targetLanguageIdentifier: String
+    let translatedBody: String
+    let translatedAt: Date
+}
+
+enum ChatTranslationState: Equatable, Sendable {
+    case pending
+    case translated(ChatMessageTranslation)
+    case failed(String)
+}
+
+struct ChatTranslationRequest: Identifiable, Equatable, Sendable {
+    let id: UUID
+    let channelName: String
+    let sourceBody: String
+    let protectedBody: String
+    let placeholders: [String: String]
+    let sourceLanguageIdentifier: String?
+    let targetLanguageIdentifier: String
+}
+
+@MainActor
+@Observable
+final class ChatTranslationStore {
+    var preferences: ChatTranslationPreferences
+    var translationsByMessageID: [FightcadeChatMessage.ID: ChatTranslationState] = [:]
+    var pendingRequests: [ChatTranslationRequest] = []
+    var requestRevision = 0
+
+    init(preferences: ChatTranslationPreferences) {
+        self.preferences = preferences
+    }
+
+    func enqueue(_ request: ChatTranslationRequest) {
+        guard translationsByMessageID[request.id] == nil else { return }
+        translationsByMessageID[request.id] = .pending
+        pendingRequests.append(request)
+        requestRevision += 1
+    }
+
+    func drainPendingRequests() -> [ChatTranslationRequest] {
+        let requests = pendingRequests
+        pendingRequests.removeAll()
+        return requests
+    }
+
+    func complete(_ translation: ChatMessageTranslation) {
+        translationsByMessageID[translation.messageID] = .translated(translation)
+    }
+
+    func fail(_ request: ChatTranslationRequest, reason: String) {
+        translationsByMessageID[request.id] = .failed(reason)
+    }
+
+    func prune(retaining retainedMessageIDs: Set<FightcadeChatMessage.ID>) {
+        translationsByMessageID = translationsByMessageID.filter { retainedMessageIDs.contains($0.key) }
+        pendingRequests.removeAll { !retainedMessageIDs.contains($0.id) }
+    }
+}
+
+struct ChatTranslationPreferencesStore {
+    private let userDefaults: UserDefaults
+
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
+    }
+
+    func load() -> ChatTranslationPreferences {
+        ChatTranslationPreferences(
+            isEnabled: userDefaults.bool(forKey: Self.enabledKey),
+            targetLanguageIdentifier: userDefaults.string(forKey: Self.targetLanguageKey)
+        )
+    }
+
+    func save(_ preferences: ChatTranslationPreferences) {
+        userDefaults.set(preferences.isEnabled, forKey: Self.enabledKey)
+
+        if let target = preferences.targetLanguageIdentifier?.nonEmpty {
+            userDefaults.set(target, forKey: Self.targetLanguageKey)
+        } else {
+            userDefaults.removeObject(forKey: Self.targetLanguageKey)
+        }
+    }
+
+    private static let enabledKey = "chatTranslation.enabled"
+    private static let targetLanguageKey = "chatTranslation.targetLanguage"
+}
 
 struct PlayerListFocusRequest: Equatable {
     let id = UUID()
@@ -69,6 +175,7 @@ extension AuthenticatedHomeViewModel {
 
         let normalized = normalizedChatMessage(message)
         append(normalized)
+        enqueueChatTranslationIfNeeded(for: normalized)
 
         if normalized.kind == .user,
            !isCurrentUser(normalized.username),
@@ -133,7 +240,9 @@ extension AuthenticatedHomeViewModel {
     private func append(_ message: FightcadeChatMessage) {
         var messages = chatMessagesByChannel[message.channelName] ?? []
         messages.append(message)
-        chatMessagesByChannel[message.channelName] = limitedScrollback(messages)
+        let limitedMessages = limitedScrollback(messages)
+        chatMessagesByChannel[message.channelName] = limitedMessages
+        chatTranslation.prune(retaining: Set(limitedMessages.map(\.id)))
     }
 
     private func limitedScrollback(_ messages: [FightcadeChatMessage]) -> [FightcadeChatMessage] {
@@ -161,6 +270,78 @@ extension AuthenticatedHomeViewModel {
             kind: .local,
             sentAt: message.sentAt
         )
+    }
+
+    private func enqueueChatTranslationIfNeeded(for message: FightcadeChatMessage) {
+        chatTranslation.preferences = ChatTranslationPreferencesStore().load()
+        let preferences = chatTranslation.preferences
+        guard preferences.isEnabled,
+              message.kind == .user,
+              !isCurrentUser(message.username) else {
+            return
+        }
+
+        let body = message.body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard shouldTranslateChatBody(body) else { return }
+
+        let target = preferences.resolvedTargetLanguageIdentifier
+        let source = detectedLanguageIdentifier(in: body)
+        if let source, languageFamily(source) == languageFamily(target) {
+            return
+        }
+
+        let protected = protectChatTranslationTokens(in: body)
+        chatTranslation.enqueue(ChatTranslationRequest(
+            id: message.id,
+            channelName: message.channelName,
+            sourceBody: body,
+            protectedBody: protected.text,
+            placeholders: protected.placeholders,
+            sourceLanguageIdentifier: source,
+            targetLanguageIdentifier: target
+        ))
+    }
+
+    private func shouldTranslateChatBody(_ body: String) -> Bool {
+        guard body.count >= 3, body.count <= chatTranslationMaximumCharacters else { return false }
+        if body.range(of: #"^https?://\S+$"#, options: .regularExpression) != nil { return false }
+        return body.contains { $0.isLetter }
+    }
+
+    private func detectedLanguageIdentifier(in body: String) -> String? {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(body)
+        return recognizer.dominantLanguage?.rawValue
+    }
+
+    private func languageFamily(_ identifier: String) -> String {
+        identifier
+            .replacingOccurrences(of: "_", with: "-")
+            .split(separator: "-")
+            .first
+            .map(String.init) ?? identifier
+    }
+
+    private func protectChatTranslationTokens(in body: String) -> (text: String, placeholders: [String: String]) {
+        var text = body
+        var placeholders: [String: String] = [:]
+        var index = 0
+        let patterns = [#"https?://\S+"#, #"@[A-Za-z0-9_\-]+"#]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
+            let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).reversed()
+
+            for match in matches {
+                guard let range = Range(match.range, in: text) else { continue }
+                let token = "__MACADE_TOKEN_\(index)__"
+                placeholders[token] = String(text[range])
+                text.replaceSubrange(range, with: token)
+                index += 1
+            }
+        }
+
+        return (text, placeholders)
     }
 
     private func trackPendingSentMessage(_ body: String, channelName: String) {

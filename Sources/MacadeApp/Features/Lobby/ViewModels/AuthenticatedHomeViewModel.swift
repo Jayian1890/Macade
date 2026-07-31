@@ -40,6 +40,7 @@ final class AuthenticatedHomeViewModel {
         }
     }
     var playerListFocusRequest: PlayerListFocusRequest?
+    var chatTranslation = ChatTranslationStore(preferences: ChatTranslationPreferencesStore().load())
     var includeLobbyDiagnosticChatBodies: Bool {
         didSet {
             diagnosticsSettings.includesChatBodies = isLobbyDiagnosticsEnabled && includeLobbyDiagnosticChatBodies
@@ -374,6 +375,7 @@ final class AuthenticatedHomeViewModel {
                 break
             }
 
+            playIncomingChallengeSound()
             rememberIncomingChallenge(challenge)
             appendSystemMessage("\(challenge.username) challenged you", channelName: challenge.channelName)
         case .challengeCanceled(let challenge):

@@ -1,4 +1,5 @@
 import SwiftUI
+@preconcurrency import Translation
 
 struct ChannelDetailView: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
@@ -104,6 +105,8 @@ private struct ChannelChatView: View {
             }
 
             ChatInput(channel: channel, viewModel: viewModel)
+
+            ChatTranslationSessionHost(viewModel: viewModel)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(chatBackground)
@@ -144,6 +147,69 @@ private struct ChannelChatView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+        }
+    }
+}
+
+private struct ChatTranslationSessionHost: View {
+    @Bindable var viewModel: AuthenticatedHomeViewModel
+    @State private var configuration: TranslationSession.Configuration?
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .onAppear(perform: activateIfNeeded)
+            .onChange(of: viewModel.chatTranslation.requestRevision) { _, _ in
+                activateIfNeeded()
+            }
+            .translationTask(configuration) { session in
+                let requests = viewModel.chatTranslation.drainPendingRequests()
+                guard !requests.isEmpty else { return }
+
+                do {
+                    try await session.prepareTranslation()
+                    let batch = requests.map {
+                        TranslationSession.Request(sourceText: $0.protectedBody, clientIdentifier: $0.id.uuidString)
+                    }
+
+                    var requestsByID = Dictionary(uniqueKeysWithValues: requests.map { ($0.id.uuidString, $0) })
+                    for try await response in session.translate(batch: batch) {
+                        guard let request = requestsByID.removeValue(forKey: response.clientIdentifier ?? "") else { continue }
+                        let translatedBody = restoreTokens(in: response.targetText, placeholders: request.placeholders)
+
+                        viewModel.chatTranslation.complete(ChatMessageTranslation(
+                            messageID: request.id,
+                            sourceLanguageIdentifier: response.sourceLanguage.languageCode?.identifier ?? request.sourceLanguageIdentifier,
+                            targetLanguageIdentifier: response.targetLanguage.languageCode?.identifier ?? request.targetLanguageIdentifier,
+                            translatedBody: translatedBody,
+                            translatedAt: .now
+                        ))
+                    }
+                } catch {
+                    for request in requests {
+                        viewModel.chatTranslation.fail(request, reason: error.localizedDescription)
+                    }
+                }
+            }
+    }
+
+    private func restoreTokens(in text: String, placeholders: [String: String]) -> String {
+        placeholders.reduce(text) { result, entry in
+            result.replacingOccurrences(of: entry.key, with: entry.value)
+        }
+    }
+
+    private func activateIfNeeded() {
+        guard viewModel.chatTranslation.preferences.isEnabled,
+              !viewModel.chatTranslation.pendingRequests.isEmpty else {
+            return
+        }
+
+        let target = viewModel.chatTranslation.preferences.resolvedTargetLanguage
+        if configuration?.target == target {
+            configuration?.invalidate()
+        } else {
+            configuration = TranslationSession.Configuration(source: nil, target: target)
         }
     }
 }
