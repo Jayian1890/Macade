@@ -31,11 +31,9 @@ static void GGPOMacQueueLocalInput(GGPOSession* session, const std::vector<unsig
 	if (session == NULL || input.empty()) return;
 	int delay = session->delay < 0 ? 0 : session->delay;
 	int targetFrame = session->currentFrame + delay;
-	std::vector<unsigned char> fill(input.size(), 0);
-	if (session->lastLocalInput.size() == input.size()) fill = session->lastLocalInput;
 	int nextFrame = session->lastLocalQueuedFrame + 1;
 	if (nextFrame < 0) nextFrame = 0;
-	for (int frame = nextFrame; frame < targetFrame; frame++) session->localInputs[frame] = fill;
+	for (int frame = nextFrame; frame < targetFrame; frame++) session->localInputs[frame] = input;
 	session->localInputs[targetFrame] = input;
 	session->lastLocalQueuedFrame = targetFrame;
 	if (targetFrame > session->localSendHighFrame) session->localSendHighFrame = targetFrame;
@@ -247,13 +245,17 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 bool __cdecl ggpo_advance_frame(GGPOSession* session)
 {
 	if (session == NULL) return false;
-	session->currentFrame++;
-	if (session->isReplayPlayback) return true;
+	if (session->isReplayPlayback) {
+		session->currentFrame++;
+		return true;
+	}
 	if (session->isSpectator) {
+		session->currentFrame++;
 		MacadePollTCP(session, 0);
 		return true;
 	}
 	MacadeSaveCurrentFrame(session);
+	session->currentFrame++;
 	GGPOMacTrimHistory(session);
 	return true;
 }

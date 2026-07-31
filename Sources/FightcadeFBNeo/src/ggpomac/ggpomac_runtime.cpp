@@ -71,31 +71,38 @@ void GGPOMacTrimHistory(GGPOSession* session)
 	while (!session->predictedRemoteInputs.empty() && session->predictedRemoteInputs.begin()->first < oldestInputFrame) session->predictedRemoteInputs.erase(session->predictedRemoteInputs.begin());
 }
 
-bool MacadeSaveCurrentFrame(GGPOSession* session)
+bool MacadeSaveFrame(GGPOSession* session, int frame)
 {
 	if (session == NULL || session->callbacks.save_game_state == NULL) return false;
 	unsigned char* state = NULL;
 	int stateLength = 0;
 	int checksum = 0;
-	session->callbacks.save_game_state(&state, &stateLength, &checksum, session->currentFrame);
+	session->callbacks.save_game_state(&state, &stateLength, &checksum, frame);
 	if (state == NULL || stateLength <= 0) {
 		GGPOMacFreeSavedState(session, state);
 		return false;
 	}
 	GGPOMacSavedFrame saved;
-	saved.frame = session->currentFrame;
+	saved.frame = frame;
 	saved.checksum = checksum;
 	saved.bytes.assign(state, state + stateLength);
 	GGPOMacFreeSavedState(session, state);
-	session->savedFrames[session->currentFrame] = saved;
+	session->savedFrames[frame] = saved;
 	session->savedStateCount++;
 	GGPOMacTrimHistory(session);
 	return true;
 }
 
+bool MacadeSaveCurrentFrame(GGPOSession* session)
+{
+	return MacadeSaveFrame(session, session == NULL ? 0 : session->currentFrame);
+}
+
+static const int kGGPOMacNoSavedFrame = -1000000;
+
 static int GGPOMacFirstAvailableSavedFrame(GGPOSession* session, int requestedFrame)
 {
-	if (session == NULL || session->savedFrames.empty()) return -1;
+	if (session == NULL || session->savedFrames.empty()) return kGGPOMacNoSavedFrame;
 	std::map<int, GGPOMacSavedFrame>::iterator exact = session->savedFrames.find(requestedFrame);
 	if (exact != session->savedFrames.end()) return exact->first;
 	std::map<int, GGPOMacSavedFrame>::iterator next = session->savedFrames.lower_bound(requestedFrame);
@@ -106,17 +113,19 @@ static int GGPOMacFirstAvailableSavedFrame(GGPOSession* session, int requestedFr
 	return session->savedFrames.begin()->first;
 }
 
+static const int kGGPOMacNoRollbackFrame = -2;
+
 bool MacadeRunRollbackIfNeeded(GGPOSession* session)
 {
-	if (session == NULL || session->fatalDesync || session->replaying || session->rollbackRequestedFrame < 0) return session != NULL && !session->fatalDesync;
+	if (session == NULL || session->fatalDesync || session->replaying || session->rollbackRequestedFrame == kGGPOMacNoRollbackFrame) return session != NULL && !session->fatalDesync;
 	int targetFrame = session->currentFrame;
 	int seekFrame = session->rollbackRequestedFrame;
 	if (seekFrame >= targetFrame) {
-		session->rollbackRequestedFrame = -1;
+		session->rollbackRequestedFrame = kGGPOMacNoRollbackFrame;
 		return true;
 	}
 	int savedFrame = GGPOMacFirstAvailableSavedFrame(session, seekFrame);
-	if (savedFrame < 0 || session->callbacks.load_game_state == NULL || session->callbacks.advance_frame == NULL) {
+	if (savedFrame == kGGPOMacNoSavedFrame || session->callbacks.load_game_state == NULL || session->callbacks.advance_frame == NULL) {
 		session->fatalDesync = true;
 		MacadeLog("Macade GGPO: cannot rollback to frame %d; saved state or callback missing\n", seekFrame);
 		return false;
@@ -133,10 +142,10 @@ bool MacadeRunRollbackIfNeeded(GGPOSession* session)
 		MacadeLog("Macade GGPO: rollback load failed frame=%d\n", savedFrame);
 		return false;
 	}
-	session->currentFrame = savedFrame;
-	session->rollbackRequestedFrame = -1;
+	session->currentFrame = savedFrame + 1;
+	session->rollbackRequestedFrame = kGGPOMacNoRollbackFrame;
 	session->replaying = true;
-	session->predictedRemoteInputs.erase(session->predictedRemoteInputs.lower_bound(savedFrame), session->predictedRemoteInputs.end());
+	session->predictedRemoteInputs.erase(session->predictedRemoteInputs.lower_bound(session->currentFrame), session->predictedRemoteInputs.end());
 	while (session->currentFrame < targetFrame && !session->fatalDesync) {
 		int before = session->currentFrame;
 		if (!session->callbacks.advance_frame(0) || session->currentFrame != before + 1) {
@@ -149,15 +158,16 @@ bool MacadeRunRollbackIfNeeded(GGPOSession* session)
 	session->replaying = false;
 	if (session->fatalDesync) return false;
 	session->rollbackCount++;
-	MacadeLog("Macade GGPO: rollback complete target=%d replayed=%d total=%d\n", targetFrame, targetFrame - savedFrame, session->rollbackCount);
+	MacadeLog("Macade GGPO: rollback complete target=%d replayed=%d total=%d\n", targetFrame, targetFrame - (savedFrame + 1), session->rollbackCount);
 	return true;
 }
 
 static void GGPOMacRequestRollback(GGPOSession* session, int frame)
 {
 	if (session == NULL || frame < 0) return;
-	if (frame >= session->currentFrame) return;
-	if (session->rollbackRequestedFrame < 0 || frame < session->rollbackRequestedFrame) session->rollbackRequestedFrame = frame;
+	int seekFrame = frame - 1;
+	if (seekFrame >= session->currentFrame) return;
+	if (session->rollbackRequestedFrame == kGGPOMacNoRollbackFrame || seekFrame < session->rollbackRequestedFrame) session->rollbackRequestedFrame = seekFrame;
 }
 
 bool MacadeStoreRemoteInput(GGPOSession* session, int frame, const std::vector<unsigned char>& input)

@@ -56,7 +56,7 @@ struct GGPOSession {
 	int maxPredictionFrames = 8;
 	int predictionCount = 0;
 	int predictionMismatchCount = 0;
-	int rollbackRequestedFrame = -1;
+	int rollbackRequestedFrame = -2;
 	int rollbackCount = 0;
 	int rollbackReplayFrameCount = 0;
 	int savedStateCount = 0;
@@ -117,6 +117,7 @@ void MacadeEmitClientEvent(GGPOSession* session, GGPOClientEventCode code, const
 void MacadeEmitChatEvent(GGPOSession* session, const char* username, const char* text);
 void MacadeMarkDisconnected(GGPOSession* session);
 bool MacadeSaveCurrentFrame(GGPOSession* session);
+bool MacadeSaveFrame(GGPOSession* session, int frame);
 bool MacadeRunRollbackIfNeeded(GGPOSession* session);
 bool MacadeStoreRemoteInput(GGPOSession* session, int frame, const std::vector<unsigned char>& input);
 void GGPOMacTrimHistory(GGPOSession* session);

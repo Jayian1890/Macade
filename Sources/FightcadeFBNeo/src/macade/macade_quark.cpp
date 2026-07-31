@@ -407,14 +407,14 @@ int MacadeQuarkLoadStateIfAvailable()
 		int result = BurnStateLoad(path, 1, NULL);
 		printf("Macade quark: savestate load path=%s result=%d\n", path, result);
 		fflush(stdout);
-		if (ggpo != NULL && MacadeSaveCurrentFrame(ggpo)) printf("Macade quark: rollback initial state captured frame=%d\n", ggpo->currentFrame);
+		if (ggpo != NULL && MacadeSaveFrame(ggpo, -1)) printf("Macade quark: rollback initial state captured frame=-1\n");
 		MacadeStartGameplayTracking();
 		MacadeLoadTrainingLuaIfNeeded();
 		return result;
 	}
 	printf("Macade quark: no Fightcade savestate found for game=%s\n", gMacadeGame);
 	fflush(stdout);
-	if (ggpo != NULL && MacadeSaveCurrentFrame(ggpo)) printf("Macade quark: rollback initial state captured frame=%d\n", ggpo->currentFrame);
+	if (ggpo != NULL && MacadeSaveFrame(ggpo, -1)) printf("Macade quark: rollback initial state captured frame=-1\n");
 	MacadeStartGameplayTracking();
 	MacadeLoadTrainingLuaIfNeeded();
 	return 1;
