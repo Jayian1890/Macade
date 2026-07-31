@@ -5,5 +5,11 @@ bool MacadeEmbeddedWindowHidden();
 void MacadeEmbeddedShutdown();
 void MacadeEmbeddedPumpInput();
 void MacadeEmbeddedPublishFrame(const void* pixels, int width, int height, int pitch, int bytesPerPixel, int isRGB565);
+void MacadeEmbeddedSetOverlaySystemMessage(const char* message, int frames);
+void MacadeEmbeddedSetOverlayGameInfo(const char* player1, const char* player2, int spectator, int ranked, int player);
+void MacadeEmbeddedSetOverlaySpectators(int spectators);
+void MacadeEmbeddedSetOverlayStats(int ping, int delay);
+void MacadeEmbeddedAddOverlayChatLine(const char* name, const char* text);
+int MacadeEmbeddedConsumeChatSubmit(char* text, int size);
 
 extern "C" int MacadeEmbeddedKeyState(int scancode);

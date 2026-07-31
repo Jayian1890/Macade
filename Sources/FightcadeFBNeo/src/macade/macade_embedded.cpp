@@ -20,7 +20,44 @@ static int gVideoFd = -1;
 static unsigned char* gVideo = NULL;
 static size_t gVideoBytes = 0;
 static uint64_t gFrameIndex = 0;
+static uint32_t gOverlaySequence = 0;
 static unsigned char gKeys[1024] = { 0 };
+static char gChatInput[160] = { 0 };
+static char gChatSubmit[160] = { 0 };
+static bool gChatInputActive = false;
+
+static void EnsureVideo();
+
+enum {
+	kOverlaySequence = 60,
+	kOverlayEnabled = 64,
+	kOverlaySpectator = 68,
+	kOverlayRanked = 72,
+	kOverlayPlayer = 76,
+	kOverlaySpectators = 80,
+	kOverlayPing = 84,
+	kOverlayDelay = 88,
+	kOverlaySystemFrames = 92,
+	kOverlayChatFrames = 96,
+	kOverlayChatInputActive = 100,
+	kOverlaySystemMessage = 104,
+	kOverlaySystemMessageLength = 160,
+	kOverlayChatInput = 264,
+	kOverlayChatInputLength = 160,
+	kOverlayChatLines = 424,
+	kOverlayChatLineCount = 7,
+	kOverlayChatLineSize = 384,
+	kOverlayChatLineNameLength = 128,
+	kOverlayChatLineText = 128,
+	kOverlayChatLineTextLength = 256,
+	kOverlayPlayers = 3112,
+	kOverlayPlayerSize = 152,
+	kOverlayPlayerNameLength = 128,
+	kOverlayPlayerCountry = 128,
+	kOverlayPlayerCountryLength = 16,
+	kOverlayPlayerRank = 144,
+	kOverlayPlayerScore = 148,
+};
 
 static void Store32(int offset, uint32_t value)
 {
@@ -32,6 +69,62 @@ static void Store64(int offset, uint64_t value)
 {
 	if (gVideo == NULL || offset < 0 || (size_t)offset + 8 > gVideoBytes) return;
 	memcpy(gVideo + offset, &value, 8);
+}
+
+static void StoreString(int offset, int length, const char* value)
+{
+	if (gVideo == NULL || offset < 0 || length <= 0 || (size_t)offset + (size_t)length > gVideoBytes) return;
+	memset(gVideo + offset, 0, (size_t)length);
+	if (value == NULL) return;
+	strncpy((char*)gVideo + offset, value, (size_t)length - 1);
+}
+
+static void BumpOverlay()
+{
+	EnsureVideo();
+	Store32(kOverlayEnabled, 1);
+	Store32(kOverlaySequence, ++gOverlaySequence);
+}
+
+static int HexValue(char c)
+{
+	if (c >= '0' && c <= '9') return c - '0';
+	if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+	return -1;
+}
+
+static void DecodeHex(char* out, size_t outSize, const char* hex)
+{
+	if (outSize == 0) return;
+	size_t written = 0;
+	while (hex != NULL && hex[0] != 0 && hex[1] != 0 && written + 1 < outSize) {
+		int hi = HexValue(hex[0]);
+		int lo = HexValue(hex[1]);
+		if (hi < 0 || lo < 0) break;
+		out[written++] = (char)((hi << 4) | lo);
+		hex += 2;
+	}
+	out[written] = 0;
+}
+
+static void StorePlayer(int index, const char* value)
+{
+	char name[128] = { 0 };
+	int rank = -1;
+	int score = 0;
+	if (value != NULL) {
+		const char* hash = strchr(value, '#');
+		size_t nameLen = hash == NULL ? strlen(value) : (size_t)(hash - value);
+		if (nameLen >= sizeof(name)) nameLen = sizeof(name) - 1;
+		memcpy(name, value, nameLen);
+		if (hash != NULL) sscanf(hash + 1, "%d,%d", &rank, &score);
+	}
+	int offset = kOverlayPlayers + index * kOverlayPlayerSize;
+	StoreString(offset, kOverlayPlayerNameLength, name);
+	StoreString(offset + kOverlayPlayerCountry, kOverlayPlayerCountryLength, "");
+	Store32(offset + kOverlayPlayerRank, (uint32_t)rank);
+	Store32(offset + kOverlayPlayerScore, (uint32_t)score);
 }
 
 bool MacadeEmbeddedEnabled()
@@ -123,7 +216,7 @@ void MacadeEmbeddedPumpInput()
 		tv.tv_usec = 0;
 		if (select(gInputFd + 1, &readSet, NULL, NULL, &tv) <= 0) return;
 
-		char buffer[128];
+		char buffer[384];
 		ssize_t count = recv(gInputFd, buffer, sizeof(buffer) - 1, 0);
 		if (count <= 0) return;
 		buffer[count] = 0;
@@ -132,6 +225,35 @@ void MacadeEmbeddedPumpInput()
 		int scancode = 0;
 		if (sscanf(buffer, "key %d %d", &pressed, &scancode) == 2 && scancode >= 0 && scancode < (int)sizeof(gKeys)) {
 			gKeys[scancode] = pressed ? 1 : 0;
+		} else if (strcmp(buffer, "chatBegin") == 0) {
+			gChatInputActive = true;
+			gChatInput[0] = 0;
+			EnsureVideo();
+			StoreString(kOverlayChatInput, kOverlayChatInputLength, gChatInput);
+			Store32(kOverlayChatInputActive, 1);
+			MacadeEmbeddedSetOverlaySystemMessage("", 0);
+			BumpOverlay();
+		} else if (strncmp(buffer, "chatUpdate ", 11) == 0) {
+			DecodeHex(gChatInput, sizeof(gChatInput), buffer + 11);
+			EnsureVideo();
+			StoreString(kOverlayChatInput, kOverlayChatInputLength, gChatInput);
+			Store32(kOverlayChatInputActive, gChatInputActive ? 1 : 0);
+			BumpOverlay();
+		} else if (strncmp(buffer, "chatSubmit ", 11) == 0) {
+			DecodeHex(gChatSubmit, sizeof(gChatSubmit), buffer + 11);
+			gChatInputActive = false;
+			gChatInput[0] = 0;
+			EnsureVideo();
+			StoreString(kOverlayChatInput, kOverlayChatInputLength, gChatInput);
+			Store32(kOverlayChatInputActive, 0);
+			BumpOverlay();
+		} else if (strcmp(buffer, "chatCancel") == 0) {
+			gChatInputActive = false;
+			gChatInput[0] = 0;
+			EnsureVideo();
+			StoreString(kOverlayChatInput, kOverlayChatInputLength, gChatInput);
+			Store32(kOverlayChatInputActive, 0);
+			BumpOverlay();
 		}
 	}
 }
@@ -148,6 +270,14 @@ void MacadeEmbeddedPublishFrame(const void* pixels, int width, int height, int p
 	EnsureVideo();
 	if (gVideo == NULL || pixels == NULL || width <= 0 || height <= 0 || pitch <= 0) return;
 
+	uint32_t frames = 0;
+	memcpy(&frames, gVideo + kOverlaySystemFrames, 4);
+	if (frames > 0) Store32(kOverlaySystemFrames, frames - 1);
+	memcpy(&frames, gVideo + kOverlayChatFrames, 4);
+	if (frames > 0) Store32(kOverlayChatFrames, frames - 1);
+	StoreString(kOverlayChatInput, kOverlayChatInputLength, gChatInput);
+	Store32(kOverlayChatInputActive, gChatInputActive ? 1 : 0);
+
 	uint32_t slotCapacity = 0;
 	memcpy(&slotCapacity, gVideo + 36, 4);
 	size_t byteCount = (size_t)pitch * (size_t)height;
@@ -163,4 +293,63 @@ void MacadeEmbeddedPublishFrame(const void* pixels, int width, int height, int p
 	Store32(40, slot);
 	Store32(44, 1);
 	Store64(48, ++gFrameIndex);
+}
+
+void MacadeEmbeddedSetOverlaySystemMessage(const char* message, int frames)
+{
+	EnsureVideo();
+	StoreString(kOverlaySystemMessage, kOverlaySystemMessageLength, message);
+	Store32(kOverlaySystemFrames, frames > 0 ? (uint32_t)frames : 0);
+	BumpOverlay();
+}
+
+void MacadeEmbeddedSetOverlayGameInfo(const char* player1, const char* player2, int spectator, int ranked, int player)
+{
+	EnsureVideo();
+	Store32(kOverlaySpectator, spectator ? 1 : 0);
+	Store32(kOverlayRanked, ranked > 0 ? (uint32_t)ranked : 0);
+	Store32(kOverlayPlayer, player > 0 ? 1 : 0);
+	StorePlayer(0, player1);
+	StorePlayer(1, player2);
+	BumpOverlay();
+}
+
+void MacadeEmbeddedSetOverlaySpectators(int spectators)
+{
+	EnsureVideo();
+	Store32(kOverlaySpectators, spectators > 0 ? (uint32_t)spectators : 0);
+	BumpOverlay();
+}
+
+void MacadeEmbeddedSetOverlayStats(int ping, int delay)
+{
+	EnsureVideo();
+	Store32(kOverlayPing, ping > 0 ? (uint32_t)ping : 0);
+	Store32(kOverlayDelay, delay > 0 ? (uint32_t)delay : 0);
+	BumpOverlay();
+}
+
+void MacadeEmbeddedAddOverlayChatLine(const char* name, const char* text)
+{
+	EnsureVideo();
+	if (gVideo == NULL) return;
+	for (int i = kOverlayChatLineCount - 1; i > 0; --i) {
+		memcpy(gVideo + kOverlayChatLines + i * kOverlayChatLineSize,
+		       gVideo + kOverlayChatLines + (i - 1) * kOverlayChatLineSize,
+		       kOverlayChatLineSize);
+	}
+	StoreString(kOverlayChatLines, kOverlayChatLineNameLength, name);
+	StoreString(kOverlayChatLines + kOverlayChatLineText, kOverlayChatLineTextLength, text);
+	Store32(kOverlayChatFrames, 300);
+	BumpOverlay();
+}
+
+int MacadeEmbeddedConsumeChatSubmit(char* text, int size)
+{
+	MacadeEmbeddedPumpInput();
+	if (text == NULL || size <= 0 || gChatSubmit[0] == 0) return 0;
+	strncpy(text, gChatSubmit, (size_t)size - 1);
+	text[size - 1] = 0;
+	gChatSubmit[0] = 0;
+	return text[0] != 0;
 }

@@ -104,6 +104,7 @@ The SDL bridge covers:
 - GGPO callbacks for begin-game, save-state, load-state, log-state, free-buffer, advance-frame, and event dispatch.
 - Bundled Fightcade savestate lookup under `MACADE_FIGHTCADE_RUNTIME/savestates`.
 - Per-frame network input packing/synchronization and GGPO advance/idle calls in the SDL run loop.
+- GGPO match-info, spectator-count, system-message, and chat events are forwarded into Macade's embedded overlay metadata; embedded chat input packets are sent through `ggpo_client_chat`.
 - Native `ggpo_*` symbols linked into `Sources/MacadeApp/Resources/FightcadeRuntime/emulators/fbneo/macfbneo`.
 - Spectate/streaming requires `ggpo_idle` even before the first game state is loaded; the SDL run loop pumps `QuarkRunIdle` on both audio and non-audio idle paths so the streaming TCP socket can receive match info and initial state.
 - The first streamed state follows the official FBNeo delayed-load path: `DrvInit`, `MediaInit`, `RunInit`, then `BurnAreaScan` with `nAcbLoadState = kNetSpectator` while restoring state bytes.

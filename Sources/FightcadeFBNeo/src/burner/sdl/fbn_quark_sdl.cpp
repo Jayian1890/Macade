@@ -1,6 +1,7 @@
 #include "burner.h"
 #include "ggpoclient.h"
 #include "ggponet.h"
+#include "macade_embedded.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -54,12 +55,15 @@ void savestate_path(char *path, size_t size, const char *game, bool ranked)
 
 int find_game(const char *name)
 {
+   UINT32 previous = nBurnDrvActive;
    for (UINT32 i = 0; i < nBurnDrvCount; i++) {
       nBurnDrvActive = i;
       if (strcmp(BurnDrvGetTextA(DRV_NAME), name) == 0 && !(BurnDrvGetFlags() & BDF_BOARDROM)) {
+         nBurnDrvActive = previous;
          return static_cast<int>(i);
       }
    }
+   nBurnDrvActive = previous;
    return -1;
 }
 
@@ -137,6 +141,22 @@ bool __cdecl ggpo_on_event_callback(GGPOEvent *info)
 {
    if (ggpo_is_client_eventcode(info->code)) {
       GGPOClientEvent *client = reinterpret_cast<GGPOClientEvent *>(info);
+      if (client->code == GGPOCLIENT_EVENTCODE_CONNECTING) {
+         MacadeEmbeddedSetOverlaySystemMessage("Connecting...", 180);
+      } else if (client->code == GGPOCLIENT_EVENTCODE_CONNECTED) {
+         MacadeEmbeddedSetOverlaySystemMessage("Connected", 120);
+      } else if (client->code == GGPOCLIENT_EVENTCODE_RETREIVING_MATCHINFO) {
+         MacadeEmbeddedSetOverlaySystemMessage("Retrieving Match Info...", 180);
+      } else if (client->code == GGPOCLIENT_EVENTCODE_DISCONNECTED) {
+         MacadeEmbeddedSetOverlaySystemMessage("Disconnected!", 300);
+      } else if (client->code == GGPOCLIENT_EVENTCODE_MATCHINFO) {
+         MacadeEmbeddedSetOverlaySystemMessage("", 0);
+         MacadeEmbeddedSetOverlayGameInfo(client->u.matchinfo.p1, client->u.matchinfo.p2, kNetSpectator, ranked_match, local_player);
+      } else if (client->code == GGPOCLIENT_EVENTCODE_SPECTATOR_COUNT_CHANGED) {
+         MacadeEmbeddedSetOverlaySpectators(client->u.spectator_count_changed.count);
+      } else if (client->code == GGPOCLIENT_EVENTCODE_CHAT && client->u.chat.text && client->u.chat.text[0] != 0) {
+         MacadeEmbeddedAddOverlayChatLine(client->u.chat.username, client->u.chat.text);
+      }
       if (client->code == GGPOCLIENT_EVENTCODE_MATCHINFO && kNetSpectator && client->u.matchinfo.blurb) {
          kNetVersion = strlen(client->u.matchinfo.blurb) > 0 ? atoi(client->u.matchinfo.blurb) : NET_VERSION;
          set_burn_fps(game_name, kNetVersion);
@@ -149,6 +169,7 @@ bool __cdecl ggpo_on_event_callback(GGPOEvent *info)
       char version[16];
       snprintf(version, sizeof(version), "%d", NET_VERSION);
       QuarkSendChatCmd(version, 'V');
+      MacadeEmbeddedSetOverlaySystemMessage("", 0);
    }
    return true;
 }
@@ -169,13 +190,15 @@ bool __cdecl ggpo_begin_game_callback(char *name)
       return true;
    }
 
-   nBurnDrvActive = index;
    if (!load_fightcade_state(name)) {
+      nBurnDrvActive = index;
       if (DrvInit(index, true) != 0) {
          return false;
       }
       MediaInit();
    }
+   MacadeEmbeddedSetOverlayGameInfo("Player1#0,0", "Player2#0,0", 0, ranked_match, local_player);
+   MacadeEmbeddedSetOverlayStats(0, frame_delay);
    return true;
 }
 
@@ -310,6 +333,7 @@ bool QuarkInit(const char *connect)
       sscanf(connect, "quark:direct,%127[^,],%d,%127[^,],%d,%d,%d,%d", game, &local_port, server,
              &remote_port, &player, &delay, &ranked);
       kNetLua = 1;
+      ranked_match = ranked;
       local_player = player;
       frame_delay = delay;
       game_seed = 0;
@@ -346,7 +370,14 @@ void QuarkEnd()
    kNetSpectator = 0;
 }
 
-void QuarkRunIdle(int ms) { if (ggpo != NULL) ggpo_idle(ggpo, ms); }
+void QuarkRunIdle(int ms)
+{
+   char chat[160];
+   if (MacadeEmbeddedConsumeChatSubmit(chat, sizeof(chat))) {
+      QuarkSendChatText(chat);
+   }
+   if (ggpo != NULL) ggpo_idle(ggpo, ms);
+}
 bool QuarkGetInput(void *values, int size, int players) { return ggpo != NULL && ggpo_synchronize_input(ggpo, values, size, players); }
 bool QuarkIncrementFrame() { return ggpo != NULL && ggpo_advance_frame(ggpo); }
 void QuarkSendChatText(char *text) { QuarkSendChatCmd(text, 'T'); }
