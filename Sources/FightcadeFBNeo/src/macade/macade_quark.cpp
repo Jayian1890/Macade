@@ -42,6 +42,7 @@ struct MacadeQuarkCommand {
 	char mode[16];
 	char game[64];
 	char quarkId[128];
+	char replayFile[1024];
 	char remoteHost[128];
 	int port;
 	int remotePort;
@@ -123,6 +124,13 @@ static bool MacadeParseQuarkCommand(const char* command, MacadeQuarkCommand* par
 		parsed->player = 2;
 		parsed->spectator = true;
 		return true;
+	}
+	if (strncmp(command, "quark:replay,", 13) == 0 && command[13] != 0) {
+		strncpy(parsed->mode, "replay", sizeof(parsed->mode) - 1);
+		strncpy(parsed->replayFile, command + 13, sizeof(parsed->replayFile) - 1);
+		parsed->player = 0;
+		parsed->delay = 0;
+		return MacadeReadReplayGameName(parsed->replayFile, parsed->game, sizeof(parsed->game));
 	}
 	return false;
 }
@@ -347,7 +355,7 @@ int MacadeQuarkHandleCommand(const char* command)
 	iSeed = parsed.spectator || quarkIdLength < 2 ? 0 : MacadeQuarkHash(parsed.quarkId, quarkIdLength - 2);
 	MacadeOverlayReset();
 	MacadeOverlaySetSession(parsed.spectator ? 1 : 0, parsed.ranked, parsed.player);
-	MacadeOverlaySetSystemMessage(localTraining ? "Training" : "Connecting...");
+	MacadeOverlaySetSystemMessage(localTraining ? "Training" : (strcmp(parsed.mode, "replay") == 0 ? "Replay" : "Connecting..."));
 	gMacadeGameplayTrackingStarted = false;
 	printf("Macade quark: parsed command\nMacade quark: mode=%s\nMacade quark: game=%s\nMacade quark: quarkId=%s\n", parsed.mode, parsed.game, parsed.quarkId);
 	printf("Macade quark: port=%d\nMacade quark: remoteHost=%s\nMacade quark: remotePort=%d\nMacade quark: delay=%d\nMacade quark: ranked=%d\nMacade quark: player=%d\nMacade quark: spectator=%d\nMacade quark: seed=%d\n", parsed.port, parsed.remoteHost, parsed.remotePort, parsed.delay, parsed.ranked, parsed.player, parsed.spectator ? 1 : 0, iSeed);
@@ -365,7 +373,8 @@ int MacadeQuarkHandleCommand(const char* command)
 		fflush(stdout);
 		return 0;
 	}
-	if (strcmp(parsed.mode, "direct") == 0) ggpo = ggpo_start_session(&cb, parsed.game, parsed.port, parsed.remoteHost, parsed.remotePort, parsed.player);
+	if (strcmp(parsed.mode, "replay") == 0) ggpo = ggpo_start_replay(&cb, parsed.replayFile);
+	else if (strcmp(parsed.mode, "direct") == 0) ggpo = ggpo_start_session(&cb, parsed.game, parsed.port, parsed.remoteHost, parsed.remotePort, parsed.player);
 	else ggpo = parsed.spectator ? ggpo_start_streaming(&cb, parsed.game, parsed.quarkId, parsed.port) : ggpo_client_connect(&cb, parsed.game, parsed.quarkId, parsed.port);
 	if (ggpo == NULL) return 2;
 	ggpo_set_frame_delay(ggpo, parsed.delay);
@@ -377,6 +386,10 @@ int MacadeQuarkHandleCommand(const char* command)
 int MacadeQuarkLoadStateIfAvailable()
 {
 	if (gMacadeGame[0] == 0) return 0;
+	if (ggpo != NULL && ggpo->isReplayPlayback) {
+		MacadeQuarkRestoreNetworkFlags();
+		return MacadeLoadReplayInitialStateIfNeeded(ggpo) ? 0 : 1;
+	}
 	if (ggpo != NULL && ggpo->isSpectator) {
 		MacadeQuarkRestoreNetworkFlags();
 		if (!ggpo->streamInitialStateReceived) return 1;

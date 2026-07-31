@@ -2,12 +2,25 @@
 #include "macade_overlay.h"
 
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <algorithm>
+#include <string>
 #include <vector>
 #include <zlib.h>
+
+struct ReplayMetadata {
+	std::string version;
+	std::string game;
+	int payloadSize = 0;
+	int compressedSize = 0;
+	int stateSize = 0;
+	int inputSize = 0;
+	int inputCount = 0;
+};
 
 static bool AppendText(char* text, size_t textSize, int* offset, const char* format, ...)
 {
@@ -68,6 +81,126 @@ static void CopyText(char* out, size_t outSize, const char* value)
 	snprintf(out, outSize, "%s", value);
 }
 
+static bool ReadReplayFile(const char* path, std::vector<unsigned char>* bytes)
+{
+	if (path == NULL || bytes == NULL) return false;
+	FILE* file = fopen(path, "rb");
+	if (file == NULL) return false;
+	if (fseek(file, 0, SEEK_END) != 0) { fclose(file); return false; }
+	long length = ftell(file);
+	if (length <= 0) { fclose(file); return false; }
+	if (fseek(file, 0, SEEK_SET) != 0) { fclose(file); return false; }
+	bytes->assign((size_t)length, 0);
+	size_t read = fread(bytes->data(), 1, (size_t)length, file);
+	fclose(file);
+	return read == (size_t)length;
+}
+
+static bool ParseInteger(const char* value, int* out)
+{
+	if (value == NULL || out == NULL) return false;
+	char* end = NULL;
+	long parsed = strtol(value, &end, 10);
+	if (end == value || *end != 0 || parsed < 0 || parsed > INT32_MAX) return false;
+	*out = (int)parsed;
+	return true;
+}
+
+static void ApplyReplayMetadataLine(ReplayMetadata* metadata, const char* key, const char* value)
+{
+	if (metadata == NULL || key == NULL || value == NULL) return;
+	if (strcmp(key, "version") == 0) metadata->version = value;
+	else if (strcmp(key, "game") == 0) metadata->game = value;
+	else if (strcmp(key, "payload size") == 0) ParseInteger(value, &metadata->payloadSize);
+	else if (strcmp(key, "compressed state size") == 0) ParseInteger(value, &metadata->compressedSize);
+	else if (strcmp(key, "state size") == 0) ParseInteger(value, &metadata->stateSize);
+	else if (strcmp(key, "input size") == 0) ParseInteger(value, &metadata->inputSize);
+	else if (strcmp(key, "input count") == 0) ParseInteger(value, &metadata->inputCount);
+}
+
+static bool ParseReplayMetadata(const char* text, ReplayMetadata* metadata)
+{
+	if (text == NULL || metadata == NULL || strncmp(text, "GGPOTV\n", 7) != 0) return false;
+	const char* line = strchr(text, '\n');
+	while (line != NULL && *line != 0) {
+		line++;
+		if (*line == 0) break;
+		const char* tab = strchr(line, '\t');
+		const char* newline = strchr(line, '\n');
+		if (tab == NULL || newline == NULL || tab > newline) break;
+		std::string key(line, tab - line);
+		std::string value(tab + 1, newline - tab - 1);
+		ApplyReplayMetadataLine(metadata, key.c_str(), value.c_str());
+		line = newline;
+	}
+	return metadata->version == "0.20" && !metadata->game.empty() && metadata->payloadSize > 0
+		&& metadata->compressedSize > 0 && metadata->stateSize > 0 && metadata->inputSize > 0
+		&& metadata->inputCount >= 0 && metadata->payloadSize >= metadata->stateSize;
+}
+
+bool MacadeLoadReplayFile(GGPOSession* session, const char* path)
+{
+	if (session == NULL) return false;
+	std::vector<unsigned char> file;
+	if (!ReadReplayFile(path, &file)) return false;
+	std::vector<unsigned char>::iterator nul = std::find(file.begin(), file.end(), 0);
+	if (nul == file.end()) return false;
+	ReplayMetadata metadata;
+	if (!ParseReplayMetadata((const char*)file.data(), &metadata)) return false;
+	size_t compressedOffset = (size_t)(nul - file.begin()) + 1;
+	if (compressedOffset + (size_t)metadata.compressedSize > file.size()) return false;
+	std::vector<unsigned char> payload((size_t)metadata.payloadSize, 0);
+	uLongf payloadLength = (uLongf)payload.size();
+	int result = uncompress(payload.data(), &payloadLength, file.data() + compressedOffset, (uLong)metadata.compressedSize);
+	if (result != Z_OK || payloadLength != (uLongf)metadata.payloadSize) return false;
+	if ((metadata.payloadSize - metadata.stateSize) / metadata.inputSize < metadata.inputCount) return false;
+
+	CopyText(session->gameName, sizeof(session->gameName), metadata.game.c_str());
+	session->isReplayPlayback = true;
+	session->inputSize = metadata.inputSize;
+	session->replayInputSize = metadata.inputSize;
+	session->replayReadFrame = 0;
+	session->replayInitialStateLoaded = false;
+	session->replayInitialState.assign(payload.begin(), payload.begin() + metadata.stateSize);
+	session->replayInputs.clear();
+	for (int frame = 0; frame < metadata.inputCount; frame++) {
+		size_t offset = (size_t)metadata.stateSize + (size_t)frame * (size_t)metadata.inputSize;
+		session->replayInputs.push_back(std::vector<unsigned char>(payload.begin() + offset, payload.begin() + offset + metadata.inputSize));
+	}
+	if (session->callbacks.begin_game != NULL) session->callbacks.begin_game(session->gameName);
+	MacadeLog("Macade GGPO: replay loaded game=%s inputs=%d inputSize=%d state=%d\n", session->gameName, metadata.inputCount, metadata.inputSize, metadata.stateSize);
+	return true;
+}
+
+bool MacadeReadReplayGameName(const char* path, char* out, size_t outSize)
+{
+	if (out == NULL || outSize == 0) return false;
+	out[0] = 0;
+	std::vector<unsigned char> file;
+	if (!ReadReplayFile(path, &file)) return false;
+	std::vector<unsigned char>::iterator nul = std::find(file.begin(), file.end(), 0);
+	if (nul == file.end()) return false;
+	ReplayMetadata metadata;
+	if (!ParseReplayMetadata((const char*)file.data(), &metadata)) return false;
+	CopyText(out, outSize, metadata.game.c_str());
+	return out[0] != 0;
+}
+
+bool MacadeLoadReplayInitialStateIfNeeded(GGPOSession* session)
+{
+	if (session == NULL || !session->isReplayPlayback) return false;
+	if (session->replayInitialStateLoaded) return true;
+	if (session->callbacks.load_game_state != NULL && !session->replayInitialState.empty()) {
+		if (!session->callbacks.load_game_state(session->replayInitialState.data(), (int)session->replayInitialState.size())) {
+			session->fatalDesync = true;
+			return false;
+		}
+	}
+	session->replayInitialStateLoaded = true;
+	MacadeLog("Macade GGPO: replay initial state applied game=%s bytes=%zu\n", session->gameName, session->replayInitialState.size());
+	return true;
+}
+
 static bool CaptureInitialState(GGPOSession* session)
 {
 	if (session == NULL || !session->replayArmed || !session->replayInitialState.empty()) return true;
@@ -89,7 +222,7 @@ static bool CaptureInitialState(GGPOSession* session)
 
 static void ArmReplay(GGPOSession* session)
 {
-	if (session == NULL || session->isSpectator || session->tcpFd < 0 || session->quarkId[0] == 0) return;
+	if (session == NULL || session->isSpectator || session->isReplayPlayback || session->tcpFd < 0 || session->quarkId[0] == 0) return;
 	session->replayArmed = true;
 	session->replayUploaded = false;
 	session->replayWinner = -1;
@@ -104,7 +237,7 @@ static void ArmReplay(GGPOSession* session)
 
 void MacadeReplayRecordInput(GGPOSession* session, const unsigned char* bytes, int size)
 {
-	if (session == NULL || !session->replayArmed || session->replayUploaded || session->replaying) return;
+	if (session == NULL || session->isReplayPlayback || !session->replayArmed || session->replayUploaded || session->replaying) return;
 	if (bytes == NULL || size <= 0 || size > 256) return;
 	if (!CaptureInitialState(session)) return;
 	session->replayInputs.push_back(std::vector<unsigned char>(bytes, bytes + size));

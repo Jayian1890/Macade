@@ -20,6 +20,7 @@ struct GGPOSession {
 	bool hasPeer = false;
 	bool openPortFallback = false;
 	bool isSpectator = false;
+	bool isReplayPlayback = false;
 	bool streamStartupSent = false;
 	bool streamTcpStarted = false;
 	bool streamInitialStateReceived = false;
@@ -94,6 +95,9 @@ struct GGPOSession {
 	int replayWinner = -1;
 	bool replayArmed = false;
 	bool replayUploaded = false;
+	int replayInputSize = 0;
+	int replayReadFrame = 0;
+	bool replayInitialStateLoaded = false;
 	std::vector<unsigned char> replayInitialState;
 	std::vector<std::vector<unsigned char> > replayInputs;
 	GGPOSessionCallbacks callbacks{};
@@ -128,6 +132,9 @@ void MacadePollTCP(GGPOSession* session, int timeoutMs);
 bool MacadeSendTCPChat(GGPOSession* session, const char* text);
 bool MacadeHandleGameEvent(GGPOSession* session, GGPOClientGameEventType type, void* data);
 void MacadeReplayRecordInput(GGPOSession* session, const unsigned char* bytes, int size);
+bool MacadeReadReplayGameName(const char* path, char* out, size_t outSize);
+bool MacadeLoadReplayFile(GGPOSession* session, const char* path);
+bool MacadeLoadReplayInitialStateIfNeeded(GGPOSession* session);
 void MacadeSendTCPReadyIfNeeded(GGPOSession* session);
 void MacadeSendTCPFrameBatch(GGPOSession* session);
 bool MacadePollUDP(GGPOSession* session, int timeoutMs);

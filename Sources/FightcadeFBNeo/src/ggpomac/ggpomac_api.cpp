@@ -109,7 +109,17 @@ GGPOSession* __cdecl ggpo_start_streaming(GGPOSessionCallbacks* cb, char* game, 
 	return session;
 }
 
-GGPOSession* __cdecl ggpo_start_replay(GGPOSessionCallbacks*, char*) { return NULL; }
+GGPOSession* __cdecl ggpo_start_replay(GGPOSessionCallbacks* cb, char* file)
+{
+	GGPOSession* session = new GGPOSession();
+	if (cb != NULL) session->callbacks = *cb;
+	session->isReplayPlayback = true;
+	session->startedAtMs = GGPOMacNowMilliseconds();
+	if (!MacadeLoadReplayFile(session, file)) {
+		MacadeLog("Macade GGPO: replay file unavailable path=%s\n", file == NULL ? "" : file);
+	}
+	return session;
+}
 
 void __cdecl ggpo_close_session(GGPOSession* session)
 {
@@ -124,6 +134,7 @@ bool __cdecl ggpo_idle(GGPOSession* session, int timeout)
 {
 	if (session == NULL) return false;
 	int waitMs = timeout < 0 ? 0 : timeout;
+	if (session->isReplayPlayback) return !session->networkDisconnected;
 	if (session->isSpectator) {
 		MacadeStartStreamingTCPIfNeeded(session);
 		MacadePollTCP(session, waitMs);
@@ -141,6 +152,19 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 	if (session == NULL || values == NULL || players < 2 || size <= 0) return false;
 	if (session->fatalDesync) return false;
 	if (session->networkDisconnected) return false;
+	if (session->isReplayPlayback) {
+		int totalSize = size * players;
+		int copyPlayers = players < 3 ? players : 2;
+		int copySize = size * copyPlayers;
+		memset(values, 0, (size_t)totalSize);
+		if (!session->replayInitialStateLoaded) return false;
+		if (session->replayReadFrame >= (int)session->replayInputs.size()) return false;
+		std::vector<unsigned char>& input = session->replayInputs[session->replayReadFrame++];
+		if (copySize > (int)input.size()) copySize = (int)input.size();
+		if (copySize > 0) memcpy(values, input.data(), (size_t)copySize);
+		session->inputSize = size;
+		return true;
+	}
 	if (session->isSpectator) {
 		if (!session->streamInitialStateLoaded) return false;
 		MacadePollTCP(session, 0);
@@ -202,7 +226,7 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 		session->remoteTimeoutCount++;
 		memcpy(bytes + remoteSlot * size, predicted.data(), predicted.size());
 	}
-	MacadeReplayRecordInput(session, local.data(), size);
+	MacadeReplayRecordInput(session, bytes, size * 2);
 	return true;
 }
 
@@ -210,6 +234,7 @@ bool __cdecl ggpo_advance_frame(GGPOSession* session)
 {
 	if (session == NULL) return false;
 	session->currentFrame++;
+	if (session->isReplayPlayback) return true;
 	if (session->isSpectator) {
 		MacadePollTCP(session, 0);
 		return true;
