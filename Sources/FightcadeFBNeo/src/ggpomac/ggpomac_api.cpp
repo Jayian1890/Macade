@@ -230,7 +230,10 @@ bool __cdecl ggpo_get_stats(GGPOSession* session, GGPONetworkStats* stats)
 	stats->network.recv_queue_len = session->remoteLastFrame >= session->currentFrame ? session->remoteLastFrame - session->currentFrame + 1 : 0;
 	stats->network.ping = session->udpPingMs;
 	long long elapsedMs = GGPOMacNowMilliseconds() - session->startedAtMs;
-	if (elapsedMs > 0) stats->network.kbps_sent = (int)((session->bytesSent * 8ULL) / (unsigned long long)elapsedMs);
+	if (elapsedMs > 0) {
+		unsigned long long udpBytesWithOverhead = session->udpBytesSent + session->udpPacketsSent * 42ULL;
+		stats->network.kbps_sent = (int)((udpBytesWithOverhead * 8ULL) / (unsigned long long)elapsedMs);
+	}
 	stats->timesync.local_frames_behind = session->localFrameAdvantage;
 	stats->timesync.remote_frames_behind = session->remoteFrameAdvantage;
 	return true;

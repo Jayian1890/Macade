@@ -80,6 +80,8 @@ struct GGPOSession {
 	bool networkInterrupted = false;
 	bool networkDisconnected = false;
 	bool clientDisconnectEventSent = false;
+	unsigned long long udpBytesSent = 0;
+	unsigned long long udpPacketsSent = 0;
 	unsigned long long bytesSent = 0;
 	unsigned long long bytesReceived = 0;
 	long long startedAtMs = 0;

@@ -93,6 +93,8 @@ static void NoteUDPSend(GGPOSession* session, ssize_t sent)
 {
 	if (session == NULL || sent <= 0) return;
 	session->udpLastSendAtMs = MacadeUDPMilliseconds();
+	session->udpBytesSent += (unsigned long long)sent;
+	session->udpPacketsSent++;
 	session->bytesSent += (unsigned long long)sent;
 }
 
