@@ -240,17 +240,18 @@ static void MacadeApplySynchronizedControls(int blockSize)
 
 	for (int player = 1; player < kMaxPlayers; player++) {
 		if (gPlayerInputs[player] == 0) continue;
+		int targetInputs = gPlayerInputs[player] < gPlayerInputs[0] ? gPlayerInputs[player] : gPlayerInputs[0];
 		int bitOffset = blockSize * player * 8;
-		for (i = 0, j = bitOffset; i < gPlayerInputs[player]; i++, j++) {
+		for (i = 0, j = bitOffset; i < targetInputs; i++, j++) {
 			if (!ReadInputInfo(i + gPlayerOffset[player], &input) || input.pVal == NULL) continue;
 			if (input.nType == BIT_DIGITAL) {
 				*input.pVal = (gControls[j >> 3] & (1 << (j & 7))) ? 1 : 0;
 			}
 		}
 
-		j += gCommonInputs;
+		j = bitOffset + gPlayerInputs[0] + gCommonInputs;
 		j = (j + 7) >> 3;
-		for (i = 0; i < gPlayerInputs[player]; i++) {
+		for (i = 0; i < targetInputs; i++) {
 			if (!ReadInputInfo(i + gPlayerOffset[player], &input)) continue;
 			if ((input.nType & BIT_GROUP_ANALOG) && input.pShortVal != NULL && j + 1 < kInputSize) {
 				*input.pShortVal = (gControls[j] << 8) | gControls[j + 1];
