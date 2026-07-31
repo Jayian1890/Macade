@@ -506,8 +506,8 @@ int RunIdle()
 	int nTime, nCount;
 	bool didNetIdle = false;
 
-	bool useTimerDrivenEmbeddedSpectator = MacadeEmbeddedEnabled() && kNetSpectator;
-	if (bAudPlaying && !useTimerDrivenEmbeddedSpectator)
+	bool useTimerDrivenEmbeddedNetplay = MacadeEmbeddedEnabled() && kNetGame && !MacadeQuarkLocalTrainingActive();
+	if (bAudPlaying && !useTimerDrivenEmbeddedNetplay)
 	{
 		// Run with sound
 		int framesBeforeAudio = macadeRunFrameCount;
