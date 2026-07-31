@@ -1,18 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef __declspec
-#define __declspec(x)
-#endif
-#if !defined(__APPLE__)
+#if defined(__APPLE__)
+#include <stdlib.h>
+#else
 #include <malloc.h>
-#endif
-#if !defined(WIN32)
-#include <unistd.h>
-#define _getcwd getcwd
-#define _chdir chdir
-#ifndef _MAX_PATH
-#define _MAX_PATH 511
-#endif
 #endif
 #include <string.h>
 #include <ctype.h>
@@ -25,7 +16,7 @@
 using std::min;
 using std::max;
 
-#include "ggpomac.h"
+#include "ggponet.h"
 extern GGPOSession *ggpo;
 
 #ifdef __linux
@@ -39,7 +30,6 @@ extern "C" {
 	#include <lauxlib.h>
 	#include <lualib.h>
 	#include <lstate.h>
-	int luaopen_gd(lua_State* L);
 }
 
 #include "burner.h"
@@ -52,29 +42,6 @@ extern "C" {
 #include "../cpu/m68000_intf.h"
 #include "../cpu/z80/z80.h"
 extern Z80_Regs Z80;
-extern int kNetLua;
-extern INT32 nReplayStatus;
-extern bool bReplayReadOnly;
-void StopReplay();
-#if !defined(WIN32)
-extern int RunReset();
-extern void UpdateMessage(char* message);
-extern bool bRunPause;
-extern bool bAppDoFast;
-INT32 bRunaheadFrame = 0;
-void EmulatorAppDoFast(bool dofast) { bAppDoFast = dofast; }
-INT32 VidSNewTinyMsg(const TCHAR* pText, INT32, INT32, INT32)
-{
-	if (pText) UpdateMessage(const_cast<TCHAR*>(pText));
-	return 0;
-}
-INT32 VidSNewShortMsg(const TCHAR* pText, INT32 nRGB, INT32 nDuration, INT32 nPriority)
-{
-	return VidSNewTinyMsg(pText, nRGB, nDuration, nPriority);
-}
-static void SetPauseMode(bool paused) { bRunPause = paused; }
-static int StartFromReset(TCHAR*) { return RunReset(); }
-#endif
 
 #ifndef TRUE
 #define TRUE 1
@@ -1546,13 +1513,6 @@ char szSavestateFilename[MAX_PATH];
 
 char *GetSavestateFilename(int nSlot) {
 	sprintf(szSavestateFilename, "./savestates/%s slot %02x.fs", BurnDrvGetTextA(DRV_NAME), nSlot);
-	return szSavestateFilename;
-}
-#else
-static char szSavestateFilename[_MAX_PATH];
-
-char *GetSavestateFilename(int nSlot) {
-	snprintf(szSavestateFilename, sizeof(szSavestateFilename), "./savestates/%s slot %02x.fs", BurnDrvGetTextA(DRV_NAME), nSlot);
 	return szSavestateFilename;
 }
 #endif
@@ -4097,13 +4057,9 @@ int FBA_LoadLuaCode(const char *filename) {
 		slash = backslash;
 	if (slash) {
 		slash[1] = '\0';    // keep slash itself for some reasons
-#ifdef WIN32
 		if (!LuaConsoleHWnd) {
 			luafile+= strlen (dir);
 		}
-#else
-		luafile += strlen(dir);
-#endif
 		_chdir(dir);
 	}
 	_getcwd(luaCWD, _MAX_PATH);
@@ -4112,12 +4068,6 @@ int FBA_LoadLuaCode(const char *filename) {
 	if (!LUA) {
 		LUA = lua_open();
 		luaL_openlibs(LUA);
-
-		lua_getglobal(LUA, "package");
-		lua_getfield(LUA, -1, "preload");
-		lua_pushcfunction(LUA, luaopen_gd);
-		lua_setfield(LUA, -2, "gd");
-		lua_pop(LUA, 2);
 
 		luaL_register(LUA, "emu", fbalib);
 		luaL_register(LUA, "fba", fbalib);
@@ -4200,7 +4150,6 @@ int FBA_LoadLuaCode(const char *filename) {
 	info_print = NULL;
 	info_onstart = NULL;
 	info_onstop = NULL;
-	info_uid = 0;
 #endif
 	if (info_onstart)
 		info_onstart(info_uid);

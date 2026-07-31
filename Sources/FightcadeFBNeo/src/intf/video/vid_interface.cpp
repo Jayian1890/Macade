@@ -231,8 +231,6 @@ INT32 VidInit()
 	if ((nVidSelect < VID_LEN) && bDrvOkay) {
 #endif
 		nVidActive = nVidSelect;
-		printf("Macade diagnostic: VidInit selecting video module index=%u name=%s\n", nVidActive, pVidOut[nVidActive]->szModuleName);
-		fflush(stdout);
 		if ((nRet = pVidOut[nVidActive]->Init()) == 0) {
 			nBurnBpp = nVidImageBPP;								// Set Burn library Bytes per pixel
 
@@ -467,7 +465,13 @@ INT32 VidRecalcPal()
 INT32 VidPaint(INT32 bValidate)
 {
 	if (bVidOkay /* && bDrvOkay */) {
-		return pVidOut[nVidActive]->Paint(bValidate);
+		if (bValidate == 3) {
+			int ret = pVidOut[nVidActive]->Paint(2 | bValidate);
+			return ret;
+		}
+		else {
+			return 0;
+		}
 	} else {
 		return 1;
 	}

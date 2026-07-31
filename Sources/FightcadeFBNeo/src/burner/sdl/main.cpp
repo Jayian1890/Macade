@@ -1,16 +1,59 @@
+/*----------------
+ * Stuff to finish:
+ *
+ * It wouldn't be a stretch of the imagination to think the whole of the sdl 'port' needs a redo but here are the main things wrong with this version:
+ *
+ *
+ * The audio output code code could maybe do with some work, but it's getting there...
+ * There are lots of problems with the opengl renderer, but you should just use the SDL2 build anyway
+ *
+ * TODO for SDL2:
+ * Add autostart to menu as an ini config option
+ * Add menu for options e.g. dips, mapping, saves, IPS patches
+ * Maybe a better font output setup with some sort of scaling, maybe add sdl1 support?
+ * figure out what is going on with the sdl sound output, something breaks after a few frames
+ * ------------------*/
+
 #include "burner.h"
 
-int kNetVersion = NET_VERSION;
 int kNetGame = 0;
 int kNetSpectator = 0;
+int kNetLua = 1;
+int kNetVersion = NET_VERSION;
 bool bFixDiagonals = false;
 int nEnableSOCD = 0;
+int bRunaheadFrame = 0;
+
 INT32 Init_Joysticks(int p1_use_joystick);
-int MacadeQuarkHandleCommand(const char* command);
-const char* MacadeQuarkGameName();
-bool MacadeChatInputIsActive();
-void DoGame(int gameToRun);
-extern "C" void MacadePrintExitBacktrace();
+
+struct lua_State;
+lua_State* FBA_GetLuaState()
+{
+	return NULL;
+}
+
+INT32 VidSNewTinyMsg(const TCHAR*, INT32, INT32, INT32)
+{
+	return 0;
+}
+
+void CallRegisteredLuaMemHook(unsigned int, int, unsigned int, LuaMemHookType)
+{
+}
+
+int FBA_LuaRerecordCountSkip()
+{
+	return 0;
+}
+
+void luasav_save(const char*)
+{
+}
+
+void luasav_load(const char*)
+{
+}
+
 int  nAppVirtualFps = 0;         // App fps * 100
 bool bRunPause = 0;
 bool bAppFullscreen = 0;
@@ -18,14 +61,17 @@ bool bAlwaysProcessKeyboardInput = 0;
 int  usemenu = 0, usejoy = 0, vsync = 1, dat = 0;
 bool bSaveconfig = 1;
 bool bIntegerScale = false;
+
 TCHAR szAppBurnVer[16];
 char videofiltering[3];
+
 #ifdef BUILD_SDL2
 static char* szSDLeepromPath = NULL;
 static char* szSDLhiscorePath = NULL;
 static char* szSDLHDDPath = NULL;
 static char* szSDLSamplePath = NULL;
 #endif
+
 #define set_commandline_option_not_config(i,v) i = v;
 #define set_commandline_option(i,v) i = v; bSaveconfig = 0;
 #define set_commandline_option_string(i, v, length) snprintf(i, length, v); bSaveconfig = 0;
@@ -47,7 +93,9 @@ int parseSwitches(int argc, char* argv[])
 		if (strcmp(argv[i] + 1, "menu") == 0)
 		{
 			set_commandline_option_not_config(usemenu, 1)
+			
 		}
+
 		if (strcmp(argv[i] + 1, "novsync") == 0)
 		{
 			set_commandline_option(vsync, 0)
@@ -198,10 +246,31 @@ void generateDats()
 }
 
 
+void DoGame(int gameToRun)
+{
+	if (!DrvInit(gameToRun, 0))
+	{
+		MediaInit();
+		Init_Joysticks(usejoy);
+		RunMessageLoop();
+	}
+	else
+	{
+		printf("There was an error loading your selected game.\n");
+	}
+
+	if (bSaveconfig)
+	{
+		ConfigAppSave();
+	}
+	DrvExit();
+	MediaExit();
+}
+
 void bye(void)
 {
 	printf("Doing exit cleanup\n");
-	MacadePrintExitBacktrace();
+
 	DrvExit();
 	MediaExit();
 	BurnLibExit();
@@ -210,19 +279,17 @@ void bye(void)
 
 static int __cdecl AppDebugPrintf(int nStatus, TCHAR* pszFormat, ...)
 {
+
 	va_list args;
 	va_start(args, pszFormat);
-	vprintf(pszFormat, args);
+	printf(pszFormat, args);
 	va_end(args);
-	fflush(stdout);
 
 	return 0;
 }
 
 int main(int argc, char* argv[])
 {
-	setvbuf(stdout, NULL, _IONBF, 0);
-	setvbuf(stderr, NULL, _IONBF, 0);
 	const char* romname = NULL;
 	UINT32      i = 0;
 	bool gamefound = 0;
@@ -264,17 +331,6 @@ int main(int argc, char* argv[])
 	{
 		if (*argv[i] != '-' && !gamefound)
 		{
-			if (strncmp(argv[i], "quark:", 6) == 0 || strncmp(argv[i], "macade:", 7) == 0)
-			{
-				int quarkStatus = MacadeQuarkHandleCommand(argv[i]);
-				if (quarkStatus != 0) {
-					return quarkStatus;
-				}
-				romname = MacadeQuarkGameName();
-				gamefound = 1;
-				continue;
-			}
-
 			romname = argv[i];
 			gamefound = 1;
 		}
@@ -384,27 +440,10 @@ int main(int argc, char* argv[])
 	if (usemenu)
 	{
 #ifdef BUILD_SDL2
-		bool quit = 0;
-
-		while (!quit)
-		{
-			gui_init();
-			int selectedOk = gui_process();
-			gui_exit();
-
-			switch (selectedOk)
-			{
-			case -1:
-				BurnLibExit();
-				SDL_Quit();
-				quit = 1;
-				return 0;
-
-			default:
-				DoGame(selectedOk);
-				break;
-			}
-		}
+		printf("SDL menu is unavailable in this macOS stock build. Launch a game directly.\n");
+		BurnLibExit();
+		SDL_Quit();
+		return 1;
 #endif
 	}
 	else if (dat)
@@ -478,5 +517,5 @@ int main(int argc, char* argv[])
 
 bool AppProcessKeyboardInput()
 {
-	return !MacadeChatInputIsActive();
+	return true;
 }

@@ -85,7 +85,6 @@ int DrvInit(int nDrvNum, bool bRestore)
 	nBurnDrvActive = nDrvNum;		// Set the driver number
 
 
-
 	if ((BurnDrvGetHardwareCode() & HARDWARE_PUBLIC_MASK) == HARDWARE_SNK_NEOCD) {
 		if (CDEmuInit()) {
 			printf("CD emu failed\n");

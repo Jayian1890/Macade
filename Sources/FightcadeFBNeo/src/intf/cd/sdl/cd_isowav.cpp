@@ -452,7 +452,7 @@ static int isowavPlayLBA(int LBA)
 
 static int isowavPlay(unsigned char M, unsigned char S, unsigned char F)
 {
-	const char address[] = { 0, static_cast<char>(M), static_cast<char>(S), static_cast<char>(F) };
+	const char address[] = { 0, M, S, F };
 
 	return isowavPlayLBA(isowavMSFToLBA(address));
 }
@@ -587,14 +587,9 @@ static int isowavGetSoundBuffer(short* /*buffer*/, int /*samples*/)
 	return 0;
 }
 
-static int isowavScan(INT32 /*nAction*/, INT32* /*pnMin*/)
-{
-	return 0;
-}
-
 static int isowavGetSettings(InterfaceInfo* /*pInfo*/)
 {
 	return 0;
 }
 
-struct CDEmuDo cdimgDo = { isowavExit, isowavInit, isowavStop, isowavPlay, isowavLoadSector, isowavReadTOC, isowavReadQChannel, isowavGetSoundBuffer, isowavScan, isowavGetSettings, _T("cue/iso/wav CD emulation") };
+struct CDEmuDo isowavDo = { isowavExit, isowavInit, isowavStop, isowavPlay, isowavLoadSector, isowavReadTOC, isowavReadQChannel, isowavGetSoundBuffer, NULL, isowavGetSettings, _T("cue/iso/wav CD emulation") };

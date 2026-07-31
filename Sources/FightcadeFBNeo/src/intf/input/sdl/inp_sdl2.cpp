@@ -2,7 +2,6 @@
 #include <SDL.h>
 
 #include "burner.h"
-#include "macade_embedded.h"
 
 
 #define MAX_JOYSTICKS (8)
@@ -419,10 +418,8 @@ static struct { unsigned char buttons; int xdelta; int ydelta; } SDLinpMouseStat
 // Call before checking for Input in a frame
 int SDLinpStart()
 {
-	if (!MacadeEmbeddedEnabled()) {
-		// Update SDL event queue
-		SDL_PumpEvents();
-	}
+	// Update SDL event queue
+	SDL_PumpEvents();
 
 	// Keyboard not read this frame
 	bKeyboardRead = 0;
@@ -606,10 +603,6 @@ int SDLinpState(int nCode)
 	}
 
 	if (nCode < 0x100) {
-		int embeddedScancode = FBKtoSDL[nCode];
-		if (embeddedScancode > 0 && MacadeEmbeddedKeyState(embeddedScancode)) {
-			return 1;
-		}
 		if (ReadKeyboard() != 0) {							// Check keyboard has been read - return not pressed on error
 			return 0;
 		}
@@ -647,21 +640,10 @@ int SDLinpFind(bool CreateBaseline)
 {
 	int nRetVal = -1;										// assume nothing pressed
 
-	if (MacadeEmbeddedEnabled()) {
-		for (int i = 0; i < 0x100; i++) {
-			int embeddedScancode = FBKtoSDL[i];
-			if (embeddedScancode > 0 && MacadeEmbeddedKeyState(embeddedScancode)) {
-				nRetVal = i;
-				goto End;
-			}
-		}
-	}
-
 	// check if any keyboard keys are pressed
 	if (ReadKeyboard() == 0) {
 		for (int i = 0; i < 0x100; i++) {
-			int embeddedScancode = FBKtoSDL[i];
-			if ((embeddedScancode > 0 && MacadeEmbeddedKeyState(embeddedScancode)) || SDL_KEY_IS_DOWN(i) > 0) {
+			if (SDL_KEY_IS_DOWN(i) > 0) {
 				nRetVal = i;
 				goto End;
 			}

@@ -53,7 +53,7 @@ endif
 #
 
 objdir	= obj/GNU_SDL/$(NAME)/
-srcdir	= src/
+srcdir = src/
 SDL_CFLAGS ?= $(shell pkg-config --cflags sdl2)
 SDL_LIBS ?= $(shell pkg-config --libs sdl2)
 
@@ -87,8 +87,6 @@ alldir	= burn \
 		burn/snd \
 		burner \
 		burner/sdl \
-		ggpomac \
-		macade \
 		intf \
 		intf/audio \
 		intf/audio/sdl \
@@ -187,8 +185,7 @@ drvobj	+= \
 		\
 		d_4enraya.o d_1942.o d_1943.o d_alinvade.o d_alpha68k.o d_ambush.o d_arabian.o d_armedf.o d_atetris.o d_aztarac.o d_baraduke.o \
 		d_bionicc.o d_blktiger.o d_blockout.o d_blueprnt.o d_bombjack.o d_capbowl.o d_commando.o d_cybertnk.o d_ddragon.o d_djboy.o d_dkong.o \
-		d_dynduke.o d_epos.o d_exedexes.o d_funkybee.o d_galaga.o d_gauntlet.o d_ginganin.o d_gng.o d_gunsmoke.o d_higemaru.o \
-		d_invaders.o d_jack.o d_kangaroo.o d_kncljoe.o d_kyugo.o d_ladybug.o d_lwings.o d_lastduel.o d_mario.o d_markham.o \
+		d_dynduke.o d_epos.o d_exedexes.o d_funkybee.o d_galaga.o d_gauntlet.o d_ginganin.o d_gng.o d_gunsmoke.o d_higemaru.o \ d_invaders.o d_jack.o d_kangaroo.o d_kncljoe.o d_kyugo.o d_ladybug.o d_lwings.o d_lastduel.o d_mario.o d_markham.o \
 		d_marineb.o d_megasys1.o d_meijinsn.o d_mitchell.o d_mole.o d_momoko.o d_mrdo.o d_mrflea.o d_mustache.o d_mystston.o d_ninjakd2.o \
 		d_pacland.o d_pacman.o d_pac2650.o d_pkunwar.o d_prehisle.o d_punchout.o d_psychic5.o d_quizo.o d_rallyx.o d_renegade.o d_rpunch.o \
 		d_route16.o d_scregg.o d_sf.o d_sidearms.o d_skyarmy.o d_skyfox.o d_skykid.o d_snk68.o d_solomon.o d_sonson.o d_srumbler.o d_suna8.o d_tail2nose.o \
@@ -218,19 +215,18 @@ drvobj	+= \
 		d_sg1000.o
 
 depobj	+= \
-		bzip.o config.o drv.o inpdipsw.o main.o ggpomac_api.o ggpomac_runtime.o macade_detector.o macade_embedded.o macade_exit_diagnostics.o macade_ggpo_chat.o macade_ggpo_direct.o macade_ggpo_handshake.o macade_ggpo_matchinfo.o macade_ggpo_replay.o macade_ggpo_stream.o macade_ggpo_udp.o macade_netplay_loop.o macade_network_input.o macade_overlay.o macade_quark.o macade_sdl_game.o media.o replay.o run.o stated.o \
+		bzip.o config.o drv.o inpdipsw.o main.o media.o replay.o run.o stated.o \
 		stringset.o ips_manager.o support_paths.o scrn.o \
 		\
-		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o luaengine.o luasav.o macade_lua_gd.o \
-		misc.o sshot.o state.o statec.o zipfn.o \
-		lapi.o lauxlib.o lbaselib.o lcode.o ldblib.o ldebug.o ldo.o ldump.o lfunc.o lgc.o linit.o liolib.o llex.o lmathlib.o lmem.o loadlib.o lobject.o lopcodes.o loslib.o lparser.o lstate.o lstring.o lstrlib.o ltable.o ltablib.o ltm.o lundump.o lvm.o lzio.o \
+		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o \
+		misc.o sshot.o state.o statec.o zipfn.o lapi.o lauxlib.o lbaselib.o lcode.o ldblib.o ldebug.o ldo.o ldump.o lfunc.o lgc.o linit.o liolib.o llex.o lmathlib.o lmem.o loadlib.o lobject.o lopcodes.o loslib.o lparser.o lstate.o lstring.o lstrlib.o ltable.o ltablib.o ltm.o lundump.o lvm.o lzio.o \
 		\
-		aud_sdl.o input_sdl2.o inp_sdl2.o sdl2_gui_common.o sdl2_gui_ingame.o sdl2_gui_stub.o sdl2_inprint.o vid_sdl2.o vid_sdl2opengl.o \
+		aud_sdl.o input_sdl2.o inp_sdl2.o sdl2_gui_common.o sdl2_gui_ingame.o sdl2_inprint.o vid_sdl2.o vid_sdl2opengl.o \
 		\
 		aud_dsp.o aud_interface.o  inp_interface.o interface.o \
 		lowpass2.o vid_interface.o vid_softfx.o vid_support.o \
 		\
-		cd_interface.o cd_isowav.o cdsound.o neocdlist.o \
+		cd_interface.o cd_sdl2.o cdsound.o neocdlist.o \
 		\
 		2xpm.o 2xsai.o ddt3x.o epx.o hq2xs.o hq2xs_16.o xbr.o \
 		\
@@ -242,19 +238,18 @@ depobj	+= \
 		\
 		$(drvobj) \
 		\
-		burn.o burn_bitmap.o burn_gun.o burn_led.o burn_memory.o burn_pal.o burn_shift.o burn_sound.o burn_sound_c.o cheat.o debug_track.o hiscore.o load.o \
+		burn.o burn_gun.o burn_led.o burn_memory.o burn_pal.o burn_shift.o burn_sound.o burn_sound_c.o cheat.o debug_track.o hiscore.o load.o \
 		tilemap_generic.o tiles_generic.o timer.o vector.o \
 		\
-		8255ppi.o 8257dma.o atariic.o atarimo.o earom.o eeprom.o gaelco_crypt.o joyprocess.o mb87078.o mermaid.o nb1414m4.o nmk004.o nmk112.o kaneko_tmap.o pandora.o resnet.o seibusnd.o sknsspr.o slapstic.o t5182.o timekpr.o tms34061.o watchdog.o \
+		8255ppi.o 8257dma.o burn_bitmap.o atarimo.o atariic.o earom.o eeprom.o gaelco_crypt.o joyprocess.o mb87078.o mermaid.o nb1414m4.o nmk004.o nmk112.o kaneko_tmap.o resnet.o pandora.o seibusnd.o sknsspr.o slapstic.o t5182.o timekpr.o tms34061.o watchdog.o \
 		v3021.o vdc.o tms9928a.o \
 		\
 		ay8910.o burn_y8950.o burn_ym2151.o burn_ym2203.o burn_ym2413.o burn_ym2608.o burn_ym2610.o burn_ym2612.o burn_md2612.o \
-		burn_ym3526.o burn_ym3812.o burn_ymf262.o burn_ymf278b.o c6280.o dac.o es5506.o es8712.o flt_rc.o fm.o fmopl.o ics2115.o iremga20.o \
+		burn_ym3526.o burn_ym3812.o burn_ymf262.o burn_ymf278b.o ymf262.o c6280.o dac.o es5506.o es8712.o flt_rc.o fm.o fmopl.o ym2612.o ics2115.o iremga20.o \
 		k005289.o k007232.o k051649.o k053260.o k054539.o msm5205.o msm5232.o msm6295.o namco_snd.o nes_apu.o pokey.o rf5c68.o saa1099.o \
-		samples.o segapcm.o sn76477.o sn76496.o tms5220.o upd7759.o vlm5030.o x1010.o ym2151.o ym2413.o ym2612.o ymdeltat.o ymf262.o ymf278b.o ymz280b.o \
+		samples.o segapcm.o sn76477.o sn76496.o tms5220.o upd7759.o vlm5030.o x1010.o ym2151.o ym2413.o ymdeltat.o ymf278b.o ymz280b.o \
 		\
-		arm7_intf.o arm_intf.o h6280_intf.o hd6309_intf.o konami_intf.o m6502_intf.o m6800_intf.o m6805_intf.o m6809_intf.o \
-		z180_intf.o \
+		arm7_intf.o arm_intf.o  h6280_intf.o z180_intf.o hd6309_intf.o konami_intf.o m6502_intf.o m6800_intf.o m6805_intf.o m6809_intf.o \
 		m68000_intf.o nec_intf.o pic16c5x_intf.o s2650_intf.o tlcs90_intf.o z80_intf.o \
 		\
 		arm.o arm7.o h6280.o hd6309.o i8039.o mcs51.o konami.o m6502.o m6800.o m6805.o m6809.o nec.o pic16c5x.o s2650.o sh2.o tlcs90.o upd7810.o z180.o \
@@ -289,7 +284,7 @@ depobj	+= \
 		\
 		toa_bcu2.o toa_extratext.o toa_gp9001.o toa_palette.o toaplan1.o toaplan.o \
 		\
-		mdeeprom.o megadrive.o stm95.o \
+		megadrive.o mdeeprom.o stm95.o \
 		\
 		pce.o \
 		\
@@ -355,8 +350,8 @@ LD	= $(CXX)
 AS	= nasm
 
 HOSTCFLAGS = $(incdir)
-CFLAGS = -O2 -fomit-frame-pointer -Wno-write-strings -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_SUPPORTED=0 -DLSB_FIRST -DFASTCALL -DBUILD_M68K -DINCLUDE_LIB_PNGH
-CXXFLAGS = -O2 -fomit-frame-pointer -Wno-write-strings -Wno-c++11-narrowing -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_SUPPORTED=0 -DLSB_FIRST -DFASTCALL -DBUILD_M68K -DINCLUDE_LIB_PNGH
+CFLAGS = -O2 -fomit-frame-pointer -Wno-write-strings -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_SUPPORTED=0 -DLSB_FIRST -DFASTCALL -DBUILD_M68K -DINCLUDE_LIB_PNGH -include stdint.h -DINT_PTR=intptr_t -DCALLBACK= -DBOOL=int -Dfopen64=fopen -Dftello64=ftello -Dfseeko64=fseeko
+CXXFLAGS = -O2 -fomit-frame-pointer -Wno-write-strings -Wno-c++11-narrowing -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_SUPPORTED=0 -DLSB_FIRST -DFASTCALL -DBUILD_M68K -DINCLUDE_LIB_PNGH -include stdint.h -DINT_PTR=intptr_t -DCALLBACK= -DBOOL=int -Dfopen64=fopen -Dftello64=ftello -Dfseeko64=fseeko
 DEF := -DCPUTYPE=$(CPUTYPE) -DUSE_SPEEDHACKS -DBUILD_SDL2
 
 CFLAGS += -U__cdecl -U__fastcall -D__cdecl="" -D__fastcall=""
@@ -398,7 +393,7 @@ ifeq ($(OS),Windows_NT)
 CFLAGS_CONSOLE = -mno-cygwin -mconsole -pipe -Wall -W $(DEF) $(incdir)
 ASFLAGS += -f coff
 else
-ASFLAGS += -f elf
+ASFLAGS += -f macho64
 endif
 
 #
@@ -468,9 +463,9 @@ endif
 #	Generate the gamelist
 #
 
-burn.o burn.d:	$(driverlist.h)
+burn.o burn.d:	driverlist.h
 
-$(driverlist.h): $(srcdir)dep/scripts/gamelist.pl
+$(driverlist.h): $(drvobj) $(srcdir)dep/scripts/gamelist.pl
 ifdef	PERL
 	@perl $(srcdir)dep/scripts/gamelist.pl -o $@ -l gamelist.txt \
 		$(filter %.cpp,$(foreach file,$(drvobj:.o=.cpp),$(foreach dir,$(alldir), \
@@ -624,10 +619,6 @@ endif
 #
 #	Generic rules for C/C++ files
 #
-
-$(objdir)dep/libs/lua/%.o: $(srcdir)dep/libs/lua/%.c
-	@echo Compiling $<...
-	@$(CC) $(CFLAGS) -Wno-unused -Wno-conversion -Wno-missing-prototypes -c $< -o $@
 
 ifeq ($(MAKELEVEL),0)
 

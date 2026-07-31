@@ -274,9 +274,6 @@ __declspec(dllexport) bool __cdecl ggpo_advance_frame(GGPOSession *);
 __declspec(dllexport) bool __cdecl ggpo_get_stats(GGPOSession *,
                                                   GGPONetworkStats *stats);
 
-__declspec(dllexport) bool __cdecl ggpo_set_frame_delay(GGPOSession *,
-                                                        int frames);
-
 /*
  * ggpo_log --
  *

@@ -68,7 +68,6 @@ int ConfigAppLoad()
 		VAR(bVidScanlines);
 		VAR(bDoGamma);
 		FLT(nGamma);
-		VAR(nAudVolume);
 		VAR(nAudSampleRate[0]);
 		VAR(nAudDSPModule[0]);
 		VAR(nInterpolation);
@@ -166,8 +165,6 @@ int ConfigAppSave()
 	VAR(bDoGamma);
 	_ftprintf(f, _T("\n// Gamma to correct with\n"));
 	FLT(nGamma);
-	fprintf(f, "\n// Sound volume percentage times 100\n");
-	VAR(nAudVolume);
 	VAR(nAudSampleRate[0]);
 	fprintf(f, "\n// If non-zero, enable DSP filter\n");
 	VAR(nAudDSPModule[0]);

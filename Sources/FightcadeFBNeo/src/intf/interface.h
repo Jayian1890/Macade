@@ -110,6 +110,7 @@ struct AudOut {
 	INT32   (*SoundInit)();
 	INT32   (*SoundExit)();
 	INT32   (*SoundCheck)();
+	INT32   (*SetCallback)(int (*pCallback)(int));
 	INT32   (*SoundFrame)();
 	INT32   (*SoundPlay)();
 	INT32   (*SoundStop)();
@@ -124,13 +125,13 @@ INT32 AudBlankSound();
 INT32 AudSoundInit();
 INT32 AudSoundExit();
 INT32 AudSoundCheck();
+INT32 AudSetCallback(int (*pCallback)(int));
 INT32 AudSoundFrame();
 INT32 AudSoundPlay();
 INT32 AudSoundStop();
 INT32 AudSoundSetVolume();
 INT32 AudSoundGetSampleRate();
 INT32 AudSoundGetSegLen();
-INT32 AudSetCallback(INT32 (*pCallback)(INT32));
 InterfaceInfo* AudGetInfo();
 void AudWriteSilence();
 

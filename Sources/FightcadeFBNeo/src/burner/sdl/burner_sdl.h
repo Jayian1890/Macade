@@ -16,27 +16,12 @@ typedef struct tagRECT
 	int bottom;
 } RECT, * PRECT, * LPRECT;
 typedef const RECT* LPCRECT;
-typedef void* HWND;
-typedef UINT32 UINT;
-typedef uintptr_t WPARAM;
-typedef intptr_t LPARAM;
-typedef intptr_t INT_PTR;
-#ifndef CALLBACK
-#define CALLBACK
-#endif
 #else
 #include <windows.h>
 #endif
 
 typedef unsigned long   DWORD;
 typedef unsigned char   BYTE;
-typedef int BOOL;
-
-extern int kNetVersion;
-extern int kNetGame;
-extern int kNetSpectator;
-extern bool bFixDiagonals;
-extern int nEnableSOCD;
 
 #ifndef MAX_PATH
 #define MAX_PATH    511
@@ -58,6 +43,12 @@ extern bool  bAlwaysProcessKeyboardInput;
 extern TCHAR szAppBurnVer[16];
 extern bool  bAppFullscreen;
 extern bool bIntegerScale;
+extern int kNetGame;
+extern int kNetSpectator;
+extern int kNetLua;
+extern int kNetVersion;
+extern bool bFixDiagonals;
+extern int nEnableSOCD;
 
 extern TCHAR* GetIsoPath();
 

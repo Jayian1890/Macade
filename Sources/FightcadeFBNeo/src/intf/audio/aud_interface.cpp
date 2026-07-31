@@ -120,6 +120,14 @@ INT32 AudSoundCheck()
 	return pAudOut[nAudActive]->SoundCheck();
 }
 
+INT32 AudSetCallback(int (*pCallback)(int))
+{
+	if (!bAudOkay || nAudActive >= AUD_LEN || pAudOut[nAudActive]->SetCallback == NULL) {
+		return 1;
+	}
+	return pAudOut[nAudActive]->SetCallback(pCallback);
+}
+
 INT32 AudSoundFrame()
 {
 	if (!bAudOkay || nAudActive >= AUD_LEN) {

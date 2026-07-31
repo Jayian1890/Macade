@@ -2,7 +2,6 @@
 #include "burner.h"
 #include "vid_support.h"
 #include "vid_softfx.h"
-#include "macade_embedded.h"
 
 #include <SDL.h>
 
@@ -22,49 +21,12 @@ static SDL_Rect dest_title_texture_rect;
 static bool bHasOverlay = false;
 
 static int screenh, screenw;
-static int macadeFrameCount = 0;
-static int macadePaintCount = 0;
-
-static unsigned int MacadeSamplePixels()
-{
-	if (pVidImage == NULL || nVidImagePitch <= 0 || nVidImageHeight <= 0) {
-		return 0;
-	}
-
-	unsigned int sample = 0;
-	int length = nVidImagePitch * nVidImageHeight;
-	int step = length / 4096;
-	if (step < 1) {
-		step = 1;
-	}
-	for (int offset = 0; offset < length; offset += step) {
-		sample = (sample * 33) ^ pVidImage[offset] ^ (pVidImage[offset] << 8);
-	}
-	return sample;
-}
-
-static int MacadeCountNonZeroPixels()
-{
-	if (pVidImage == NULL || nVidImagePitch <= 0 || nVidImageHeight <= 0) {
-		return 0;
-	}
-
-	int count = 0;
-	int length = nVidImagePitch * nVidImageHeight;
-	for (int offset = 0; offset < length; offset++) {
-		if (pVidImage[offset] != 0) {
-			count++;
-		}
-	}
-	return count;
-}
 
 SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture)
 {
-	(void)renderer;
-	(void)loadedTexture;
+#ifndef _WIN32
 	return NULL;
-#if 0
+#else
 	char titlePath[MAX_PATH] = { 0 };
 	int overlaywidth, overlayheight;
 
@@ -201,13 +163,11 @@ void RenderMessage()
 		inprint_shadowed(sdlRenderer, lastMessage, 10, 30);
 		messageFrames--;
 	}
-
 }
 
 static int Exit()
 {
 	kill_inline_font(); //TODO: This is not supposed to be here
-	MacadeEmbeddedShutdown();
 	SDL_DestroyTexture(overlayTexture);
 	SDL_DestroyTexture(sdlTexture);
 	SDL_DestroyRenderer(sdlRenderer);
@@ -218,77 +178,6 @@ static int Exit()
 }
 static int display_w = 400, display_h = 300;
 
-static void MacadeDefaultWindowFrame(int logicalWidth, int logicalHeight, int* x, int* y, int* width, int* height)
-{
-	if (MacadeEmbeddedWindowHidden()) {
-		*width = logicalWidth;
-		*height = logicalHeight;
-		*x = SDL_WINDOWPOS_CENTERED;
-		*y = SDL_WINDOWPOS_CENTERED;
-		return;
-	}
-
-	SDL_Rect usable = { 0, 0, 0, 0 };
-	if (SDL_GetDisplayUsableBounds(0, &usable) != 0 || usable.w <= 0 || usable.h <= 0) {
-		usable.x = SDL_WINDOWPOS_CENTERED;
-		usable.y = SDL_WINDOWPOS_CENTERED;
-		usable.w = logicalWidth;
-		usable.h = logicalHeight;
-	}
-
-	int targetHeight = usable.h;
-	int targetWidth = (targetHeight * logicalWidth) / logicalHeight;
-	if (targetWidth > usable.w) {
-		targetWidth = usable.w;
-		targetHeight = (targetWidth * logicalHeight) / logicalWidth;
-	}
-
-	*width = targetWidth;
-	*height = targetHeight;
-	*x = usable.x == SDL_WINDOWPOS_CENTERED ? SDL_WINDOWPOS_CENTERED : usable.x + (usable.w - targetWidth) / 2;
-	*y = usable.y == SDL_WINDOWPOS_CENTERED ? SDL_WINDOWPOS_CENTERED : usable.y + (usable.h - targetHeight) / 2;
-}
-
-static int MacadeInitFrameBuffer()
-{
-	printf("Macade diagnostic: embedded framebuffer enter size=%dx%d flags=%u\n", nVidImageWidth, nVidImageHeight, BurnDrvGetFlags());
-	fflush(stdout);
-	nVidImageDepth = 32;
-	if (BurnDrvGetFlags() & BDF_16BIT_ONLY)
-	{
-		nVidImageDepth = 16;
-		printf("Forcing 16bit color\n");
-		fflush(stdout);
-	}
-	printf("Macade diagnostic: embedded framebuffer bbp: %d\n", nVidImageDepth);
-	fflush(stdout);
-
-	nVidImageBPP = (nVidImageDepth + 7) >> 3;
-	nBurnBpp = nVidImageBPP;
-	printf("Macade diagnostic: embedded framebuffer before SetBurnHighCol depth=%d bpp=%d\n", nVidImageDepth, nVidImageBPP);
-	fflush(stdout);
-	SetBurnHighCol(nVidImageDepth);
-	printf("Macade diagnostic: embedded framebuffer after SetBurnHighCol\n");
-	fflush(stdout);
-	nVidImagePitch = nVidImageWidth * nVidImageBPP;
-	nBurnPitch = nVidImagePitch;
-
-	int nMemLen = nVidImageWidth * nVidImageHeight * nVidImageBPP;
-	printf("Macade diagnostic: embedded framebuffer %dx%d pitch=%d bytes=%d\n", nVidImageWidth, nVidImageHeight, nVidImagePitch, nMemLen);
-	fflush(stdout);
-
-	VidMem = (unsigned char*)malloc(nMemLen);
-	if (VidMem)
-	{
-		memset(VidMem, 0, nMemLen);
-		pVidImage = VidMem;
-		return 0;
-	}
-
-	pVidImage = NULL;
-	return 1;
-}
-
 
 static int Init()
 {
@@ -296,50 +185,12 @@ static int Init()
 	int GameAspectX = 4, GameAspectY = 3;
 	bHasOverlay = false;
 
-	if (MacadeEmbeddedEnabled()) {
-		nRotateGame = 0;
-		bFlipped = false;
-
-		if (bDrvOkay)
-		{
-			BurnDrvGetVisibleSize(&nVidImageWidth, &nVidImageHeight);
-			BurnDrvGetAspect(&GameAspectX, &GameAspectY);
-
-			display_w = nVidImageWidth;
-			display_h = nVidImageWidth * GameAspectY / GameAspectX;
-
-			if (BurnDrvGetFlags() & BDF_ORIENTATION_VERTICAL)
-			{
-				BurnDrvGetVisibleSize(&nVidImageHeight, &nVidImageWidth);
-				BurnDrvGetAspect(&GameAspectY, &GameAspectX);
-				printf("Vertical\n");
-				nRotateGame = 1;
-				display_w = nVidImageHeight * GameAspectX / GameAspectY;
-				display_h = nVidImageHeight;
-			}
-
-			if (BurnDrvGetFlags() & BDF_ORIENTATION_FLIPPED)
-			{
-				printf("Flipped\n");
-				bFlipped = 1;
-			}
-		}
-
-		dstrect.y = 0;
-		dstrect.x = 0;
-		dstrect.h = display_h;
-		dstrect.w = display_w;
-		return MacadeInitFrameBuffer();
-	}
-
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
 		printf("vid init error\n");
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't initialize SDL: %s", SDL_GetError());
 		return 3;
 	}
-	printf("Macade diagnostic: SDL video initialized, driver=%s\n", SDL_GetCurrentVideoDriver());
-	fflush(stdout);
 
 	nRotateGame = 0;
 
@@ -374,9 +225,9 @@ static int Init()
 
 	sprintf(title, "FBNeo - %s - %s", BurnDrvGetTextA(DRV_NAME), BurnDrvGetTextA(DRV_FULLNAME));
 
-	Uint32 screenFlags = MacadeEmbeddedWindowHidden() ? SDL_WINDOW_HIDDEN : (SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	Uint32 screenFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
 
-	if (bAppFullscreen && !MacadeEmbeddedWindowHidden())
+	if (bAppFullscreen)
 	{
 		screenFlags = SDL_WINDOW_SHOWN | SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
@@ -388,16 +239,12 @@ static int Init()
 
 	if (nRotateGame)
 	{
-		int windowX, windowY, windowWidth, windowHeight;
-		MacadeDefaultWindowFrame(display_h, display_w, &windowX, &windowY, &windowWidth, &windowHeight);
-		printf("Macade diagnostic: creating rotated window %dx%d flags=%u\n", display_h, display_w, screenFlags);
-		fflush(stdout);
 		sdlWindow = SDL_CreateWindow(
 			title,
-			windowX,
-			windowY,
-			windowWidth,
-			windowHeight,
+			SDL_WINDOWPOS_CENTERED,
+			SDL_WINDOWPOS_CENTERED,
+			display_h,
+			display_w,
 			screenFlags
 		);
 		dstrect.y = (display_w - display_h) / 2;
@@ -408,16 +255,12 @@ static int Init()
 	}
 	else
 	{
-		int windowX, windowY, windowWidth, windowHeight;
-		MacadeDefaultWindowFrame(display_w, display_h, &windowX, &windowY, &windowWidth, &windowHeight);
-		printf("Macade diagnostic: creating window %dx%d flags=%u\n", display_w, display_h, screenFlags);
-		fflush(stdout);
 		sdlWindow = SDL_CreateWindow(
 			title,
-			windowX,
-			windowY,
-			windowWidth,
-			windowHeight,
+			SDL_WINDOWPOS_CENTERED,
+			SDL_WINDOWPOS_CENTERED,
+			display_w,
+			display_h,
 			screenFlags
 		);
 	}
@@ -429,11 +272,8 @@ static int Init()
 	{
 		// In the case that the window could not be made...
 		printf("Could not create window: %s\n", SDL_GetError());
-		fflush(stdout);
 		return 1;
 	}
-	printf("Macade diagnostic: window created id=%u\n", SDL_GetWindowID(sdlWindow));
-	fflush(stdout);
 
 	Uint32 renderflags = SDL_RENDERER_ACCELERATED;
 
@@ -447,13 +287,8 @@ static int Init()
 	{
 		// In the case that the window could not be made...
 		printf("Could not create renderer: %s\n", SDL_GetError());
-		fflush(stdout);
 		return 1;
 	}
-	SDL_RendererInfo rendererInfo;
-	SDL_GetRendererInfo(sdlRenderer, &rendererInfo);
-	printf("Macade diagnostic: renderer created name=%s flags=%u\n", rendererInfo.name ? rendererInfo.name : "unknown", renderflags);
-	fflush(stdout);
 
 	overlayTexture = LoadOverlayImage(sdlRenderer, overlayTexture);
 	if (bHasOverlay)
@@ -471,10 +306,8 @@ static int Init()
 	{
 		nVidImageDepth = 16;
 		printf("Forcing 16bit color\n");
-		fflush(stdout);
 	}
 	printf("bbp: %d\n", nVidImageDepth);
-	fflush(stdout);
 
 	if (bIntegerScale)
 	{
@@ -518,12 +351,8 @@ static int Init()
 	if (!sdlTexture)
 	{
 		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create sdlTexture from surface: %s", SDL_GetError());
-		printf("Could not create texture: %s\n", SDL_GetError());
-		fflush(stdout);
 		return 3;
 	}
-	printf("Macade diagnostic: texture created %dx%d depth=%d\n", nVidImageWidth, nVidImageHeight, nVidImageDepth);
-	fflush(stdout);
 
 	nVidImageBPP = (nVidImageDepth + 7) >> 3;
 	nBurnBpp = nVidImageBPP;
@@ -543,7 +372,6 @@ static int Init()
 		memset(VidMem, 0, nMemLen);
 		pVidImage = VidMem;
 		printf("Malloc for video Ok %d\n", nMemLen);
-		fflush(stdout);
 		return 0;
 	}
 	else
@@ -589,12 +417,6 @@ static int Frame(bool bRedraw)                                          // bRedr
 			pVidTransCallback();
 		}
 	}
-
-	if (macadeFrameCount < 10 || macadeFrameCount % 120 == 0) {
-		printf("Macade diagnostic: frame=%d redraw=%d sample=%u nonzero=%d bpp=%d pitch=%d\n", macadeFrameCount, bRedraw, MacadeSamplePixels(), MacadeCountNonZeroPixels(), nVidImageBPP, nVidImagePitch);
-		fflush(stdout);
-	}
-	macadeFrameCount++;
 	return 0;
 }
 
@@ -604,31 +426,6 @@ static int Paint(int bValidate)
 	void* pixels;
 	int   pitch;
 
-	FBA_LuaGui(pVidImage, nVidImageWidth, nVidImageHeight, nVidImageBPP, nVidImagePitch);
-
-	if (MacadeEmbeddedEnabled()) {
-		MacadeEmbeddedPublishFrame(pVidImage, nVidImageWidth, nVidImageHeight, nVidImagePitch, nVidImageBPP, nVidImageDepth == 16 ? 1 : 0);
-		if (macadePaintCount < 10 || macadePaintCount % 120 == 0) {
-			printf("Macade diagnostic: embedded paint=%d validate=%d sample=%u nonzero=%d bpp=%d pitch=%d\n", macadePaintCount, bValidate, MacadeSamplePixels(), MacadeCountNonZeroPixels(), nVidImageBPP, nVidImagePitch);
-			fflush(stdout);
-		}
-		macadePaintCount++;
-		return 0;
-	}
-
-	if (macadePaintCount < 10 || macadePaintCount % 120 == 0) {
-		printf("Macade diagnostic: paint-enter=%d validate=%d sample=%u nonzero=%d dst=%d,%d %dx%d\n", macadePaintCount, bValidate, MacadeSamplePixels(), MacadeCountNonZeroPixels(), dstrect.x, dstrect.y, dstrect.w, dstrect.h);
-		fflush(stdout);
-	}
-
-	if (macadePaintCount == 0) {
-		SDL_SetRenderDrawColor(sdlRenderer, 255, 0, 255, 255);
-		SDL_RenderClear(sdlRenderer);
-		SDL_RenderPresent(sdlRenderer);
-		SDL_Delay(250);
-	}
-
-	SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(sdlRenderer);
 
 	if (nRotateGame)
@@ -645,22 +442,13 @@ static int Paint(int bValidate)
 	}
 	else
 	{
-		if (SDL_LockTexture(sdlTexture, NULL, &pixels, &pitch)) {
-			printf("Macade diagnostic: SDL_LockTexture failed: %s\n", SDL_GetError());
-			fflush(stdout);
-			return 1;
-		}
+		SDL_LockTexture(sdlTexture, NULL, &pixels, &pitch);
 		memcpy(pixels, pVidImage, nVidImagePitch * nVidImageHeight);
 		SDL_UnlockTexture(sdlTexture);
-		if (SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, &dstrect)) {
-			printf("Macade diagnostic: SDL_RenderCopy failed: %s\n", SDL_GetError());
-			fflush(stdout);
-			return 1;
-		}
+		SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, &dstrect);
 	}
 
 	RenderMessage();
-	MacadeEmbeddedPublishRendererFrame(sdlRenderer, nRotateGame ? display_h : display_w, nRotateGame ? display_w : display_h);
 
 
 	if (bHasOverlay)
@@ -680,11 +468,6 @@ static int Paint(int bValidate)
 	}
 
 	SDL_RenderPresent(sdlRenderer);
-	if (macadePaintCount < 10 || macadePaintCount % 120 == 0) {
-		printf("Macade diagnostic: paint=%d validate=%d sample=%u nonzero=%d dst=%d,%d %dx%d\n", macadePaintCount, bValidate, MacadeSamplePixels(), MacadeCountNonZeroPixels(), dstrect.x, dstrect.y, dstrect.w, dstrect.h);
-		fflush(stdout);
-	}
-	macadePaintCount++;
 
 	return 0;
 }

@@ -1,6 +1,5 @@
 // Run module
 #include "burner.h"
-#include "macade_embedded.h"
 
 #include <sys/time.h>
 
@@ -18,16 +17,6 @@ static bool bAppDoStep = 0;
 bool        bAppDoFast = 0;
 bool        bAppShowFPS = 0;
 static int  nFastSpeed = 6;
-static int  macadeRunFrameCount = 0;
-static int  macadeRunGetSoundLogCount = 0;
-static int  macadeRunIdleAudioLogCount = 0;
-static const int kMacadeRunFrameOK = 0;
-static const int kMacadeRunFrameQuit = 1;
-static const int kMacadeRunFrameWait = 2;
-static void MacadeSilenceNextSound()
-{
-	if (nAudNextSound != NULL && nAudSegLen > 0) memset(nAudNextSound, 0, nAudSegLen << 2);
-}
 
 UINT32 messageFrames = 0;
 char lastMessage[MESSAGE_MAX_LENGTH];
@@ -36,194 +25,6 @@ char lastMessage[MESSAGE_MAX_LENGTH];
 #ifdef BUILD_SDL2
 extern SDL_Renderer* sdlRenderer;
 extern void ingame_gui_start(SDL_Renderer* renderer);
-#endif
-extern int kNetGame;
-extern int kNetLua;
-extern int kNetSpectator;
-extern void MacadeQuarkRunIdle(int ms);
-extern bool MacadeQuarkIncrementFrame();
-extern bool MacadeQuarkLocalTrainingActive();
-extern void MacadeDetectorUpdate();
-extern int MacadeNetworkGetInput();
-extern int MacadeSDLSoundCommitFrame();
-struct GGPOSession;
-extern GGPOSession* ggpo;
-extern "C" bool ggpo_client_chat(GGPOSession*, char*);
-extern void MacadeOverlaySetChatInput(const char* text, int active);
-static const int kMacadeChatInputMax = 128;
-static bool gMacadeChatActive = false;
-static char gMacadeChatText[kMacadeChatInputMax + 1] = { 0 };
-
-bool MacadeChatInputIsActive()
-{
-	return gMacadeChatActive;
-}
-
-#ifdef BUILD_SDL2
-static void MacadeChatRefreshOverlay()
-{
-	MacadeOverlaySetChatInput(gMacadeChatText, gMacadeChatActive ? 1 : 0);
-}
-
-static void MacadeChatStart()
-{
-	gMacadeChatActive = true;
-	gMacadeChatText[0] = 0;
-	if (!MacadeEmbeddedEnabled()) SDL_StartTextInput();
-	MacadeChatRefreshOverlay();
-}
-
-static void MacadeChatCancel()
-{
-	gMacadeChatActive = false;
-	gMacadeChatText[0] = 0;
-	if (!MacadeEmbeddedEnabled()) SDL_StopTextInput();
-	MacadeChatRefreshOverlay();
-}
-
-static bool MacadeChatHasText()
-{
-	for (const char* cursor = gMacadeChatText; *cursor; cursor++) {
-		if (*cursor != ' ' && *cursor != '\t') return true;
-	}
-	return false;
-}
-
-static void MacadeChatSubmit()
-{
-	if (MacadeChatHasText() && kNetGame && ggpo != NULL) {
-		ggpo_client_chat(ggpo, gMacadeChatText);
-	}
-	MacadeChatCancel();
-}
-
-static void MacadeChatBackspace()
-{
-	size_t length = strlen(gMacadeChatText);
-	if (length == 0) return;
-	length--;
-	while (length > 0 && ((unsigned char)gMacadeChatText[length] & 0xc0) == 0x80) length--;
-	gMacadeChatText[length] = 0;
-	MacadeChatRefreshOverlay();
-}
-
-static void MacadeChatAppend(const char* text)
-{
-	if (text == NULL || text[0] == 0) return;
-	size_t length = strlen(gMacadeChatText);
-	for (const char* cursor = text; *cursor && length < kMacadeChatInputMax; cursor++) {
-		if (*cursor == '\r' || *cursor == '\n') continue;
-		gMacadeChatText[length++] = *cursor;
-	}
-	gMacadeChatText[length] = 0;
-	MacadeChatRefreshOverlay();
-}
-
-static void MacadeChatReplace(const char* text)
-{
-	gMacadeChatText[0] = 0;
-	if (text != NULL && text[0] != 0) MacadeChatAppend(text);
-	else MacadeChatRefreshOverlay();
-}
-
-extern "C" void MacadeChatBeginExternal()
-{
-	MacadeChatStart();
-}
-
-extern "C" void MacadeChatUpdateExternal(const char* text)
-{
-	gMacadeChatActive = true;
-	MacadeChatReplace(text);
-}
-
-extern "C" void MacadeChatSubmitExternal(const char* text)
-{
-	gMacadeChatActive = true;
-	MacadeChatReplace(text);
-	MacadeChatSubmit();
-}
-
-extern "C" void MacadeChatCancelExternal()
-{
-	MacadeChatCancel();
-}
-
-static bool MacadeChatHandleKeyDown(const SDL_KeyboardEvent& key)
-{
-	if (gMacadeChatActive) {
-		switch (key.keysym.sym) {
-		case SDLK_RETURN:
-		case SDLK_KP_ENTER:
-			MacadeChatSubmit();
-			break;
-		case SDLK_ESCAPE:
-			MacadeChatCancel();
-			break;
-		case SDLK_BACKSPACE:
-			MacadeChatBackspace();
-			break;
-		default:
-			break;
-		}
-		return true;
-	}
-
-	if (!kNetGame || key.repeat) return false;
-	if ((key.keysym.mod & (KMOD_CTRL | KMOD_ALT | KMOD_GUI)) != 0) return false;
-	if (key.keysym.sym == SDLK_t) {
-		MacadeChatStart();
-		return true;
-	}
-	return false;
-}
-#endif
-
-#ifdef BUILD_SDL2
-static void MacadeLockWindowAspect(const SDL_WindowEvent& windowEvent)
-{
-	static bool adjusting = false;
-	if (adjusting || sdlRenderer == NULL) {
-		return;
-	}
-
-	int logicalWidth = 0;
-	int logicalHeight = 0;
-	SDL_RenderGetLogicalSize(sdlRenderer, &logicalWidth, &logicalHeight);
-	if (logicalWidth <= 0 || logicalHeight <= 0) {
-		return;
-	}
-
-	int width = windowEvent.data1;
-	int height = windowEvent.data2;
-	if (width <= 0 || height <= 0) {
-		return;
-	}
-
-	int expectedWidth = (height * logicalWidth) / logicalHeight;
-	int expectedHeight = (width * logicalHeight) / logicalWidth;
-	int adjustedWidth = width;
-	int adjustedHeight = height;
-
-	if (abs(expectedWidth - width) < abs(expectedHeight - height)) {
-		adjustedWidth = expectedWidth;
-	} else {
-		adjustedHeight = expectedHeight;
-	}
-
-	if (adjustedWidth == width && adjustedHeight == height) {
-		return;
-	}
-
-	SDL_Window* window = SDL_GetWindowFromID(windowEvent.windowID);
-	if (window == NULL) {
-		return;
-	}
-
-	adjusting = true;
-	SDL_SetWindowSize(window, adjustedWidth, adjustedHeight);
-	adjusting = false;
-}
 #endif
 
 /// Save States
@@ -325,7 +126,7 @@ unsigned int GetTime(void)
 	unsigned int ticks;
 	struct timeval now;
 	gettimeofday(&now, NULL);
-	ticks = (now.tv_sec - start.tv_sec) * 1000 + (now.tv_usec - start.tv_usec) / 1000;
+	ticks = (now.tv_sec - start.tv_sec) * 1000000 + now.tv_usec - start.tv_usec;
 	return ticks;
 }
 
@@ -337,8 +138,6 @@ static int RunFrame(int bDraw, int bPause)
 	{
 		return 1;
 	}
-	bool commitEmbeddedAudio = MacadeEmbeddedEnabled() && kNetGame && !MacadeQuarkLocalTrainingActive() && bAudPlaying && !bPause && nAudNextSound != NULL;
-	if (commitEmbeddedAudio) pBurnSoundOut = nAudNextSound;
 
 	if (bPause)
 	{
@@ -347,74 +146,25 @@ static int RunFrame(int bDraw, int bPause)
 	}
 	else
 	{
-		bool macadeNetplayActive = kNetGame && !MacadeQuarkLocalTrainingActive();
 		nFramesEmulated++;
 		nCurrentFrame++;
 		InputMake(true);
-		if (kNetLua) {
-			CallRegisteredLuaFunctions(LUACALL_BEFOREEMULATION);
-			if (FBA_LuaUsingJoypad()) FBA_LuaReadJoypad();
-		}
-		if (macadeNetplayActive) {
-			if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0) {
-				printf("Macade diagnostic: RunFrame=%d before-net bDraw=%d pause=%d emulated=%u rendered=%u\n", macadeRunFrameCount, bDraw, bPause, nFramesEmulated, nFramesRendered);
-				fflush(stdout);
-			}
-			MacadeQuarkRunIdle(0);
-			int networkStatus = MacadeNetworkGetInput();
-			if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0 || networkStatus != 0) {
-				printf("Macade diagnostic: RunFrame=%d net-status=%d\n", macadeRunFrameCount, networkStatus);
-				fflush(stdout);
-			}
-			if (networkStatus == 2) {
-				return kMacadeRunFrameWait;
-			}
-			if (networkStatus != 0) {
-				return kMacadeRunFrameQuit;
-			}
-		}
 	}
 
 	if (bDraw)
 	{
 		nFramesRendered++;
-		int frameResult = VidFrame();
-		if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0) {
-			printf("Macade diagnostic: RunFrame=%d bDraw=%d pause=%d VidFrame=%d\n", macadeRunFrameCount, bDraw, bPause, frameResult);
-			fflush(stdout);
-		}
-		if (frameResult)
+		if (VidFrame())
 		{
 		 	AudBlankSound();
 		}
-		int paintResult = VidPaint(0);                                              // paint the screen (no need to validate)
-		if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0) {
-			printf("Macade diagnostic: RunFrame=%d VidPaint=%d\n", macadeRunFrameCount, paintResult);
-			fflush(stdout);
-		}
+		VidPaint(0);                                              // paint the screen (no need to validate)
 	}
 	else
 	{                                       // frame skipping
 		pBurnDraw = NULL;                    // Make sure no image is drawn
 		BurnDrvFrame();
-		if (macadeRunFrameCount < 20 || macadeRunFrameCount % 120 == 0) {
-			printf("Macade diagnostic: RunFrame=%d bDraw=%d pause=%d skipped paint\n", macadeRunFrameCount, bDraw, bPause);
-			fflush(stdout);
-		}
 	}
-	bool macadeNetplayActive = kNetGame && !MacadeQuarkLocalTrainingActive();
-	if (!bPause && macadeNetplayActive && !MacadeQuarkIncrementFrame()) {
-		return kMacadeRunFrameQuit;
-	}
-	if (!bPause && macadeNetplayActive) {
-		MacadeDetectorUpdate();
-	}
-	if (!bPause && kNetLua) {
-		FBA_LuaFrameBoundary();
-		CallRegisteredLuaFunctions(LUACALL_AFTEREMULATION);
-	}
-	if (commitEmbeddedAudio) MacadeSDLSoundCommitFrame();
-	macadeRunFrameCount++;
 
 	if (bAppShowFPS) {
 		if (nDoFPS < nFramesRendered) {
@@ -423,18 +173,12 @@ static int RunFrame(int bDraw, int bPause)
 		}
 	}
 
-	return kMacadeRunFrameOK;
+	return 0;
 }
 
 // Callback used when DSound needs more sound
 static int RunGetNextSound(int bDraw)
 {
-	if (macadeRunGetSoundLogCount < 20 || macadeRunGetSoundLogCount % 120 == 0) {
-		printf("Macade diagnostic: RunGetNextSound=%d bDraw=%d audPlaying=%d next=%p segLen=%d\n", macadeRunGetSoundLogCount, bDraw, bAudPlaying, nAudNextSound, nAudSegLen);
-		fflush(stdout);
-	}
-	macadeRunGetSoundLogCount++;
-
 	if (nAudNextSound == NULL)
 	{
 		return 1;
@@ -444,16 +188,12 @@ static int RunGetNextSound(int bDraw)
 	{
 		if (bAppDoStep)
 		{
-			int frameStatus = RunFrame(bDraw, 0);
-			if (frameStatus == kMacadeRunFrameQuit) return 1;
-			if (frameStatus == kMacadeRunFrameWait) { MacadeSilenceNextSound(); return 0; }
+			RunFrame(bDraw, 0);
 			memset(nAudNextSound, 0, nAudSegLen << 2);                                        // Write silence into the buffer
 		}
 		else
 		{
-			int frameStatus = RunFrame(bDraw, 1);
-			if (frameStatus == kMacadeRunFrameQuit) return 1;
-			if (frameStatus == kMacadeRunFrameWait) { MacadeSilenceNextSound(); return 0; }
+			RunFrame(bDraw, 1);
 		}
 
 		bAppDoStep = 0;                                                   // done one step
@@ -464,17 +204,13 @@ static int RunGetNextSound(int bDraw)
 	{                                            // do more frames
 		for (int i = 0; i < nFastSpeed; i++)
 		{
-			int frameStatus = RunFrame(0, 0);
-			if (frameStatus == kMacadeRunFrameQuit) return 1;
-			if (frameStatus == kMacadeRunFrameWait) { MacadeSilenceNextSound(); return 0; }
+			RunFrame(0, 0);
 		}
 	}
 
 	// Render frame with sound
 	pBurnSoundOut = nAudNextSound;
-	int frameStatus = RunFrame(bDraw, 0);
-	if (frameStatus == kMacadeRunFrameQuit) return 1;
-	if (frameStatus == kMacadeRunFrameWait) { MacadeSilenceNextSound(); return 0; }
+	RunFrame(bDraw, 0);
 	if (bAppDoStep)
 	{
 		memset(nAudNextSound, 0, nAudSegLen << 2);                // Write silence into the buffer
@@ -504,26 +240,12 @@ int delay_ticks(int ticks)
 int RunIdle()
 {
 	int nTime, nCount;
-	bool didNetIdle = false;
 
-	bool useTimerDrivenEmbeddedNetplay = MacadeEmbeddedEnabled() && kNetGame && !MacadeQuarkLocalTrainingActive();
-	if (bAudPlaying && !useTimerDrivenEmbeddedNetplay)
+	if (bAudPlaying)
 	{
 		// Run with sound
-		int framesBeforeAudio = macadeRunFrameCount;
-		int soundStatus = AudSoundCheck();
-		if (macadeRunIdleAudioLogCount < 20 || macadeRunIdleAudioLogCount % 120 == 0 || soundStatus != 0) {
-			printf("Macade diagnostic: RunIdle audio=%d status=%d fillFrames=%d rendered=%u\n", macadeRunIdleAudioLogCount, soundStatus, macadeRunFrameCount, nFramesRendered);
-			fflush(stdout);
-		}
-		macadeRunIdleAudioLogCount++;
-		if (soundStatus) return 1;
-		if (!kNetGame || MacadeQuarkLocalTrainingActive()) return 0;
-		if (macadeRunFrameCount != framesBeforeAudio) {
-			nNormalLast = GetTime();
-			nNormalFrac = 0;
-			return 0;
-		}
+		AudSoundCheck();
+		return 0;
 	}
 
 	// Run without sound
@@ -531,7 +253,6 @@ int RunIdle()
 	nCount = (nTime * nAppVirtualFps - nNormalFrac) / 100000;
 	if (nCount <= 0) {						// No need to do anything for a bit
 		//delay_ticks(2);
-		if (kNetGame && !MacadeQuarkLocalTrainingActive() && !didNetIdle) MacadeQuarkRunIdle(1);
 		return 0;
 	}
 
@@ -547,9 +268,7 @@ int RunIdle()
 			nCount = 10;
 		}
 		else {
-			int frameStatus = RunFrame(1, 1);
-			if (frameStatus == kMacadeRunFrameQuit) return 1;
-			if (frameStatus == kMacadeRunFrameWait) return 0;					// Paused
+			RunFrame(1, 1);					// Paused
 			return 0;
 		}
 	}
@@ -560,9 +279,7 @@ int RunIdle()
 	{									// do more frames
 		for (int i = 0; i < nFastSpeed; i++)
 		{
-			int frameStatus = RunFrame(0, 0);
-			if (frameStatus == kMacadeRunFrameQuit) return 1;
-			if (frameStatus == kMacadeRunFrameWait) return 0;
+			RunFrame(0, 0);
 		}
 	}
 
@@ -570,14 +287,10 @@ int RunIdle()
 	{
 		for (int i = nCount / 10; i > 0; i--)
 		{              // Mid-frames
-			int frameStatus = RunFrame(0, 0);
-			if (frameStatus == kMacadeRunFrameQuit) return 1;
-			if (frameStatus == kMacadeRunFrameWait) return 0;
+			RunFrame(0, 0);
 		}
 	}
-	int frameStatus = RunFrame(1, 0);
-	if (frameStatus == kMacadeRunFrameQuit) return 1;
-	if (frameStatus == kMacadeRunFrameWait) return 0;                                  // End-frame
+	RunFrame(1, 0);                                  // End-frame
 	// temp added for SDLFBA
 	//VidPaint(0);
 	return 0;
@@ -587,42 +300,31 @@ int RunReset()
 {
 	// Reset the speed throttling code
 	nNormalLast = 0; nNormalFrac = 0;
-	nNormalLast = GetTime();
+	if (!bAudPlaying)
+	{
+		// run without sound
+		nNormalLast = GetTime();
+	}
 	return 0;
 }
 
 int RunInit()
 {
-	printf("Macade diagnostic: RunInit start audOkay=%d audPlaying=%d segLen=%d\n", bAudOkay, bAudPlaying, nAudSegLen);
-	fflush(stdout);
 	gettimeofday(&start, NULL);
 	DisplayFPSInit();
 	// Try to run with sound
 	AudSetCallback(RunGetNextSound);
-	int soundPlayStatus = AudSoundPlay();
-	printf("Macade diagnostic: RunInit sound-play status=%d audOkay=%d audPlaying=%d segLen=%d\n", soundPlayStatus, bAudOkay, bAudPlaying, nAudSegLen);
-	fflush(stdout);
+	AudSoundPlay();
 
 	RunReset();
-	if (kNetGame && !MacadeQuarkLocalTrainingActive()) {
-		printf("Macade diagnostic: RunInit skipping auto-state for netplay\n");
-	} else {
-		int autoStateStatus = StatedAuto(0);
-		printf("Macade diagnostic: RunInit auto-state status=%d\n", autoStateStatus);
-	}
-	fflush(stdout);
+	StatedAuto(0);
 	return 0;
 }
 
 int RunExit()
 {
 	nNormalLast = 0;
-	if (kNetGame && !MacadeQuarkLocalTrainingActive()) {
-		printf("Macade diagnostic: RunExit skipping auto-state save for netplay\n");
-		fflush(stdout);
-	} else {
-		StatedAuto(1);
-	}
+	StatedAuto(1);
 	return 0;
 }
 
@@ -634,53 +336,19 @@ int RunMessageLoop()
 
 	RunInit();
 	GameInpCheckMouse();                                                                     // Hide the cursor
-	Uint32 macadeLoopStartTicks = SDL_GetTicks();
-	int macadeIgnoredStartupQuits = 0;
 
 	while (!quit)
 	{
-		MacadeEmbeddedPumpInput();
 		SDL_Event event;
-		Uint32 macadeElapsedTicks;
 		while (SDL_PollEvent(&event))
 		{
 			switch (event.type)
 			{
 			case SDL_QUIT:                                        /* Windows was closed */
-				macadeElapsedTicks = SDL_GetTicks() - macadeLoopStartTicks;
-				printf("Macade diagnostic: SDL_QUIT received kNetGame=%d frames=%u elapsed=%u ignored=%d\n", kNetGame, nFramesRendered, macadeElapsedTicks, macadeIgnoredStartupQuits);
-				fflush(stdout);
-				if (MacadeEmbeddedEnabled() && kNetGame) {
-					macadeIgnoredStartupQuits++;
-					printf("Macade diagnostic: ignoring embedded netplay SDL_QUIT; Swift owns runtime lifecycle\n");
-					fflush(stdout);
-					break;
-				}
-				if (kNetGame && macadeElapsedTicks < 5000 && macadeIgnoredStartupQuits < 4) {
-					macadeIgnoredStartupQuits++;
-					printf("Macade diagnostic: ignoring startup SDL_QUIT before first render\n");
-					fflush(stdout);
-					break;
-				}
 				quit = 1;
 				break;
 
-#ifdef BUILD_SDL2
-			case SDL_WINDOWEVENT:
-				if (event.window.event == SDL_WINDOWEVENT_RESIZED || event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-					MacadeLockWindowAspect(event.window);
-				}
-				break;
-
-			case SDL_TEXTINPUT:
-				if (gMacadeChatActive) MacadeChatAppend(event.text.text);
-				break;
-#endif
-
 			case SDL_KEYDOWN:                                                // need to find a nicer way of doing this...
-#ifdef BUILD_SDL2
-				if (MacadeChatHandleKeyDown(event.key)) break;
-#endif
 				switch (event.key.keysym.sym)
 				{
 				case SDLK_F1:
@@ -706,9 +374,6 @@ int RunMessageLoop()
 				break;
 
 			case SDL_KEYUP:                                                // need to find a nicer way of doing this...
-#ifdef BUILD_SDL2
-				if (gMacadeChatActive) break;
-#endif
 				switch (event.key.keysym.sym)
 				{
 				case SDLK_F1:
@@ -725,7 +390,7 @@ int RunMessageLoop()
 				break;
 			}
 		}
-		if (RunIdle()) quit = 1;
+		RunIdle();
 	}
 
 	RunExit();

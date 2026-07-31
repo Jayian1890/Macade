@@ -1,25 +1,39 @@
-# Macade Fightcade FBNeo
+## Fightcade-fbneo
+Fightcade emulator built with FBNeo and GGPO
+Public Release: https://www.fightcade.com
 
-This is the trimmed, modified Fightcade FBNeo runtime source used by Macade.
+## FinalBurn Neo
+Official Forum: https://neo-source.com
 
-The tree keeps only the source and build inputs needed for the native macOS SDL2 runtime. Windows project files, help files, packaged binaries, and generated build outputs are intentionally not tracked.
+## How to Compile
+NOTE: You will need at least VS2015 to build FightcadeFBNeo.
 
-## Layout
+**1)** Download, install and run Visual Studio IDE Community Edition from https://visualstudio.microsoft.com/.
 
-| Path | Purpose |
-| --- | --- |
-| `makefile.sdl` | Native SDL2 FBNeo build entry point. |
-| `src/burn`, `src/cpu`, `src/intf`, `src/dep` | FBNeo emulator source and compile-time dependencies. |
-| `src/burner/sdl` | SDL frontend source. |
-| `src/macade` | Macade-specific runtime bridge, embedded video/input, and Fightcade-compatible GGPO work. |
+**2)** Download and install the 2010 DirectX SDK from https://www.microsoft.com/en-gb/download/details.aspx?id=6812). Make sure that you install it to the default location. The installer may also error out at the end, you can ignore it.
 
-## Build
+**3)** Go to '*projectfiles\visualstudio-2015*' and open '*fbneo_vs2015.sln*' in Visual Studio.
 
-Requirements: `make`, `perl`, `pkg-config`, and SDL2 development files discoverable through `pkg-config --cflags --libs sdl2`.
+**4)** Select development with C++ if you are asked.
 
-```sh
-cd Sources/FightcadeFBNeo
-make -f makefile.sdl -j"$(sysctl -n hw.ncpu 2>/dev/null || echo 4)" CPUTYPE="$(uname -m)" DEPEND= PERL=perl
-```
+**5)** If you are asked to change the C++ toolchain, download and install the one it is asking for.
 
-Generated outputs such as `obj/`, `fbneosdl*`, `gamelist.txt`, and `src/dep/generated/` are ignored.
+**6)** Install the PERL interpreter for Windows. We reccomend ActivePerl (https://www.activestate.com/products/activeperl/downloads/).
+Make sure that you have enabled the checkbox to add PERL to the PATH variable list.
+
+**7)** Install NASM for the assembly files from https://www.nasm.us/.
+You need to put NASM.EXE somewhere in your PATH. You can put it in your Windows directory (IE: *'C:\Windows*'), but I do not recommend this for a number of reasons.
+
+**8)** Open a command line shell and run the '*games.bat*' script. This will populate the games list, do this if you add a new game and want it to appear on the internal list and test it.
+
+**9)** Make sure the build settings are set to '*Release, x86*'. Debug, x86 configuration also builds correctly, but is intended for developers and debugging sessions.
+
+**10)** Build using '*Build / Build Solution*' Menu (or using keyboard shortcuts, depending on your setup, F6, F7 or Ctrl+Shift+B).
+
+**11)** Install Fightcade from https://www.fightcade.com/.
+
+**12)** Copy all the DLL's from the Fightcade FBNeo path (IE: '*emulator\fbneo*') to the '*build*' directory where '*fcadefbneo.exe*' was just compiled to.
+
+**13)** Run '*fcadefbneo.exe*' that was compiled in the 'build' directory, or you can use '*Debug*' it from Visual Studio, it will launch it from that folder (debug version is '*fcadefbneod.exe*'
+
+**14)** If you want to test a new detector, put it in '*build\detector*'.
