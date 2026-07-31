@@ -1,25 +1,10 @@
-/*----------------
- * Stuff to finish:
- *
- * It wouldn't be a stretch of the imagination to think the whole of the sdl 'port' needs a redo but here are the main things wrong with this version:
- *
- *
- * The audio output code code could maybe do with some work, but it's getting there...
- * There are lots of problems with the opengl renderer, but you should just use the SDL2 build anyway
- *
- * TODO for SDL2:
- * Add autostart to menu as an ini config option
- * Add menu for options e.g. dips, mapping, saves, IPS patches
- * Maybe a better font output setup with some sort of scaling, maybe add sdl1 support?
- * figure out what is going on with the sdl sound output, something breaks after a few frames
- * ------------------*/
-
 #include "burner.h"
 
 int kNetGame = 0;
 int kNetSpectator = 0;
 int kNetLua = 1;
 int kNetVersion = NET_VERSION;
+char kNetQuarkId[128] = {};
 bool bFixDiagonals = false;
 int nEnableSOCD = 0;
 int bRunaheadFrame = 0;
@@ -64,6 +49,30 @@ bool bIntegerScale = false;
 
 TCHAR szAppBurnVer[16];
 char videofiltering[3];
+
+static bool bQuarkLaunch = false;
+static char szQuarkLaunchCommand[1024];
+
+static const char* MacadeLaunchGameArgument(const char* argument)
+{
+	static char game[128];
+	game[0] = 0;
+	if (argument == NULL) return NULL;
+
+	const char* prefix = "macade:training,";
+	if (strncmp(argument, prefix, strlen(prefix)) == 0) {
+		snprintf(game, sizeof(game), "%s", argument + strlen(prefix));
+		printf("Macade launch: local training game=%s\n", game);
+		return game;
+	}
+
+	if (strncmp(argument, "quark:", 6) != 0) return argument;
+
+	bQuarkLaunch = true;
+	snprintf(szQuarkLaunchCommand, sizeof(szQuarkLaunchCommand), "%s", argument);
+	printf("Macade quark: native launch command=%s\n", argument);
+	return NULL;
+}
 
 #ifdef BUILD_SDL2
 static char* szSDLeepromPath = NULL;
@@ -331,14 +340,14 @@ int main(int argc, char* argv[])
 	{
 		if (*argv[i] != '-' && !gamefound)
 		{
-			romname = argv[i];
+			romname = MacadeLaunchGameArgument(argv[i]);
 			gamefound = 1;
 		}
 	}
 
 	parseSwitches(argc, argv);
 
-	if (romname == NULL)
+	if (romname == NULL && !bQuarkLaunch)
 	{
 		printf("Usage: %s [-cd] [-joy] [-menu] [-novsync] [-integerscale] [-fullscreen] [-dat] [-autosave] [-nearest] [-linear] [-best] <romname>\n", argv[0]);
 		printf("Note the -menu switch does not require a romname\n");
@@ -424,6 +433,18 @@ int main(int argc, char* argv[])
 #endif
 	BurnLibInit();
 
+	if (bQuarkLaunch)
+	{
+		if (!QuarkInit(szQuarkLaunchCommand))
+		{
+			BurnLibExit();
+			SDL_Quit();
+			return 1;
+		}
+		RunMessageLoop();
+		return 0;
+	}
+
 	// Search for a game now, for use in the menu and loading a games
 	if (romname != NULL)
 	{
@@ -462,57 +483,6 @@ int main(int argc, char* argv[])
 	}
 
 	return 0;
-}
-
-/* const */ TCHAR* ANSIToTCHAR(const char* pszInString, TCHAR* pszOutString, int nOutSize)
-{
-#if defined (UNICODE)
-	static TCHAR szStringBuffer[1024];
-
-	TCHAR* pszBuffer = pszOutString ? pszOutString : szStringBuffer;
-	int    nBufferSize = pszOutString ? nOutSize * 2 : sizeof(szStringBuffer);
-
-	if (MultiByteToWideChar(CP_ACP, 0, pszInString, -1, pszBuffer, nBufferSize))
-	{
-		return pszBuffer;
-	}
-
-	return NULL;
-#else
-	if (pszOutString)
-	{
-		_tcscpy(pszOutString, pszInString);
-		return pszOutString;
-	}
-
-	return (TCHAR*)pszInString;
-#endif
-}
-
-/* const */ char* TCHARToANSI(const TCHAR* pszInString, char* pszOutString, int nOutSize)
-{
-#if defined (UNICODE)
-	static char szStringBuffer[1024];
-	memset(szStringBuffer, 0, sizeof(szStringBuffer));
-
-	char* pszBuffer = pszOutString ? pszOutString : szStringBuffer;
-	int   nBufferSize = pszOutString ? nOutSize * 2 : sizeof(szStringBuffer);
-
-	if (WideCharToMultiByte(CP_ACP, 0, pszInString, -1, pszBuffer, nBufferSize, NULL, NULL))
-	{
-		return pszBuffer;
-	}
-
-	return NULL;
-#else
-	if (pszOutString)
-	{
-		strcpy(pszOutString, pszInString);
-		return pszOutString;
-	}
-
-	return (char*)pszInString;
-#endif
 }
 
 bool AppProcessKeyboardInput()

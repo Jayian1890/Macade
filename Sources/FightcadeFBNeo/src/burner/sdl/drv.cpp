@@ -126,6 +126,10 @@ int DrvInit(int nDrvNum, bool bRestore)
 	bDrvOkay = 1;                            // Okay to use all BurnDrv functions
 
 	bSaveRAM = false;
+	if (kNetGame) {
+		NetworkInitInput();
+		NetworkGetInput();
+	}
 	nBurnLayer = 0xFF;                       // show all layers
 
 	// Reset the speed throttling code, so we don't 'jump' after the load

@@ -1,0 +1,478 @@
+{
+  "exports": [
+    {
+      "address": "1001489a",
+      "name": "entry"
+    },
+    {
+      "address": "10021b30",
+      "name": "ggpo_close_session"
+    },
+    {
+      "address": "10021b50",
+      "name": "ggpo_get_stats"
+    },
+    {
+      "address": "10021b80",
+      "name": "ggpo_client_chat"
+    },
+    {
+      "address": "10021bb0",
+      "name": "ggpo_advance_frame"
+    },
+    {
+      "address": "10021be0",
+      "name": "ggpo_synchronize_input"
+    },
+    {
+      "address": "10021c20",
+      "name": "ggpo_idle"
+    },
+    {
+      "address": "10021c50",
+      "name": "ggpo_set_frame_delay"
+    },
+    {
+      "address": "10021c80",
+      "name": "ggpo_client_set_game_event"
+    },
+    {
+      "address": "10021ca0",
+      "name": "ggpo_logv"
+    },
+    {
+      "address": "10021cc0",
+      "name": "ggpo_log"
+    },
+    {
+      "address": "10021d10",
+      "name": "ggpo_start_replay"
+    },
+    {
+      "address": "10021d60",
+      "name": "ggpo_start_streaming"
+    },
+    {
+      "address": "10021db0",
+      "name": "ggpo_start_synctest"
+    },
+    {
+      "address": "10021e00",
+      "name": "ggpo_client_connect"
+    },
+    {
+      "address": "10021e50",
+      "name": "ggpo_start_session"
+    }
+  ],
+  "external_symbols": [
+    {
+      "address": "EXTERNAL:00000028",
+      "name": "KERNEL32.DLL::CloseHandle"
+    },
+    {
+      "address": "EXTERNAL:0000001e",
+      "name": "KERNEL32.DLL::CompareStringA"
+    },
+    {
+      "address": "EXTERNAL:0000001d",
+      "name": "KERNEL32.DLL::CompareStringW"
+    },
+    {
+      "address": "EXTERNAL:00000021",
+      "name": "KERNEL32.DLL::CreateDirectoryA"
+    },
+    {
+      "address": "EXTERNAL:00000025",
+      "name": "KERNEL32.DLL::CreateEventA"
+    },
+    {
+      "address": "EXTERNAL:0000002e",
+      "name": "KERNEL32.DLL::CreateFileA"
+    },
+    {
+      "address": "EXTERNAL:00000023",
+      "name": "KERNEL32.DLL::DebugBreak"
+    },
+    {
+      "address": "EXTERNAL:00000041",
+      "name": "KERNEL32.DLL::DeleteCriticalSection"
+    },
+    {
+      "address": "EXTERNAL:00000043",
+      "name": "KERNEL32.DLL::EnterCriticalSection"
+    },
+    {
+      "address": "EXTERNAL:00000038",
+      "name": "KERNEL32.DLL::ExitProcess"
+    },
+    {
+      "address": "EXTERNAL:00000057",
+      "name": "KERNEL32.DLL::FlushFileBuffers"
+    },
+    {
+      "address": "EXTERNAL:00000058",
+      "name": "KERNEL32.DLL::FreeEnvironmentStringsA"
+    },
+    {
+      "address": "EXTERNAL:0000005a",
+      "name": "KERNEL32.DLL::FreeEnvironmentStringsW"
+    },
+    {
+      "address": "EXTERNAL:00000061",
+      "name": "KERNEL32.DLL::GetACP"
+    },
+    {
+      "address": "EXTERNAL:00000060",
+      "name": "KERNEL32.DLL::GetCPInfo"
+    },
+    {
+      "address": "EXTERNAL:0000003b",
+      "name": "KERNEL32.DLL::GetCommandLineA"
+    },
+    {
+      "address": "EXTERNAL:00000055",
+      "name": "KERNEL32.DLL::GetConsoleCP"
+    },
+    {
+      "address": "EXTERNAL:00000056",
+      "name": "KERNEL32.DLL::GetConsoleMode"
+    },
+    {
+      "address": "EXTERNAL:0000001a",
+      "name": "KERNEL32.DLL::GetConsoleOutputCP"
+    },
+    {
+      "address": "EXTERNAL:00000032",
+      "name": "KERNEL32.DLL::GetCurrentProcess"
+    },
+    {
+      "address": "EXTERNAL:0000002b",
+      "name": "KERNEL32.DLL::GetCurrentProcessId"
+    },
+    {
+      "address": "EXTERNAL:0000003a",
+      "name": "KERNEL32.DLL::GetCurrentThreadId"
+    },
+    {
+      "address": "EXTERNAL:00000059",
+      "name": "KERNEL32.DLL::GetEnvironmentStrings"
+    },
+    {
+      "address": "EXTERNAL:0000005b",
+      "name": "KERNEL32.DLL::GetEnvironmentStringsW"
+    },
+    {
+      "address": "EXTERNAL:00000020",
+      "name": "KERNEL32.DLL::GetFileAttributesExA"
+    },
+    {
+      "address": "EXTERNAL:00000051",
+      "name": "KERNEL32.DLL::GetFileType"
+    },
+    {
+      "address": "EXTERNAL:00000026",
+      "name": "KERNEL32.DLL::GetLastError"
+    },
+    {
+      "address": "EXTERNAL:00000065",
+      "name": "KERNEL32.DLL::GetLocaleInfoA"
+    },
+    {
+      "address": "EXTERNAL:00000047",
+      "name": "KERNEL32.DLL::GetModuleFileNameA"
+    },
+    {
+      "address": "EXTERNAL:00000045",
+      "name": "KERNEL32.DLL::GetModuleHandleA"
+    },
+    {
+      "address": "EXTERNAL:00000036",
+      "name": "KERNEL32.DLL::GetModuleHandleW"
+    },
+    {
+      "address": "EXTERNAL:00000062",
+      "name": "KERNEL32.DLL::GetOEMCP"
+    },
+    {
+      "address": "EXTERNAL:00000037",
+      "name": "KERNEL32.DLL::GetProcAddress"
+    },
+    {
+      "address": "EXTERNAL:00000013",
+      "name": "KERNEL32.DLL::GetProcessHeap"
+    },
+    {
+      "address": "EXTERNAL:00000052",
+      "name": "KERNEL32.DLL::GetStartupInfoA"
+    },
+    {
+      "address": "EXTERNAL:00000046",
+      "name": "KERNEL32.DLL::GetStdHandle"
+    },
+    {
+      "address": "EXTERNAL:00000016",
+      "name": "KERNEL32.DLL::GetStringTypeA"
+    },
+    {
+      "address": "EXTERNAL:00000015",
+      "name": "KERNEL32.DLL::GetStringTypeW"
+    },
+    {
+      "address": "EXTERNAL:0000005e",
+      "name": "KERNEL32.DLL::GetSystemTimeAsFileTime"
+    },
+    {
+      "address": "EXTERNAL:0000005d",
+      "name": "KERNEL32.DLL::GetTickCount"
+    },
+    {
+      "address": "EXTERNAL:00000030",
+      "name": "KERNEL32.DLL::HeapAlloc"
+    },
+    {
+      "address": "EXTERNAL:0000003e",
+      "name": "KERNEL32.DLL::HeapCreate"
+    },
+    {
+      "address": "EXTERNAL:0000003f",
+      "name": "KERNEL32.DLL::HeapDestroy"
+    },
+    {
+      "address": "EXTERNAL:0000002f",
+      "name": "KERNEL32.DLL::HeapFree"
+    },
+    {
+      "address": "EXTERNAL:00000039",
+      "name": "KERNEL32.DLL::HeapReAlloc"
+    },
+    {
+      "address": "EXTERNAL:00000064",
+      "name": "KERNEL32.DLL::HeapSize"
+    },
+    {
+      "address": "EXTERNAL:00000054",
+      "name": "KERNEL32.DLL::InitializeCriticalSectionAndSpinCount"
+    },
+    {
+      "address": "EXTERNAL:0000004e",
+      "name": "KERNEL32.DLL::InterlockedDecrement"
+    },
+    {
+      "address": "EXTERNAL:0000004c",
+      "name": "KERNEL32.DLL::InterlockedIncrement"
+    },
+    {
+      "address": "EXTERNAL:00000035",
+      "name": "KERNEL32.DLL::IsDebuggerPresent"
+    },
+    {
+      "address": "EXTERNAL:00000063",
+      "name": "KERNEL32.DLL::IsValidCodePage"
+    },
+    {
+      "address": "EXTERNAL:00000018",
+      "name": "KERNEL32.DLL::LCMapStringA"
+    },
+    {
+      "address": "EXTERNAL:00000017",
+      "name": "KERNEL32.DLL::LCMapStringW"
+    },
+    {
+      "address": "EXTERNAL:00000042",
+      "name": "KERNEL32.DLL::LeaveCriticalSection"
+    },
+    {
+      "address": "EXTERNAL:00000053",
+      "name": "KERNEL32.DLL::LoadLibraryA"
+    },
+    {
+      "address": "EXTERNAL:0000002a",
+      "name": "KERNEL32.DLL::MultiByteToWideChar"
+    },
+    {
+      "address": "EXTERNAL:00000022",
+      "name": "KERNEL32.DLL::OutputDebugStringA"
+    },
+    {
+      "address": "EXTERNAL:0000005c",
+      "name": "KERNEL32.DLL::QueryPerformanceCounter"
+    },
+    {
+      "address": "EXTERNAL:0000003c",
+      "name": "KERNEL32.DLL::RaiseException"
+    },
+    {
+      "address": "EXTERNAL:0000004f",
+      "name": "KERNEL32.DLL::ReadFile"
+    },
+    {
+      "address": "EXTERNAL:00000027",
+      "name": "KERNEL32.DLL::ResetEvent"
+    },
+    {
+      "address": "EXTERNAL:0000003d",
+      "name": "KERNEL32.DLL::RtlUnwind"
+    },
+    {
+      "address": "EXTERNAL:00000014",
+      "name": "KERNEL32.DLL::SetEndOfFile"
+    },
+    {
+      "address": "EXTERNAL:0000001c",
+      "name": "KERNEL32.DLL::SetEnvironmentVariableA"
+    },
+    {
+      "address": "EXTERNAL:00000024",
+      "name": "KERNEL32.DLL::SetEvent"
+    },
+    {
+      "address": "EXTERNAL:0000005f",
+      "name": "KERNEL32.DLL::SetFilePointer"
+    },
+    {
+      "address": "EXTERNAL:00000050",
+      "name": "KERNEL32.DLL::SetHandleCount"
+    },
+    {
+      "address": "EXTERNAL:0000004d",
+      "name": "KERNEL32.DLL::SetLastError"
+    },
+    {
+      "address": "EXTERNAL:0000002d",
+      "name": "KERNEL32.DLL::SetStdHandle"
+    },
+    {
+      "address": "EXTERNAL:00000034",
+      "name": "KERNEL32.DLL::SetUnhandledExceptionFilter"
+    },
+    {
+      "address": "EXTERNAL:0000001f",
+      "name": "KERNEL32.DLL::Sleep"
+    },
+    {
+      "address": "EXTERNAL:00000031",
+      "name": "KERNEL32.DLL::TerminateProcess"
+    },
+    {
+      "address": "EXTERNAL:00000049",
+      "name": "KERNEL32.DLL::TlsAlloc"
+    },
+    {
+      "address": "EXTERNAL:0000004b",
+      "name": "KERNEL32.DLL::TlsFree"
+    },
+    {
+      "address": "EXTERNAL:00000048",
+      "name": "KERNEL32.DLL::TlsGetValue"
+    },
+    {
+      "address": "EXTERNAL:0000004a",
+      "name": "KERNEL32.DLL::TlsSetValue"
+    },
+    {
+      "address": "EXTERNAL:00000033",
+      "name": "KERNEL32.DLL::UnhandledExceptionFilter"
+    },
+    {
+      "address": "EXTERNAL:00000044",
+      "name": "KERNEL32.DLL::VirtualAlloc"
+    },
+    {
+      "address": "EXTERNAL:00000040",
+      "name": "KERNEL32.DLL::VirtualFree"
+    },
+    {
+      "address": "EXTERNAL:0000002c",
+      "name": "KERNEL32.DLL::WaitForMultipleObjects"
+    },
+    {
+      "address": "EXTERNAL:00000029",
+      "name": "KERNEL32.DLL::WideCharToMultiByte"
+    },
+    {
+      "address": "EXTERNAL:0000001b",
+      "name": "KERNEL32.DLL::WriteConsoleA"
+    },
+    {
+      "address": "EXTERNAL:00000019",
+      "name": "KERNEL32.DLL::WriteConsoleW"
+    },
+    {
+      "address": "EXTERNAL:00000012",
+      "name": "KERNEL32.DLL::WriteFile"
+    },
+    {
+      "address": "EXTERNAL:00000066",
+      "name": "USER32.DLL::MessageBoxA"
+    },
+    {
+      "address": "EXTERNAL:00000001",
+      "name": "WINMM.DLL::timeGetTime"
+    },
+    {
+      "address": "EXTERNAL:00000003",
+      "name": "WS2_32.DLL::Ordinal_10"
+    },
+    {
+      "address": "EXTERNAL:00000005",
+      "name": "WS2_32.DLL::Ordinal_11"
+    },
+    {
+      "address": "EXTERNAL:00000009",
+      "name": "WS2_32.DLL::Ordinal_111"
+    },
+    {
+      "address": "EXTERNAL:00000002",
+      "name": "WS2_32.DLL::Ordinal_14"
+    },
+    {
+      "address": "EXTERNAL:0000000c",
+      "name": "WS2_32.DLL::Ordinal_2"
+    },
+    {
+      "address": "EXTERNAL:00000008",
+      "name": "WS2_32.DLL::Ordinal_20"
+    },
+    {
+      "address": "EXTERNAL:0000000b",
+      "name": "WS2_32.DLL::Ordinal_22"
+    },
+    {
+      "address": "EXTERNAL:0000000d",
+      "name": "WS2_32.DLL::Ordinal_23"
+    },
+    {
+      "address": "EXTERNAL:0000000f",
+      "name": "WS2_32.DLL::Ordinal_3"
+    },
+    {
+      "address": "EXTERNAL:00000004",
+      "name": "WS2_32.DLL::Ordinal_4"
+    },
+    {
+      "address": "EXTERNAL:00000010",
+      "name": "WS2_32.DLL::Ordinal_52"
+    },
+    {
+      "address": "EXTERNAL:00000006",
+      "name": "WS2_32.DLL::Ordinal_8"
+    },
+    {
+      "address": "EXTERNAL:0000000a",
+      "name": "WS2_32.DLL::Ordinal_9"
+    },
+    {
+      "address": "EXTERNAL:0000000e",
+      "name": "WS2_32.DLL::WSAGetOverlappedResult"
+    },
+    {
+      "address": "EXTERNAL:00000007",
+      "name": "WS2_32.DLL::WSARecv"
+    },
+    {
+      "address": "EXTERNAL:00000011",
+      "name": "WS2_32.DLL::WSASend"
+    }
+  ]
+}

@@ -1,13 +1,11 @@
 // blitter effects via SDL2
 #include "burner.h"
+#include "macade_embedded.h"
 #include "vid_support.h"
 #include "vid_softfx.h"
-
 #include <SDL.h>
-
 extern int vsync;
 extern char videofiltering[3];
-
 static unsigned char* VidMem = NULL;
 static SDL_Window* sdlWindow = NULL;
 SDL_Renderer* sdlRenderer = NULL;
@@ -19,7 +17,6 @@ static SDL_Rect dstrect;
 static SDL_Rect title_texture_rect;
 static SDL_Rect dest_title_texture_rect;
 static bool bHasOverlay = false;
-
 static int screenh, screenw;
 
 SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture)
@@ -29,12 +26,10 @@ SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture
 #else
 	char titlePath[MAX_PATH] = { 0 };
 	int overlaywidth, overlayheight;
-
 	if (!bAppFullscreen)
 	{
 		return NULL;
 	}
-
 #ifndef _WIN32
 	snprintf(titlePath, MAX_PATH, "%s%s.png", "/usr/local/share/overlays/", BurnDrvGetTextA(0));
 #else
@@ -47,17 +42,14 @@ SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture
 	SDL_GetWindowSize(sdlWindow,
 		&screenw,
 		&screenh);
-
-	title_texture_rect.x = 0; //the x coordinate
-	title_texture_rect.y = 0; // the y coordinate
-	title_texture_rect.w = overlaywidth; //the width of the texture
-	title_texture_rect.h = overlayheight; //the height of the texture
-
-	dest_title_texture_rect.x = (screenw - overlaywidth) / 2; //the x coordinate
-	dest_title_texture_rect.y = (screenh - overlayheight) / 2; // the y coordinate
-	dest_title_texture_rect.w = overlaywidth; //the width of the texture
-	dest_title_texture_rect.h = overlayheight; //the height of the texture
-
+	title_texture_rect.x = 0;
+	title_texture_rect.y = 0;
+	title_texture_rect.w = overlaywidth;
+	title_texture_rect.h = overlayheight;
+	dest_title_texture_rect.x = (screenw - overlaywidth) / 2;
+	dest_title_texture_rect.y = (screenh - overlayheight) / 2;
+	dest_title_texture_rect.w = overlaywidth;
+	dest_title_texture_rect.h = overlayheight;
 #ifndef _WIN32
 	snprintf(titlePath, MAX_PATH, "%s%s.cfg", "/usr/local/share/overlays/", BurnDrvGetTextA(0));
 #else
@@ -69,7 +61,6 @@ SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture
 	TCHAR* t;
 	TCHAR* s;
 	TCHAR* szQuote;
-
 	int destx = 0, desty = 0 , destw = 0, desth = 0;
 	int    length;
 	h = _tfopen(titlePath, _T("rt"));
@@ -77,7 +68,6 @@ SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture
 		printf("overlay config %s not found \n" ,titlePath );
 		return NULL;
 	}
-
 	while (1) {
 		if (_fgetts(szLine, sizeof(szLine), h) == NULL) {
 			break;
@@ -89,7 +79,6 @@ SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture
 			szLine[length - 1] = 0;
 			length--;
 		}
-
 		s = szLine;
 		if ((t = LabelCheck(s, _T("custom_viewport_height"))) != 0) {
 			s = t;
@@ -130,25 +119,19 @@ SDL_Texture* LoadOverlayImage(SDL_Renderer* renderer, SDL_Texture* loadedTexture
 		dstrect.x = destx;
 		dstrect.h = desth;
 		dstrect.w = destw;
-
 		if (nRotateGame)
 		{
 			dstrect.y = desty + (desty/2);
 			dstrect.x = (screenw - destx) / 2;
 			dstrect.h = destw;
 			dstrect.w = desth;
-
 		}
 	}
-
 	return loadedTexture;
 #endif
 }
-
-
 void RenderMessage()
 {
-	// First render anything that is key-held based
 	if (bAppDoFast)
 	{
 		inprint_shadowed(sdlRenderer, "FFWD", 10, 10);
@@ -157,7 +140,6 @@ void RenderMessage()
 	{
 		inprint_shadowed(sdlRenderer, fpsstring, 10, 50);
 	}
-
 	if (messageFrames > 1)
 	{
 		inprint_shadowed(sdlRenderer, lastMessage, 10, 30);
@@ -168,17 +150,38 @@ void RenderMessage()
 static int Exit()
 {
 	kill_inline_font(); //TODO: This is not supposed to be here
+	MacadeEmbeddedShutdown();
 	SDL_DestroyTexture(overlayTexture);
 	SDL_DestroyTexture(sdlTexture);
 	SDL_DestroyRenderer(sdlRenderer);
 	SDL_DestroyWindow(sdlWindow);
-
 	free(VidMem);
 	return 0;
 }
 static int display_w = 400, display_h = 300;
 
-
+static int InitEmbeddedFrameBuffer()
+{
+	nVidImageDepth = (BurnDrvGetFlags() & BDF_16BIT_ONLY) ? 16 : 32;
+	if (nVidImageDepth == 16) {
+		printf("Forcing 16bit color\n");
+	}
+	nVidImageBPP = (nVidImageDepth + 7) >> 3;
+	nBurnBpp = nVidImageBPP;
+	SetBurnHighCol(nVidImageDepth);
+	nVidImagePitch = nVidImageWidth * nVidImageBPP;
+	nBurnPitch = nVidImagePitch;
+	int nMemLen = nVidImageWidth * nVidImageHeight * nVidImageBPP;
+	VidMem = (unsigned char*)malloc(nMemLen);
+	if (VidMem == NULL) {
+		pVidImage = NULL;
+		return 1;
+	}
+	memset(VidMem, 0, nMemLen);
+	pVidImage = VidMem;
+	printf("Macade embedded framebuffer %dx%d pitch=%d depth=%d\n", nVidImageWidth, nVidImageHeight, nVidImagePitch, nVidImageDepth);
+	return 0;
+}
 static int Init()
 {
 	int nMemLen = 0;
@@ -219,6 +222,14 @@ static int Init()
 			printf("Flipped\n");
 			bFlipped = 1;
 		}
+	}
+
+	if (MacadeEmbeddedEnabled()) {
+		dstrect.y = 0;
+		dstrect.x = 0;
+		dstrect.h = display_h;
+		dstrect.w = display_w;
+		return InitEmbeddedFrameBuffer();
 	}
 
 	char title[512];
@@ -415,6 +426,9 @@ static int Frame(bool bRedraw)                                          // bRedr
 		if ((BurnDrvGetFlags() & BDF_16BIT_ONLY) && pVidTransCallback)
 		{
 			pVidTransCallback();
+		}
+		if (MacadeEmbeddedEnabled()) {
+			MacadeEmbeddedPublishFrame(pVidImage, nVidImageWidth, nVidImageHeight, nVidImagePitch, nVidImageBPP, nVidImageDepth == 16 ? 1 : 0);
 		}
 	}
 	return 0;

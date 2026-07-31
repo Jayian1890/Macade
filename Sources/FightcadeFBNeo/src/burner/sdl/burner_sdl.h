@@ -47,6 +47,7 @@ extern int kNetGame;
 extern int kNetSpectator;
 extern int kNetLua;
 extern int kNetVersion;
+extern char kNetQuarkId[128];
 extern bool bFixDiagonals;
 extern int nEnableSOCD;
 
@@ -77,6 +78,8 @@ int AppError(TCHAR* szText, int bWarning);
 //run.cpp
 extern int RunMessageLoop();
 extern int RunReset();
+extern int RunInit();
+extern int RunFrame(int bDraw, int bPause, int bInput = 1, int bNotifyGGPO = 1);
 
 #define MESSAGE_MAX_FRAMES 180 // assuming 60fps this would be 3 seconds...
 #define MESSAGE_MAX_LENGTH 255
@@ -90,6 +93,21 @@ int StatedAuto(int bSave);
 // media.cpp
 int MediaInit();
 int MediaExit();
+
+// fbn_network_sdl.cpp
+int NetworkInitInput();
+int NetworkGetInput();
+
+// fbn_quark_sdl.cpp
+bool QuarkInit(const char *connect);
+void QuarkEnd();
+void QuarkRunIdle(int ms);
+bool QuarkGetInput(void *values, int size, int players);
+bool QuarkIncrementFrame();
+void QuarkSendChatText(char *text);
+void QuarkSendChatCmd(char *text, char cmd);
+void QuarkUpdateStats(double fps);
+void QuarkRecordReplay();
 
 //inpdipsw.cpp
 void InpDIPSWResetDIPs();

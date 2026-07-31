@@ -2,6 +2,7 @@
 #include <SDL.h>
 
 #include "burner.h"
+#include "macade_embedded.h"
 
 
 #define MAX_JOYSTICKS (8)
@@ -420,6 +421,7 @@ int SDLinpStart()
 {
 	// Update SDL event queue
 	SDL_PumpEvents();
+	MacadeEmbeddedPumpInput();
 
 	// Keyboard not read this frame
 	bKeyboardRead = 0;
@@ -603,6 +605,9 @@ int SDLinpState(int nCode)
 	}
 
 	if (nCode < 0x100) {
+		if (MacadeEmbeddedKeyState(FBKtoSDL[nCode])) {
+			return 1;
+		}
 		if (ReadKeyboard() != 0) {							// Check keyboard has been read - return not pressed on error
 			return 0;
 		}

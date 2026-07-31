@@ -87,6 +87,7 @@ alldir	= burn \
 		burn/snd \
 		burner \
 		burner/sdl \
+		macade \
 		intf \
 		intf/audio \
 		intf/audio/sdl \
@@ -126,6 +127,7 @@ alldir	= burn \
 		dep/libs/lua \
 		dep/libs/libpng \
 		dep/libs/zlib \
+		dep/ggponet-native/include \
 		dep/mingw/include \
 		dep/scripts \
 		dep/vc/include \
@@ -215,7 +217,7 @@ drvobj	+= \
 		d_sg1000.o
 
 depobj	+= \
-		bzip.o config.o drv.o inpdipsw.o main.o media.o replay.o run.o stated.o \
+		bzip.o config.o drv.o fbn_network_sdl.o fbn_quark_sdl.o inpdipsw.o main.o macade_embedded.o media.o replay.o run.o stated.o tchar_bridge_sdl.o \
 		stringset.o ips_manager.o support_paths.o scrn.o \
 		\
 		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o \
@@ -299,6 +301,8 @@ autobj += burn_sound_a.o eagle_fm.o 2xsaimmx.o hq2x32.o hq3x32.o hq4x32.o supers
 endif
  
 autdep	= $(depobj:.o=.d)
+ggponet_native_src = $(wildcard $(srcdir)dep/ggponet-native/src/*.cpp)
+ggponet_native_obj = $(patsubst $(srcdir)dep/ggponet-native/src/%.cpp,$(objdir)dep/ggponet-native-native/%.o,$(ggponet_native_src))
 
 #app_windres.rc = $(srcdir)dep/generated/app_windres.rc
 #license.rc = $(srcdir)dep/generated/license.rc
@@ -326,6 +330,8 @@ allobj	= $(objdir)cpu/m68k/m68kcpu.o $(objdir)cpu/m68k/m68kops.o \
 		$(foreach dir,$(alldir),$(subst $(srcdir),$(objdir), \
 		$(firstword $(subst .rc,.o,$(wildcard $(srcdir)$(dir)/$(file)))))))
 
+allobj += $(ggponet_native_obj)
+
 alldep	= $(foreach file,$(autobj:.o=.c), \
 		$(foreach dir,$(alldir),$(subst $(srcdir),$(objdir), \
 		$(firstword $(subst .c,.d,$(wildcard $(srcdir)$(dir)/$(file))))))) \
@@ -351,7 +357,7 @@ AS	= nasm
 
 HOSTCFLAGS = $(incdir)
 CFLAGS = -O2 -fomit-frame-pointer -Wno-write-strings -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_SUPPORTED=0 -DLSB_FIRST -DFASTCALL -DBUILD_M68K -DINCLUDE_LIB_PNGH -include stdint.h -DINT_PTR=intptr_t -DCALLBACK= -DBOOL=int -Dfopen64=fopen -Dftello64=ftello -Dfseeko64=fseeko
-CXXFLAGS = -O2 -fomit-frame-pointer -Wno-write-strings -Wno-c++11-narrowing -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_SUPPORTED=0 -DLSB_FIRST -DFASTCALL -DBUILD_M68K -DINCLUDE_LIB_PNGH -include stdint.h -DINT_PTR=intptr_t -DCALLBACK= -DBOOL=int -Dfopen64=fopen -Dftello64=ftello -Dfseeko64=fseeko
+CXXFLAGS = -std=c++17 -O2 -fomit-frame-pointer -Wno-write-strings -Wno-c++11-narrowing -DPNG_ARM_NEON_OPT=0 -DPNG_ARM_NEON_SUPPORTED=0 -DLSB_FIRST -DFASTCALL -DBUILD_M68K -DINCLUDE_LIB_PNGH -include stdint.h -DINT_PTR=intptr_t -DCALLBACK= -DBOOL=int -Dfopen64=fopen -Dftello64=ftello -Dfseeko64=fseeko
 DEF := -DCPUTYPE=$(CPUTYPE) -DUSE_SPEEDHACKS -DBUILD_SDL2
 
 CFLAGS += -U__cdecl -U__fastcall -D__cdecl="" -D__fastcall=""
@@ -458,6 +464,11 @@ ifdef	COMPRESS
 endif
 endif
 endif
+
+$(objdir)dep/ggponet-native-native/%.o: $(srcdir)dep/ggponet-native/src/%.cpp
+	@echo Compiling $<...
+	@mkdir -p $(objdir)dep/ggponet-native-native
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 #
 #	Generate the gamelist
@@ -688,6 +699,7 @@ else
 endif
 	@echo
 	@mkdir -p $(foreach dir, $(alldir),$(objdir)$(dir))
+	@mkdir -p $(objdir)dep/ggponet-native-native
 	@mkdir -p $(srcdir)dep/generated
 
 cleandep:

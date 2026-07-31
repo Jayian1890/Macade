@@ -1,0 +1,16 @@
+1001489a	entry
+10021b30	ggpo_close_session
+10021b50	ggpo_get_stats
+10021b80	ggpo_client_chat
+10021bb0	ggpo_advance_frame
+10021be0	ggpo_synchronize_input
+10021c20	ggpo_idle
+10021c50	ggpo_set_frame_delay
+10021c80	ggpo_client_set_game_event
+10021ca0	ggpo_logv
+10021cc0	ggpo_log
+10021d10	ggpo_start_replay
+10021d60	ggpo_start_streaming
+10021db0	ggpo_start_synctest
+10021e00	ggpo_client_connect
+10021e50	ggpo_start_session

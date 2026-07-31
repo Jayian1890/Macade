@@ -1,5 +1,6 @@
 // Run module
 #include "burner.h"
+#include "macade_embedded.h"
 
 #include <sys/time.h>
 
@@ -132,7 +133,7 @@ unsigned int GetTime(void)
 
 // With or without sound, run one frame.
 // If bDraw is true, it's the last frame before we are up to date, and so we should draw the screen
-static int RunFrame(int bDraw, int bPause)
+int RunFrame(int bDraw, int bPause, int bInput, int bNotifyGGPO)
 {
 	if (!bDrvOkay)
 	{
@@ -148,7 +149,16 @@ static int RunFrame(int bDraw, int bPause)
 	{
 		nFramesEmulated++;
 		nCurrentFrame++;
-		InputMake(true);
+		if (kNetGame) {
+			if (bInput) {
+				InputMake(true);
+			}
+			if (NetworkGetInput()) {
+				return 1;
+			}
+		} else {
+			InputMake(true);
+		}
 	}
 
 	if (bDraw)
@@ -164,6 +174,10 @@ static int RunFrame(int bDraw, int bPause)
 	{                                       // frame skipping
 		pBurnDraw = NULL;                    // Make sure no image is drawn
 		BurnDrvFrame();
+	}
+
+	if (kNetGame && bNotifyGGPO) {
+		QuarkIncrementFrame();
 	}
 
 	if (bAppShowFPS) {
@@ -182,6 +196,10 @@ static int RunGetNextSound(int bDraw)
 	if (nAudNextSound == NULL)
 	{
 		return 1;
+	}
+
+	if (MacadeEmbeddedEnabled() && kNetSpectator) {
+		bDraw = 1;
 	}
 
 	if (bRunPause)
@@ -244,6 +262,9 @@ int RunIdle()
 	if (bAudPlaying)
 	{
 		// Run with sound
+		if (kNetGame) {
+			QuarkRunIdle(1);
+		}
 		AudSoundCheck();
 		return 0;
 	}
@@ -252,6 +273,9 @@ int RunIdle()
 	nTime = GetTime() - nNormalLast;
 	nCount = (nTime * nAppVirtualFps - nNormalFrac) / 100000;
 	if (nCount <= 0) {						// No need to do anything for a bit
+		if (kNetGame) {
+			QuarkRunIdle(1);
+		}
 		//delay_ticks(2);
 		return 0;
 	}
@@ -317,14 +341,20 @@ int RunInit()
 	AudSoundPlay();
 
 	RunReset();
-	StatedAuto(0);
+	if (!kNetGame) {
+		StatedAuto(0);
+	}
 	return 0;
 }
 
 int RunExit()
 {
 	nNormalLast = 0;
-	StatedAuto(1);
+	if (kNetGame) {
+		QuarkEnd();
+	} else {
+		StatedAuto(1);
+	}
 	return 0;
 }
 
@@ -345,6 +375,9 @@ int RunMessageLoop()
 			switch (event.type)
 			{
 			case SDL_QUIT:                                        /* Windows was closed */
+				if (MacadeEmbeddedEnabled()) {
+					break;
+				}
 				quit = 1;
 				break;
 
