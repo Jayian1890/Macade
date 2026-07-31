@@ -249,6 +249,7 @@ int MacadeNetworkReplayFrame()
 	memset(gControls, 0, sizeof(gControls));
 	std::map<int, std::vector<unsigned char> >::iterator local = ggpo->localInputs.find(ggpo->currentFrame);
 	if (local != ggpo->localInputs.end() && local->second.size() == (size_t)ggpo->inputSize) memcpy(gControls, local->second.data(), ggpo->inputSize);
+	nFramesEmulated++;
 	nCurrentFrame++;
 	bool synchronized = ggpo_synchronize_input(ggpo, gControls, ggpo->inputSize, kNetPlayers);
 	if (!synchronized) return 1;

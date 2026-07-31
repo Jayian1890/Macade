@@ -173,6 +173,7 @@ static void GGPOMacRequestRollback(GGPOSession* session, int frame)
 bool MacadeStoreRemoteInput(GGPOSession* session, int frame, const std::vector<unsigned char>& input)
 {
 	if (session == NULL || frame < 0 || input.empty()) return false;
+	bool newestRemoteInput = frame >= session->remoteLastFrame;
 	std::map<int, std::vector<unsigned char> >::iterator predicted = session->predictedRemoteInputs.find(frame);
 	if (predicted != session->predictedRemoteInputs.end()) {
 		if (predicted->second != input) {
@@ -190,7 +191,9 @@ bool MacadeStoreRemoteInput(GGPOSession* session, int frame, const std::vector<u
 	} else {
 		session->remoteInputs[frame] = input;
 	}
-	if (frame > session->remoteLastFrame) session->remoteLastFrame = frame;
-	session->lastRemoteInput = input;
+	if (newestRemoteInput) {
+		session->remoteLastFrame = frame;
+		session->lastRemoteInput = input;
+	}
 	return true;
 }

@@ -337,8 +337,8 @@ static int RunFrame(int bDraw, int bPause)
 	{
 		return 1;
 	}
-	bool commitEmbeddedSpectatorAudio = MacadeEmbeddedEnabled() && kNetSpectator && bAudPlaying && !bPause && nAudNextSound != NULL;
-	if (commitEmbeddedSpectatorAudio) pBurnSoundOut = nAudNextSound;
+	bool commitEmbeddedAudio = MacadeEmbeddedEnabled() && kNetGame && !MacadeQuarkLocalTrainingActive() && bAudPlaying && !bPause && nAudNextSound != NULL;
+	if (commitEmbeddedAudio) pBurnSoundOut = nAudNextSound;
 
 	if (bPause)
 	{
@@ -413,7 +413,7 @@ static int RunFrame(int bDraw, int bPause)
 		FBA_LuaFrameBoundary();
 		CallRegisteredLuaFunctions(LUACALL_AFTEREMULATION);
 	}
-	if (commitEmbeddedSpectatorAudio) MacadeSDLSoundCommitFrame();
+	if (commitEmbeddedAudio) MacadeSDLSoundCommitFrame();
 	macadeRunFrameCount++;
 
 	if (bAppShowFPS) {

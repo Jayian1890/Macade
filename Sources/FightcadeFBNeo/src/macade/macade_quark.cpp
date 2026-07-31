@@ -180,8 +180,8 @@ static bool __cdecl MacadeSaveState(unsigned char** buffer, int* len, int* check
 	header[1] = kMacadeGGPOStateHeaderSize;
 	header[2] = nBurnVer;
 	header[3] = ((score1 & 0xff) << 8) | ((score2 & 0xff) << 16) | ((iRanked & 0xff) << 24);
-	header[4] = 0;
-	header[5] = 0;
+	header[4] = (int)nCurrentFrame;
+	header[5] = (int)nFramesEmulated;
 	memcpy(*buffer + kMacadeGGPOStateHeaderSize, gMacadeStateBuffer.data(), gMacadeStateBuffer.size());
 	return true;
 }
@@ -205,6 +205,8 @@ static bool __cdecl MacadeLoadState(unsigned char* buffer, int len)
 			int score2 = (header[3] >> 16) & 0xff;
 			int ranked = (header[3] >> 24) & 0xff;
 			if (ranked > 0) iRanked = ranked;
+			nCurrentFrame = (UINT32)header[4];
+			nFramesEmulated = (UINT32)header[5];
 			MacadeOverlaySetSession(kNetSpectator, iRanked, iPlayer);
 			MacadeOverlaySetScores(score1, score2);
 		}

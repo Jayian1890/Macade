@@ -38,10 +38,11 @@ static bool GGPOMacQueueLocalInput(GGPOSession* session, const std::vector<unsig
 		return false;
 	}
 	for (int frame = nextFrame; frame < targetFrame; frame++) session->localInputs[frame] = input;
-	session->localInputs[targetFrame] = input;
+	std::vector<unsigned char> queued = targetFrame == 0 ? std::vector<unsigned char>(input.size(), 0) : input;
+	session->localInputs[targetFrame] = queued;
 	session->lastLocalQueuedFrame = targetFrame;
 	if (targetFrame > session->localSendHighFrame) session->localSendHighFrame = targetFrame;
-	session->lastLocalInput = input;
+	session->lastLocalInput = queued;
 	return true;
 }
 
@@ -209,7 +210,10 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 		}
 		bool queuedLocalInput = GGPOMacQueueLocalInput(session, rawLocal);
 		MacadePumpUDPControl(session);
-		if (queuedLocalInput) MacadeSendUDPInput(session, rawLocal.data(), size, session->localSendHighFrame);
+		if (queuedLocalInput) {
+			std::map<int, std::vector<unsigned char> >::iterator queued = session->localInputs.find(session->localSendHighFrame);
+			if (queued != session->localInputs.end()) MacadeSendUDPInput(session, queued->second.data(), size, session->localSendHighFrame);
+		}
 		MacadeSendTCPReadyIfNeeded(session);
 		MacadeSendTCPFrameBatch(session);
 		MacadePollTCP(session, 0);
