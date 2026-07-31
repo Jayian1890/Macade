@@ -119,8 +119,7 @@ static void SendUDPSyncProbe(GGPOSession* session, long long now)
 	if (session == NULL || session->udpFd < 0 || !session->hasPeer) return;
 	unsigned char packet[5];
 	packet[0] = 1;
-	session->udpSyncNonce = arc4random();
-	if (session->udpSyncNonce == 0) session->udpSyncNonce = (unsigned int)now;
+	session->udpSyncNonce = arc4random_uniform(0x10000);
 	WriteLE32(packet + 1, (int)session->udpSyncNonce);
 	ssize_t sent = sendto(session->udpFd, packet, sizeof(packet), 0, (sockaddr*)&session->peer, sizeof(session->peer));
 	if (sent > 0) {
@@ -140,8 +139,7 @@ static void SendUDPQualityReport(GGPOSession* session, long long now)
 	if (advantage > 127) advantage = 127;
 	session->localFrameAdvantage = advantage;
 	packet[1] = (unsigned char)(int8_t)advantage;
-	session->udpQualityNonce = arc4random();
-	if (session->udpQualityNonce == 0) session->udpQualityNonce = (unsigned int)now;
+	session->udpQualityNonce = (unsigned int)now;
 	WriteLE32(packet + 2, (int)session->udpQualityNonce);
 	ssize_t sent = sendto(session->udpFd, packet, sizeof(packet), 0, (sockaddr*)&session->peer, sizeof(session->peer));
 	if (sent > 0) {
