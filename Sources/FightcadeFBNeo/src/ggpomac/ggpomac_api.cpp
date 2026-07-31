@@ -231,8 +231,8 @@ bool __cdecl ggpo_get_stats(GGPOSession* session, GGPONetworkStats* stats)
 	stats->network.ping = session->udpPingMs;
 	long long elapsedMs = GGPOMacNowMilliseconds() - session->startedAtMs;
 	if (elapsedMs > 0) stats->network.kbps_sent = (int)((session->bytesSent * 8ULL) / (unsigned long long)elapsedMs);
-	stats->timesync.local_frames_behind = session->localFrameAdvantage < 0 ? -session->localFrameAdvantage : 0;
-	stats->timesync.remote_frames_behind = session->localFrameAdvantage > 0 ? session->localFrameAdvantage : 0;
+	stats->timesync.local_frames_behind = session->localFrameAdvantage;
+	stats->timesync.remote_frames_behind = session->remoteFrameAdvantage;
 	return true;
 }
 

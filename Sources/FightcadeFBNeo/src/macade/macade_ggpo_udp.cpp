@@ -134,7 +134,9 @@ static void SendUDPQualityReport(GGPOSession* session, long long now)
 	if (session == NULL || session->udpFd < 0 || !session->hasPeer) return;
 	unsigned char packet[6];
 	packet[0] = 4;
-	int advantage = session->currentFrame - session->remoteLastFrame;
+	int remoteFrame = session->remoteLastFrame + (session->udpPingMs * 60) / 1000;
+	if (session->udpLastInputReceiveAtMs > 0) remoteFrame += (int)((now - session->udpLastInputReceiveAtMs) * 60 / 1000);
+	int advantage = remoteFrame - session->currentFrame;
 	if (advantage < -128) advantage = -128;
 	if (advantage > 127) advantage = 127;
 	session->localFrameAdvantage = advantage;
