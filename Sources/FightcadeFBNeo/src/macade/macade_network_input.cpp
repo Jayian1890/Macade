@@ -23,6 +23,9 @@ static unsigned char gControls[kInputSize];
 static int gNetworkGetInputLogCount = 0;
 static int gNetworkReplayFrameLogCount = 0;
 static int gNetworkLocalNonzeroLogCount = 0;
+static int gNetworkApplyLogCount = 0;
+
+static bool ReadInputInfo(unsigned int index, BurnInputInfo* input);
 
 static bool BufferHasNonzeroByte(const unsigned char* bytes, int size)
 {
@@ -43,6 +46,53 @@ static void FormatBytes(const unsigned char* bytes, int size, char* out, int out
 		out[written++] = hex[bytes[i] & 0xf];
 	}
 	out[written] = 0;
+}
+
+static void AppendControlName(char* out, int outSize, const char* name)
+{
+	if (out == NULL || outSize <= 0 || name == NULL || name[0] == 0) return;
+	int length = (int)strlen(out);
+	if (length + 1 >= outSize) return;
+	if (length > 0) out[length++] = '|';
+	for (const char* cursor = name; *cursor && length + 1 < outSize; cursor++) {
+		out[length++] = (*cursor == ' ' || *cursor == '\t') ? '_' : *cursor;
+	}
+	out[length] = 0;
+}
+
+static bool ControlBitIsSet(int bit)
+{
+	if (bit < 0 || bit / 8 >= kInputSize) return false;
+	return (gControls[bit >> 3] & (1 << (bit & 7))) != 0;
+}
+
+static void FormatPressedControlsForPlayer(int player, int blockSize, char* out, int outSize)
+{
+	if (out == NULL || outSize <= 0) return;
+	out[0] = 0;
+	if (player < 0 || player >= kMaxPlayers || blockSize <= 0) return;
+	BurnInputInfo input;
+	int bitOffset = blockSize * player * 8;
+	for (int i = 0; i < gPlayerInputs[player]; i++) {
+		if (!ReadInputInfo(i + gPlayerOffset[player], &input)) continue;
+		if (input.nType == BIT_DIGITAL && ControlBitIsSet(bitOffset + i)) AppendControlName(out, outSize, input.szName);
+	}
+	if (out[0] == 0) strncpy(out, "none", (size_t)outSize - 1);
+	out[outSize - 1] = 0;
+}
+
+static void LogSynchronizedControls(int blockSize, const char* source)
+{
+	if (ggpo == NULL || blockSize <= 0) return;
+	bool shouldLog = ggpo->isSpectator || gNetworkApplyLogCount < 24 || gNetworkApplyLogCount % 120 == 0;
+	if (!shouldLog) return;
+	char p1Bytes[32]; char p2Bytes[32]; char p1Names[256]; char p2Names[256];
+	FormatBytes(gControls, blockSize, p1Bytes, sizeof(p1Bytes));
+	FormatBytes(gControls + blockSize, blockSize, p2Bytes, sizeof(p2Bytes));
+	FormatPressedControlsForPlayer(0, blockSize, p1Names, sizeof(p1Names));
+	FormatPressedControlsForPlayer(1, blockSize, p2Names, sizeof(p2Names));
+	printf("Macade input trace: %s frame=%d spectator=%d block=%d p1Bytes=%s p1=%s p2Bytes=%s p2=%s\n", source, ggpo->currentFrame, ggpo->isSpectator ? 1 : 0, blockSize, p1Bytes, p1Names, p2Bytes, p2Names);
+	fflush(stdout);
 }
 
 static bool InputNameHasPrefix(const BurnInputInfo& input, const char* prefix)
@@ -239,7 +289,9 @@ int MacadeNetworkGetInput()
 	if (!synchronized) {
 		return (ggpo->fatalDesync || ggpo->networkDisconnected) ? 1 : 2;
 	}
+	LogSynchronizedControls(blockSize, "before-apply");
 	MacadeApplySynchronizedControls(blockSize);
+	gNetworkApplyLogCount++;
 	return 0;
 }
 

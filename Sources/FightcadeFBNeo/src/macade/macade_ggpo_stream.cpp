@@ -10,6 +10,21 @@ static unsigned int ReadBE32(const unsigned char* data)
 
 static bool ShouldLogCount(int count) { return count < 8 || count % 120 == 0; }
 
+static void FormatBytes(const unsigned char* bytes, int size, char* out, int outSize)
+{
+	static const char* hex = "0123456789abcdef";
+	if (out == NULL || outSize <= 0) return;
+	out[0] = 0;
+	if (bytes == NULL || size <= 0) return;
+	int written = 0;
+	int limit = size < 12 ? size : 12;
+	for (int i = 0; i < limit && written + 2 < outSize; i++) {
+		out[written++] = hex[(bytes[i] >> 4) & 0xf];
+		out[written++] = hex[bytes[i] & 0xf];
+	}
+	out[written] = 0;
+}
+
 static void HandleTCPStreamGameBuffer(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize)
 {
 	if (session == NULL || payload == NULL || payloadSize < 4) return;
@@ -43,7 +58,10 @@ static void HandleTCPStreamFrameBatch(GGPOSession* session, const unsigned char*
 		session->streamReceiveFrame++;
 	}
 	session->streamFrameBatchCount++;
-	if (ShouldLogCount(session->streamFrameBatchCount)) MacadeLog("Macade GGPO: stream frame batch received frameSize=%u count=%u queued=%zu batches=%d\n", frameSize, frameCount, session->streamInputs.size(), session->streamFrameBatchCount);
+	if (ShouldLogCount(session->streamFrameBatchCount)) {
+		char first[32]; FormatBytes(frames, (int)frameSize, first, sizeof(first));
+		MacadeLog("Macade GGPO: stream frame batch received frameSize=%u count=%u queued=%zu batches=%d first=%s\n", frameSize, frameCount, session->streamInputs.size(), session->streamFrameBatchCount, first);
+	}
 }
 
 static void HandleTCPStreamFrame(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize)
@@ -51,7 +69,11 @@ static void HandleTCPStreamFrame(GGPOSession* session, const unsigned char* payl
 	if (session == NULL || payload == NULL || payloadSize == 0 || payloadSize > 512) return;
 	session->streamInputs.push_back(std::vector<unsigned char>(payload, payload + payloadSize));
 	session->streamReceiveFrame++;
-	if (ShouldLogCount(session->streamFrameBatchCount)) MacadeLog("Macade GGPO: stream frame received size=%u queued=%zu\n", payloadSize, session->streamInputs.size());
+	session->streamFrameBatchCount++;
+	if (ShouldLogCount(session->streamFrameBatchCount)) {
+		char bytes[32]; FormatBytes(payload, (int)payloadSize, bytes, sizeof(bytes));
+		MacadeLog("Macade GGPO: stream frame received size=%u queued=%zu count=%d bytes=%s\n", payloadSize, session->streamInputs.size(), session->streamFrameBatchCount, bytes);
+	}
 }
 
 static void HandleTCPStreamSpectatorCount(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize)
