@@ -1,0 +1,3082 @@
+[
+  {
+    "address": "1002e200",
+    "type": "string",
+    "value": " deflate 1.1.4 Copyright 1995-2002 Jean-loup Gailly "
+  },
+  {
+    "address": "1002ed30",
+    "type": "string",
+    "value": " inflate 1.1.4 Copyright 1995-2002 Mark Adler "
+  },
+  {
+    "address": "1002ef48",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "1002ef88",
+    "type": "string",
+    "value": "string too long"
+  },
+  {
+    "address": "1002ef98",
+    "type": "string",
+    "value": "invalid string position"
+  },
+  {
+    "address": "1002efbc",
+    "type": "string",
+    "value": "Unknown exception"
+  },
+  {
+    "address": "1002efd8",
+    "type": "string",
+    "value": "CorExitProcess"
+  },
+  {
+    "address": "1002f03c",
+    "type": "string",
+    "value": "(null)"
+  },
+  {
+    "address": "1002f0a4",
+    "type": "string",
+    "value": "runtime error "
+  },
+  {
+    "address": "1002f0b8",
+    "type": "string",
+    "value": "TLOSS error\r\n"
+  },
+  {
+    "address": "1002f0c8",
+    "type": "string",
+    "value": "SING error\r\n"
+  },
+  {
+    "address": "1002f0d8",
+    "type": "string",
+    "value": "DOMAIN error\r\n"
+  },
+  {
+    "address": "1002f0e8",
+    "type": "string",
+    "value": "R6034\r\nAn application has made an attempt to load the C runtime library incorrectly.\nPlease contact the application's support team for more information.\r\n"
+  },
+  {
+    "address": "1002f188",
+    "type": "string",
+    "value": "R6033\r\n- Attempt to use MSIL code from this assembly during native code initialization\nThis indicates a bug in your application. It is most likely the result of calling an MSIL-compiled (/clr) function from a native constructor or from DllMain.\r\n"
+  },
+  {
+    "address": "1002f280",
+    "type": "string",
+    "value": "R6032\r\n- not enough space for locale information\r\n"
+  },
+  {
+    "address": "1002f2b8",
+    "type": "string",
+    "value": "R6031\r\n- Attempt to initialize the CRT more than once.\nThis indicates a bug in your application.\r\n"
+  },
+  {
+    "address": "1002f31c",
+    "type": "string",
+    "value": "R6030\r\n- CRT not initialized\r\n"
+  },
+  {
+    "address": "1002f33c",
+    "type": "string",
+    "value": "R6028\r\n- unable to initialize heap\r\n"
+  },
+  {
+    "address": "1002f364",
+    "type": "string",
+    "value": "R6027\r\n- not enough space for lowio initialization\r\n"
+  },
+  {
+    "address": "1002f39c",
+    "type": "string",
+    "value": "R6026\r\n- not enough space for stdio initialization\r\n"
+  },
+  {
+    "address": "1002f3d4",
+    "type": "string",
+    "value": "R6025\r\n- pure virtual function call\r\n"
+  },
+  {
+    "address": "1002f3fc",
+    "type": "string",
+    "value": "R6024\r\n- not enough space for _onexit/atexit table\r\n"
+  },
+  {
+    "address": "1002f434",
+    "type": "string",
+    "value": "R6019\r\n- unable to open console device\r\n"
+  },
+  {
+    "address": "1002f460",
+    "type": "string",
+    "value": "R6018\r\n- unexpected heap error\r\n"
+  },
+  {
+    "address": "1002f484",
+    "type": "string",
+    "value": "R6017\r\n- unexpected multithread lock error\r\n"
+  },
+  {
+    "address": "1002f4b4",
+    "type": "string",
+    "value": "R6016\r\n- not enough space for thread data\r\n"
+  },
+  {
+    "address": "1002f4e0",
+    "type": "string",
+    "value": "\r\nThis application has requested the Runtime to terminate it in an unusual way.\nPlease contact the application's support team for more information.\r\n"
+  },
+  {
+    "address": "1002f578",
+    "type": "string",
+    "value": "R6009\r\n- not enough space for environment\r\n"
+  },
+  {
+    "address": "1002f5a4",
+    "type": "string",
+    "value": "R6008\r\n- not enough space for arguments\r\n"
+  },
+  {
+    "address": "1002f5d0",
+    "type": "string",
+    "value": "R6002\r\n- floating point support not loaded\r\n"
+  },
+  {
+    "address": "1002f600",
+    "type": "string",
+    "value": "Microsoft Visual C++ Runtime Library"
+  },
+  {
+    "address": "1002f630",
+    "type": "string",
+    "value": "<program name unknown>"
+  },
+  {
+    "address": "1002f648",
+    "type": "string",
+    "value": "Runtime Error!\n\nProgram: "
+  },
+  {
+    "address": "1002f664",
+    "type": "string",
+    "value": "EncodePointer"
+  },
+  {
+    "address": "1002f690",
+    "type": "string",
+    "value": "DecodePointer"
+  },
+  {
+    "address": "1002f6a0",
+    "type": "string",
+    "value": "FlsFree"
+  },
+  {
+    "address": "1002f6a8",
+    "type": "string",
+    "value": "FlsSetValue"
+  },
+  {
+    "address": "1002f6b4",
+    "type": "string",
+    "value": "FlsGetValue"
+  },
+  {
+    "address": "1002f6c0",
+    "type": "string",
+    "value": "FlsAlloc"
+  },
+  {
+    "address": "1002f6d0",
+    "type": "string",
+    "value": "UTF-8"
+  },
+  {
+    "address": "1002f6d8",
+    "type": "string",
+    "value": "UTF-16LE"
+  },
+  {
+    "address": "1002f6e4",
+    "type": "string",
+    "value": "UNICODE"
+  },
+  {
+    "address": "1002f7d8",
+    "type": "string",
+    "value": "bad exception"
+  },
+  {
+    "address": "1002f86c",
+    "type": "string",
+    "value": "GetProcessWindowStation"
+  },
+  {
+    "address": "1002f884",
+    "type": "string",
+    "value": "GetUserObjectInformationA"
+  },
+  {
+    "address": "1002f8a0",
+    "type": "string",
+    "value": "GetLastActivePopup"
+  },
+  {
+    "address": "1002f8b4",
+    "type": "string",
+    "value": "GetActiveWindow"
+  },
+  {
+    "address": "1002f8c4",
+    "type": "string",
+    "value": "MessageBoxA"
+  },
+  {
+    "address": "1002f8d0",
+    "type": "string",
+    "value": "USER32.DLL"
+  },
+  {
+    "address": "1002f8dc",
+    "type": "string",
+    "value": " Complete Object Locator'"
+  },
+  {
+    "address": "1002f8f8",
+    "type": "string",
+    "value": " Class Hierarchy Descriptor'"
+  },
+  {
+    "address": "1002f918",
+    "type": "string",
+    "value": " Base Class Array'"
+  },
+  {
+    "address": "1002f92c",
+    "type": "string",
+    "value": " Base Class Descriptor at ("
+  },
+  {
+    "address": "1002f948",
+    "type": "string",
+    "value": " Type Descriptor'"
+  },
+  {
+    "address": "1002f95c",
+    "type": "string",
+    "value": "`local static thread guard'"
+  },
+  {
+    "address": "1002f978",
+    "type": "string",
+    "value": "`managed vector copy constructor iterator'"
+  },
+  {
+    "address": "1002f9a4",
+    "type": "string",
+    "value": "`vector vbase copy constructor iterator'"
+  },
+  {
+    "address": "1002f9d0",
+    "type": "string",
+    "value": "`vector copy constructor iterator'"
+  },
+  {
+    "address": "1002f9f4",
+    "type": "string",
+    "value": "`dynamic atexit destructor for '"
+  },
+  {
+    "address": "1002fa18",
+    "type": "string",
+    "value": "`dynamic initializer for '"
+  },
+  {
+    "address": "1002fa34",
+    "type": "string",
+    "value": "`eh vector vbase copy constructor iterator'"
+  },
+  {
+    "address": "1002fa60",
+    "type": "string",
+    "value": "`eh vector copy constructor iterator'"
+  },
+  {
+    "address": "1002fa88",
+    "type": "string",
+    "value": "`managed vector destructor iterator'"
+  },
+  {
+    "address": "1002fab0",
+    "type": "string",
+    "value": "`managed vector constructor iterator'"
+  },
+  {
+    "address": "1002fad8",
+    "type": "string",
+    "value": "`placement delete[] closure'"
+  },
+  {
+    "address": "1002faf8",
+    "type": "string",
+    "value": "`placement delete closure'"
+  },
+  {
+    "address": "1002fb14",
+    "type": "string",
+    "value": "`omni callsig'"
+  },
+  {
+    "address": "1002fb24",
+    "type": "string",
+    "value": " delete[]"
+  },
+  {
+    "address": "1002fb30",
+    "type": "string",
+    "value": " new[]"
+  },
+  {
+    "address": "1002fb38",
+    "type": "string",
+    "value": "`local vftable constructor closure'"
+  },
+  {
+    "address": "1002fb5c",
+    "type": "string",
+    "value": "`local vftable'"
+  },
+  {
+    "address": "1002fb6c",
+    "type": "string",
+    "value": "`RTTI"
+  },
+  {
+    "address": "1002fb78",
+    "type": "string",
+    "value": "`udt returning'"
+  },
+  {
+    "address": "1002fb88",
+    "type": "string",
+    "value": "`copy constructor closure'"
+  },
+  {
+    "address": "1002fba4",
+    "type": "string",
+    "value": "`eh vector vbase constructor iterator'"
+  },
+  {
+    "address": "1002fbcc",
+    "type": "string",
+    "value": "`eh vector destructor iterator'"
+  },
+  {
+    "address": "1002fbec",
+    "type": "string",
+    "value": "`eh vector constructor iterator'"
+  },
+  {
+    "address": "1002fc10",
+    "type": "string",
+    "value": "`virtual displacement map'"
+  },
+  {
+    "address": "1002fc2c",
+    "type": "string",
+    "value": "`vector vbase constructor iterator'"
+  },
+  {
+    "address": "1002fc50",
+    "type": "string",
+    "value": "`vector destructor iterator'"
+  },
+  {
+    "address": "1002fc70",
+    "type": "string",
+    "value": "`vector constructor iterator'"
+  },
+  {
+    "address": "1002fc90",
+    "type": "string",
+    "value": "`scalar deleting destructor'"
+  },
+  {
+    "address": "1002fcb0",
+    "type": "string",
+    "value": "`default constructor closure'"
+  },
+  {
+    "address": "1002fcd0",
+    "type": "string",
+    "value": "`vector deleting destructor'"
+  },
+  {
+    "address": "1002fcf0",
+    "type": "string",
+    "value": "`vbase destructor'"
+  },
+  {
+    "address": "1002fd04",
+    "type": "string",
+    "value": "`string'"
+  },
+  {
+    "address": "1002fd10",
+    "type": "string",
+    "value": "`local static guard'"
+  },
+  {
+    "address": "1002fd28",
+    "type": "string",
+    "value": "`typeof'"
+  },
+  {
+    "address": "1002fd34",
+    "type": "string",
+    "value": "`vcall'"
+  },
+  {
+    "address": "1002fd3c",
+    "type": "string",
+    "value": "`vbtable'"
+  },
+  {
+    "address": "1002fd48",
+    "type": "string",
+    "value": "`vftable'"
+  },
+  {
+    "address": "1002fdd0",
+    "type": "string",
+    "value": "operator"
+  },
+  {
+    "address": "1002fdf4",
+    "type": "string",
+    "value": " delete"
+  },
+  {
+    "address": "1002fe04",
+    "type": "string",
+    "value": "__unaligned"
+  },
+  {
+    "address": "1002fe10",
+    "type": "string",
+    "value": "__restrict"
+  },
+  {
+    "address": "1002fe1c",
+    "type": "string",
+    "value": "__ptr64"
+  },
+  {
+    "address": "1002fe24",
+    "type": "string",
+    "value": "__clrcall"
+  },
+  {
+    "address": "1002fe30",
+    "type": "string",
+    "value": "__fastcall"
+  },
+  {
+    "address": "1002fe3c",
+    "type": "string",
+    "value": "__thiscall"
+  },
+  {
+    "address": "1002fe48",
+    "type": "string",
+    "value": "__stdcall"
+  },
+  {
+    "address": "1002fe54",
+    "type": "string",
+    "value": "__pascal"
+  },
+  {
+    "address": "1002fe60",
+    "type": "string",
+    "value": "__cdecl"
+  },
+  {
+    "address": "1002fe68",
+    "type": "string",
+    "value": "__based("
+  },
+  {
+    "address": "10030808",
+    "type": "string",
+    "value": "HH:mm:ss"
+  },
+  {
+    "address": "10030814",
+    "type": "string",
+    "value": "dddd, MMMM dd, yyyy"
+  },
+  {
+    "address": "10030828",
+    "type": "string",
+    "value": "MM/dd/yy"
+  },
+  {
+    "address": "1003083c",
+    "type": "string",
+    "value": "December"
+  },
+  {
+    "address": "10030848",
+    "type": "string",
+    "value": "November"
+  },
+  {
+    "address": "10030854",
+    "type": "string",
+    "value": "October"
+  },
+  {
+    "address": "1003085c",
+    "type": "string",
+    "value": "September"
+  },
+  {
+    "address": "10030868",
+    "type": "string",
+    "value": "August"
+  },
+  {
+    "address": "10030880",
+    "type": "string",
+    "value": "April"
+  },
+  {
+    "address": "10030888",
+    "type": "string",
+    "value": "March"
+  },
+  {
+    "address": "10030890",
+    "type": "string",
+    "value": "February"
+  },
+  {
+    "address": "1003089c",
+    "type": "string",
+    "value": "January"
+  },
+  {
+    "address": "100308d4",
+    "type": "string",
+    "value": "Saturday"
+  },
+  {
+    "address": "100308e0",
+    "type": "string",
+    "value": "Friday"
+  },
+  {
+    "address": "100308e8",
+    "type": "string",
+    "value": "Thursday"
+  },
+  {
+    "address": "100308f4",
+    "type": "string",
+    "value": "Wednesday"
+  },
+  {
+    "address": "10030900",
+    "type": "string",
+    "value": "Tuesday"
+  },
+  {
+    "address": "10030908",
+    "type": "string",
+    "value": "Monday"
+  },
+  {
+    "address": "10030910",
+    "type": "string",
+    "value": "Sunday"
+  },
+  {
+    "address": "10030934",
+    "type": "string",
+    "value": "CONOUT$"
+  },
+  {
+    "address": "1003093c",
+    "type": "string",
+    "value": "SunMonTueWedThuFriSat"
+  },
+  {
+    "address": "10030954",
+    "type": "string",
+    "value": "JanFebMarAprMayJunJulAugSepOctNovDec"
+  },
+  {
+    "address": "10030980",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10030990",
+    "type": "string",
+    "value": "Rejecting input from emualtor: reached prediction barrier.\n"
+  },
+  {
+    "address": "100309cc",
+    "type": "string",
+    "value": "SyncInput: Sending frame %d to synchronization layer.\n"
+  },
+  {
+    "address": "10030a04",
+    "type": "string",
+    "value": "..\\source\\sync.cpp"
+  },
+  {
+    "address": "10030a18",
+    "type": "string",
+    "value": "seek_to + count == _framecount - 1"
+  },
+  {
+    "address": "10030a3c",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030a64",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030a7c",
+    "type": "string",
+    "value": "Catching up\n"
+  },
+  {
+    "address": "10030a8c",
+    "type": "string",
+    "value": "..\\source\\sync.cpp"
+  },
+  {
+    "address": "10030aa0",
+    "type": "string",
+    "value": "_framecount == seek_to + 1"
+  },
+  {
+    "address": "10030abc",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030ae4",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030afc",
+    "type": "string",
+    "value": "..\\source\\sync.cpp"
+  },
+  {
+    "address": "10030b10",
+    "type": "string",
+    "value": "_framecount == framecount"
+  },
+  {
+    "address": "10030b2c",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030b54",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030b74",
+    "type": "string",
+    "value": "Skipping NOP.\n"
+  },
+  {
+    "address": "10030b84",
+    "type": "string",
+    "value": "=== Loading frame info %d (size: %d  checksum: %08x).\n"
+  },
+  {
+    "address": "10030bbc",
+    "type": "string",
+    "value": "..\\source\\sync.cpp"
+  },
+  {
+    "address": "10030bd0",
+    "type": "string",
+    "value": "state->buf && state->cbuf"
+  },
+  {
+    "address": "10030bec",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030c14",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030c2c",
+    "type": "string",
+    "value": "=== Saved frame info %d (size: %d  checksum: %08x).\n"
+  },
+  {
+    "address": "10030c64",
+    "type": "string",
+    "value": "..\\source\\sync.cpp"
+  },
+  {
+    "address": "10030c78",
+    "type": "string",
+    "value": "FALSE"
+  },
+  {
+    "address": "10030c80",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030ca8",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030cc0",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10030cd0",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10030cec",
+    "type": "string",
+    "value": "_sync_game_queue.empty()"
+  },
+  {
+    "address": "10030d08",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030d30",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030d48",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10030d64",
+    "type": "string",
+    "value": "_predict_queue.empty() || _remote_queue.empty()"
+  },
+  {
+    "address": "10030d94",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030dbc",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030dd4",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10030df0",
+    "type": "string",
+    "value": "ReadyForLocalInput()"
+  },
+  {
+    "address": "10030e08",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030e30",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030e48",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10030e64",
+    "type": "string",
+    "value": "_sync_game_queue.empty()"
+  },
+  {
+    "address": "10030e80",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030ea8",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030ec0",
+    "type": "string",
+    "value": "Clearing all inputs for first frame in prediction layer.\n"
+  },
+  {
+    "address": "10030efc",
+    "type": "string",
+    "value": "Tossing new frame %d (before expected frame %d).\n"
+  },
+  {
+    "address": "10030f30",
+    "type": "string",
+    "value": "Padding local input queue with new frame (%d < %d).\n"
+  },
+  {
+    "address": "10030f68",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10030f84",
+    "type": "string",
+    "value": "i.frame == _next_expected_frame"
+  },
+  {
+    "address": "10030fa4",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10030fcc",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10030fe4",
+    "type": "string",
+    "value": "Adding new game input to LocalQueue"
+  },
+  {
+    "address": "10031008",
+    "type": "string",
+    "value": "Workaround: Adding generated input to front of remote queue (%d).\n"
+  },
+  {
+    "address": "1003104c",
+    "type": "string",
+    "value": "Adding input to RemoteQueue"
+  },
+  {
+    "address": "10031068",
+    "type": "string",
+    "value": "MovePredictionForward (l:%d r:%d p:%d)\n"
+  },
+  {
+    "address": "10031090",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "100310ac",
+    "type": "string",
+    "value": "_predict_queue.empty()"
+  },
+  {
+    "address": "100310c4",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100310ec",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031104",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10031120",
+    "type": "string",
+    "value": "_last_remote_input.frame == local.frame"
+  },
+  {
+    "address": "10031148",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031170",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031188",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "100311a4",
+    "type": "string",
+    "value": "_last_remote_input.frame <= local.frame"
+  },
+  {
+    "address": "100311cc",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100311f4",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "1003120c",
+    "type": "string",
+    "value": "Adding latency frame to GameQueue"
+  },
+  {
+    "address": "10031230",
+    "type": "string",
+    "value": "Adding confirmed frame to GameQueue"
+  },
+  {
+    "address": "10031254",
+    "type": "string",
+    "value": "LOGICIAL ERROR!!!  Queues not empty:\n"
+  },
+  {
+    "address": "1003127c",
+    "type": "string",
+    "value": "   Local Queue  : %d.\n"
+  },
+  {
+    "address": "10031294",
+    "type": "string",
+    "value": "   Remote Queue : %d.\n"
+  },
+  {
+    "address": "100312ac",
+    "type": "string",
+    "value": "   Predict Queue: %d.\n"
+  },
+  {
+    "address": "100312c4",
+    "type": "string",
+    "value": "Frame p(%s) != r(%s)\n"
+  },
+  {
+    "address": "100312dc",
+    "type": "string",
+    "value": "Predicted remote frame is correct."
+  },
+  {
+    "address": "10031300",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "1003131c",
+    "type": "string",
+    "value": "!_remote_queue.empty()"
+  },
+  {
+    "address": "10031334",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "1003135c",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031374",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10031390",
+    "type": "string",
+    "value": "_sync_game_queue.empty()"
+  },
+  {
+    "address": "100313ac",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100313d4",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100313ec",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10031408",
+    "type": "string",
+    "value": "_last_remote_input.frame <= predict.frame"
+  },
+  {
+    "address": "10031434",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "1003145c",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031474",
+    "type": "string",
+    "value": "Requeuing %d.\n"
+  },
+  {
+    "address": "10031484",
+    "type": "string",
+    "value": "   frame "
+  },
+  {
+    "address": "10031490",
+    "type": "string",
+    "value": "Predict queue is now:\n"
+  },
+  {
+    "address": "100314a8",
+    "type": "string",
+    "value": "   frame "
+  },
+  {
+    "address": "100314bc",
+    "type": "string",
+    "value": "SyncQueue"
+  },
+  {
+    "address": "100314c8",
+    "type": "string",
+    "value": "GameQueue"
+  },
+  {
+    "address": "100314d4",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "100314f0",
+    "type": "string",
+    "value": "_game_queue.empty()"
+  },
+  {
+    "address": "10031504",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "1003152c",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031544",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "10031560",
+    "type": "string",
+    "value": "_game_queue.size() == 1"
+  },
+  {
+    "address": "10031578",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100315a0",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100315b8",
+    "type": "string",
+    "value": "..\\source\\prediction.cpp"
+  },
+  {
+    "address": "100315d4",
+    "type": "string",
+    "value": "input.frame == frameNumber"
+  },
+  {
+    "address": "100315f0",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031618",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031630",
+    "type": "string",
+    "value": "Returning input %s from %s to emulator.\n"
+  },
+  {
+    "address": "1003165c",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "1003166c",
+    "type": "string",
+    "value": "..\\source\\poll.cpp"
+  },
+  {
+    "address": "10031680",
+    "type": "string",
+    "value": "_handle_count < MAX_POLLABLE_HANDLES - 1"
+  },
+  {
+    "address": "100316ac",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100316d4",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100316ec",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "100316fc",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "1003170c",
+    "type": "string",
+    "value": "quark.log"
+  },
+  {
+    "address": "10031718",
+    "type": "string",
+    "value": "quark.log.ignore"
+  },
+  {
+    "address": "1003172c",
+    "type": "string",
+    "value": "c:\\users\\ponder\\log-%d.log"
+  },
+  {
+    "address": "1003174c",
+    "type": "string",
+    "value": "quark.log.timestamps"
+  },
+  {
+    "address": "10031764",
+    "type": "string",
+    "value": "%d.%03d : "
+  },
+  {
+    "address": "10031770",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10031780",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "1003179c",
+    "type": "string",
+    "value": "isize"
+  },
+  {
+    "address": "100317a4",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100317cc",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100317e4",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "10031800",
+    "type": "string",
+    "value": "isize <= GAMEINPUT_MAX_BYTES"
+  },
+  {
+    "address": "10031820",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031848",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031860",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "1003187c",
+    "type": "string",
+    "value": "players <= GAMEINPUT_MAX_PLAYERS"
+  },
+  {
+    "address": "100318a0",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100318c8",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100318e0",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "100318fc",
+    "type": "string",
+    "value": "isize"
+  },
+  {
+    "address": "10031904",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "1003192c",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031944",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "10031960",
+    "type": "string",
+    "value": "isize <= GAMEINPUT_MAX_BYTES * GAMEINPUT_MAX_PLAYERS"
+  },
+  {
+    "address": "10031998",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100319c0",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100319d8",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "100319fc",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031a24",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031a3c",
+    "type": "string",
+    "value": "(frame:%d size:%d "
+  },
+  {
+    "address": "10031a50",
+    "type": "string",
+    "value": "(size:%d "
+  },
+  {
+    "address": "10031a6c",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "10031a90",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031ab8",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031ad0",
+    "type": "string",
+    "value": "frames don't match: %d, %d\n"
+  },
+  {
+    "address": "10031aec",
+    "type": "string",
+    "value": "sizes don't match: %d, %d\n"
+  },
+  {
+    "address": "10031b08",
+    "type": "string",
+    "value": "bits don't match\n"
+  },
+  {
+    "address": "10031b1c",
+    "type": "string",
+    "value": "..\\source\\game_input.cpp"
+  },
+  {
+    "address": "10031b38",
+    "type": "string",
+    "value": "size && other.size"
+  },
+  {
+    "address": "10031b4c",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031b74",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031b8c",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10031b9c",
+    "type": "string",
+    "value": "..\\source\\bitvector.cpp"
+  },
+  {
+    "address": "10031bb4",
+    "type": "string",
+    "value": "nibble < (1 << BITVECTOR_NIBBLE_SIZE)"
+  },
+  {
+    "address": "10031bdc",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031c04",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031c1c",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10031c2c",
+    "type": "string",
+    "value": "ggpo.idle.framecount"
+  },
+  {
+    "address": "10031c44",
+    "type": "string",
+    "value": "ggpo.idle.frameboost"
+  },
+  {
+    "address": "10031c5c",
+    "type": "string",
+    "value": "Sending frame %d (not idle)\n"
+  },
+  {
+    "address": "10031c7c",
+    "type": "string",
+    "value": "Skipping frame %d (idle)\n"
+  },
+  {
+    "address": "10031c98",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "10031cb8",
+    "type": "string",
+    "value": "last.frame == -1 || last.frame + 1 == msg->u.input.start_frame"
+  },
+  {
+    "address": "10031cf8",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031d20",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031d38",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "10031d58",
+    "type": "string",
+    "value": "(GAMEINPUT_MAX_BYTES * GAMEINPUT_MAX_PLAYERS * 8) < (1 << BITVECTOR_NIBBLE_SIZE)"
+  },
+  {
+    "address": "10031dac",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031dd4",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031dec",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "10031e0c",
+    "type": "string",
+    "value": "i < (1 << BITVECTOR_NIBBLE_SIZE)"
+  },
+  {
+    "address": "10031e30",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10031e58",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10031e70",
+    "type": "string",
+    "value": "No luck after %d ms... Re-queueing sync packet.\n"
+  },
+  {
+    "address": "10031ea8",
+    "type": "string",
+    "value": "Haven't exchanged packets in a while (last received:%d  last sent:%d).  Resending.\n"
+  },
+  {
+    "address": "10031f0c",
+    "type": "string",
+    "value": "Queuing event"
+  },
+  {
+    "address": "10031f1c",
+    "type": "string",
+    "value": "udp proto | "
+  },
+  {
+    "address": "10031f2c",
+    "type": "string",
+    "value": "%s sync-request (%d).\n"
+  },
+  {
+    "address": "10031f44",
+    "type": "string",
+    "value": "%s sync-reply (%d).\n"
+  },
+  {
+    "address": "10031f5c",
+    "type": "string",
+    "value": "%s quality report.\n"
+  },
+  {
+    "address": "10031f70",
+    "type": "string",
+    "value": "%s quality reply.\n"
+  },
+  {
+    "address": "10031f8c",
+    "type": "string",
+    "value": "%s game-compressed-input %d (+%s).\n"
+  },
+  {
+    "address": "10031fb0",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "10031fd0",
+    "type": "string",
+    "value": "FALSE && \"Unknown UdpMsg type.\""
+  },
+  {
+    "address": "10031ff0",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10032018",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10032030",
+    "type": "string",
+    "value": "%s (event: Synchronzied).\n"
+  },
+  {
+    "address": "1003204c",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "1003206c",
+    "type": "string",
+    "value": "FALSE && \"Invalid msg in UdpProtocol\""
+  },
+  {
+    "address": "10032094",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100320bc",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100320d4",
+    "type": "string",
+    "value": "Ignoring SyncReply while not synching.\n"
+  },
+  {
+    "address": "100320fc",
+    "type": "string",
+    "value": "sync reply %d != %d.  Keep looking...\n"
+  },
+  {
+    "address": "10032124",
+    "type": "string",
+    "value": "Synchronized!\n"
+  },
+  {
+    "address": "10032134",
+    "type": "string",
+    "value": "Ignoring input received while syncing.\n"
+  },
+  {
+    "address": "1003215c",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "1003217c",
+    "type": "string",
+    "value": "currentFrame <= (_last_received_input.frame + 1)"
+  },
+  {
+    "address": "100321b0",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100321d8",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100321f0",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "10032210",
+    "type": "string",
+    "value": "offset <= numBits"
+  },
+  {
+    "address": "10032224",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "1003224c",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10032264",
+    "type": "string",
+    "value": "..\\source\\network\\udp_proto.cpp"
+  },
+  {
+    "address": "10032284",
+    "type": "string",
+    "value": "currentFrame == _last_received_input.frame + 1"
+  },
+  {
+    "address": "100322b4",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100322dc",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100322f4",
+    "type": "string",
+    "value": "Sending frame %d to emu (%s).\n"
+  },
+  {
+    "address": "10032314",
+    "type": "string",
+    "value": "Skipping past frame:(%d) current is %d.\n"
+  },
+  {
+    "address": "10032340",
+    "type": "string",
+    "value": "Throwing away pending output frame %d\n"
+  },
+  {
+    "address": "10032368",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032378",
+    "type": "string",
+    "value": "ggpo.network.delay"
+  },
+  {
+    "address": "1003238c",
+    "type": "string",
+    "value": "Priming socket for port %d.\n"
+  },
+  {
+    "address": "100323ac",
+    "type": "string",
+    "value": "Remote endpoint is %s:%d.\n"
+  },
+  {
+    "address": "100323c8",
+    "type": "string",
+    "value": "Network Stats -- Bandwidth: %.2f KBps   Packets Sent: %5d (%.2f pps)   KB Sent: %.2f   Overhead: %.2f %%.\n"
+  },
+  {
+    "address": "10032434",
+    "type": "string",
+    "value": "Got WSAECONNRESET while polling old port %d.  Reconnecting\n"
+  },
+  {
+    "address": "10032470",
+    "type": "string",
+    "value": "..\\source\\network\\udp.cpp"
+  },
+  {
+    "address": "1003248c",
+    "type": "string",
+    "value": "FALSE && \"Unknown return value from WSARecv\""
+  },
+  {
+    "address": "100324bc",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100324e4",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100324fc",
+    "type": "string",
+    "value": "..\\source\\network\\udp.cpp"
+  },
+  {
+    "address": "10032518",
+    "type": "string",
+    "value": "_peer_addr.sin_addr.s_addr"
+  },
+  {
+    "address": "10032534",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "1003255c",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10032574",
+    "type": "string",
+    "value": "..\\source\\network\\udp.cpp"
+  },
+  {
+    "address": "10032590",
+    "type": "string",
+    "value": "FALSE && \"Unknown error in sendto\""
+  },
+  {
+    "address": "100325b4",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100325dc",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100325f4",
+    "type": "string",
+    "value": "Udp bound to port: %d.\n"
+  },
+  {
+    "address": "1003260c",
+    "type": "string",
+    "value": "Could not bind to port %d.  Retrying.\n"
+  },
+  {
+    "address": "10032634",
+    "type": "string",
+    "value": "Re-priming socket for port %d.\n"
+  },
+  {
+    "address": "10032654",
+    "type": "string",
+    "value": "udp | "
+  },
+  {
+    "address": "1003265c",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032670",
+    "type": "string",
+    "value": "..\\source\\network\\tcp_proto.cpp"
+  },
+  {
+    "address": "10032690",
+    "type": "string",
+    "value": "false"
+  },
+  {
+    "address": "10032698",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100326c0",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100326d8",
+    "type": "string",
+    "value": "..\\source\\network\\tcp_proto.cpp"
+  },
+  {
+    "address": "100326f8",
+    "type": "string",
+    "value": "false"
+  },
+  {
+    "address": "10032700",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10032728",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10032740",
+    "type": "string",
+    "value": "..\\source\\network\\tcp_proto.cpp"
+  },
+  {
+    "address": "10032760",
+    "type": "string",
+    "value": "false"
+  },
+  {
+    "address": "10032768",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10032790",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "100327a8",
+    "type": "string",
+    "value": "..\\source\\network\\tcp_proto.cpp"
+  },
+  {
+    "address": "100327c8",
+    "type": "string",
+    "value": "false"
+  },
+  {
+    "address": "100327d0",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100327f8",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10032810",
+    "type": "string",
+    "value": "Sending command %d to server.\n"
+  },
+  {
+    "address": "10032830",
+    "type": "string",
+    "value": "Sending confirmed frame to server: %s.\n"
+  },
+  {
+    "address": "10032858",
+    "type": "string",
+    "value": "Sending Replay..."
+  },
+  {
+    "address": "1003286c",
+    "type": "string",
+    "value": "Done sending Replay..."
+  },
+  {
+    "address": "10032884",
+    "type": "string",
+    "value": "Flushing..."
+  },
+  {
+    "address": "10032894",
+    "type": "string",
+    "value": "TcpProtocol returning event of type %d.\n"
+  },
+  {
+    "address": "100328c0",
+    "type": "string",
+    "value": "TcpProtocol got TCP connect event.  Negotiating version...\n"
+  },
+  {
+    "address": "100328fc",
+    "type": "string",
+    "value": "Received event %d from server\n"
+  },
+  {
+    "address": "1003291c",
+    "type": "string",
+    "value": "Starting match %s (port %d)\n"
+  },
+  {
+    "address": "1003293c",
+    "type": "string",
+    "value": "Sending streamed frame to quark"
+  },
+  {
+    "address": "1003295c",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "1003296c",
+    "type": "string",
+    "value": "Closing TCP socket."
+  },
+  {
+    "address": "10032980",
+    "type": "string",
+    "value": "Got WSAECONNRESET in Recv.\n"
+  },
+  {
+    "address": "1003299c",
+    "type": "string",
+    "value": "Unknown error from WSARecv 0x%08x.\n"
+  },
+  {
+    "address": "100329c0",
+    "type": "string",
+    "value": "Pushing current data to last entry of send queue...(old:%d new:%d offset:%d max:%d)\n"
+  },
+  {
+    "address": "10032a18",
+    "type": "string",
+    "value": "Adding new entry to send queue (len:%d)...\n"
+  },
+  {
+    "address": "10032a44",
+    "type": "string",
+    "value": "Send event got hot...\n"
+  },
+  {
+    "address": "10032a5c",
+    "type": "string",
+    "value": "%d items in send queue (first of length %d offset %d)\n"
+  },
+  {
+    "address": "10032a94",
+    "type": "string",
+    "value": "Sending buffer...\n"
+  },
+  {
+    "address": "10032aa8",
+    "type": "string",
+    "value": "Checking result...\n"
+  },
+  {
+    "address": "10032abc",
+    "type": "string",
+    "value": "Setting pending...\n"
+  },
+  {
+    "address": "10032ad0",
+    "type": "string",
+    "value": "Got %d bytes.  Offset is now %d (of %d).  Result was %d\n"
+  },
+  {
+    "address": "10032b0c",
+    "type": "string",
+    "value": "Removing entry...\n"
+  },
+  {
+    "address": "10032b20",
+    "type": "string",
+    "value": "..\\source\\network\\tcp.cpp"
+  },
+  {
+    "address": "10032b3c",
+    "type": "string",
+    "value": "false"
+  },
+  {
+    "address": "10032b44",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10032b6c",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10032b84",
+    "type": "string",
+    "value": "GGPOSession version 0.9 (fix short)\n"
+  },
+  {
+    "address": "10032bac",
+    "type": "string",
+    "value": "Tcp bound to port: %d.\n"
+  },
+  {
+    "address": "10032bc4",
+    "type": "string",
+    "value": "..\\source\\network\\tcp.cpp"
+  },
+  {
+    "address": "10032be0",
+    "type": "string",
+    "value": "false"
+  },
+  {
+    "address": "10032be8",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "10032c10",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10032c28",
+    "type": "string",
+    "value": "tcp connection failed (%d)!  retrying...\n"
+  },
+  {
+    "address": "10032c54",
+    "type": "string",
+    "value": "Failed to make socket non-blocking: 0x%08x.\n"
+  },
+  {
+    "address": "10032c84",
+    "type": "string",
+    "value": "Closing TCP socket."
+  },
+  {
+    "address": "10032c98",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032ca8",
+    "type": "string",
+    "value": "iteration %d:  sleep frames is %d\n"
+  },
+  {
+    "address": "10032cd0",
+    "type": "string",
+    "value": "iteration %d:  rejecting due to input stuff at position %d...!!!\n"
+  },
+  {
+    "address": "10032d14",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032d24",
+    "type": "string",
+    "value": "End of frame(%d)...\n"
+  },
+  {
+    "address": "10032d3c",
+    "type": "string",
+    "value": "Frame number %d does not match saved frame number %d"
+  },
+  {
+    "address": "10032d74",
+    "type": "string",
+    "value": "Checksum for frame %d does not match saved (%d != %d)"
+  },
+  {
+    "address": "10032dac",
+    "type": "string",
+    "value": "Checksum %08d for frame %d matches.\n"
+  },
+  {
+    "address": "10032dd4",
+    "type": "string",
+    "value": "synclogs"
+  },
+  {
+    "address": "10032de0",
+    "type": "string",
+    "value": "replay"
+  },
+  {
+    "address": "10032de8",
+    "type": "string",
+    "value": "original"
+  },
+  {
+    "address": "10032df4",
+    "type": "string",
+    "value": "state"
+  },
+  {
+    "address": "10032e00",
+    "type": "string",
+    "value": "synclogs\\%s-%04d-%s.log"
+  },
+  {
+    "address": "10032e1c",
+    "type": "string",
+    "value": "Closing log file.\n"
+  },
+  {
+    "address": "10032e30",
+    "type": "string",
+    "value": "synclogs\\state-%04d-original.log"
+  },
+  {
+    "address": "10032e54",
+    "type": "string",
+    "value": "synclogs\\state-%04d-replay.log"
+  },
+  {
+    "address": "10032e74",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032e90",
+    "type": "string",
+    "value": "TcpProtocol connected.\n"
+  },
+  {
+    "address": "10032ea8",
+    "type": "string",
+    "value": "confirmed input frame"
+  },
+  {
+    "address": "10032ec0",
+    "type": "string",
+    "value": "Input queue length is %d.\n"
+  },
+  {
+    "address": "10032edc",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032ef0",
+    "type": "string",
+    "value": "version"
+  },
+  {
+    "address": "10032f00",
+    "type": "string",
+    "value": "payload size"
+  },
+  {
+    "address": "10032f10",
+    "type": "string",
+    "value": "compressed state size"
+  },
+  {
+    "address": "10032f28",
+    "type": "string",
+    "value": "state size"
+  },
+  {
+    "address": "10032f34",
+    "type": "string",
+    "value": "input size"
+  },
+  {
+    "address": "10032f40",
+    "type": "string",
+    "value": "input count"
+  },
+  {
+    "address": "10032f54",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032f64",
+    "type": "string",
+    "value": "End of frame (%d)...\n"
+  },
+  {
+    "address": "10032f7c",
+    "type": "string",
+    "value": "bad allocation"
+  },
+  {
+    "address": "10032f98",
+    "type": "string",
+    "value": "System"
+  },
+  {
+    "address": "10032fa0",
+    "type": "string",
+    "value": "Press 'T' to chat..."
+  },
+  {
+    "address": "10032fb8",
+    "type": "string",
+    "value": "Got disconnect event from TcpProtocol.\n"
+  },
+  {
+    "address": "10032fe0",
+    "type": "string",
+    "value": "GGPOTV\n"
+  },
+  {
+    "address": "10032fe8",
+    "type": "string",
+    "value": "version\t0.20\n"
+  },
+  {
+    "address": "10032ff8",
+    "type": "string",
+    "value": "game\t%s\n"
+  },
+  {
+    "address": "10033004",
+    "type": "string",
+    "value": "player 1 username\t%s\n"
+  },
+  {
+    "address": "1003301c",
+    "type": "string",
+    "value": "player 2 username\t%s\n"
+  },
+  {
+    "address": "10033034",
+    "type": "string",
+    "value": "player %d avatar\t%s\n"
+  },
+  {
+    "address": "1003304c",
+    "type": "string",
+    "value": "player %d score\t%d\n"
+  },
+  {
+    "address": "10033060",
+    "type": "string",
+    "value": "series\t%s\n"
+  },
+  {
+    "address": "1003306c",
+    "type": "string",
+    "value": "winner\t%d\n"
+  },
+  {
+    "address": "10033078",
+    "type": "string",
+    "value": "input size\t%d\n"
+  },
+  {
+    "address": "10033088",
+    "type": "string",
+    "value": "input count\t%d\n"
+  },
+  {
+    "address": "10033098",
+    "type": "string",
+    "value": "state size\t%d\n"
+  },
+  {
+    "address": "100330a8",
+    "type": "string",
+    "value": "compressed state size\t%d\n"
+  },
+  {
+    "address": "100330c4",
+    "type": "string",
+    "value": "payload size\t%d\n"
+  },
+  {
+    "address": "100330d8",
+    "type": "string",
+    "value": "list<T> too long"
+  },
+  {
+    "address": "100331b0",
+    "type": "string",
+    "value": "deque<T> too long"
+  },
+  {
+    "address": "100332fc",
+    "type": "string",
+    "value": "map/set<T> too long"
+  },
+  {
+    "address": "10033310",
+    "type": "string",
+    "value": "invalid map/set<T> iterator"
+  },
+  {
+    "address": "10033340",
+    "type": "string",
+    "value": "false"
+  },
+  {
+    "address": "10033348",
+    "type": "string",
+    "value": "udp_msg.h"
+  },
+  {
+    "address": "10033352",
+    "type": "string",
+    "value": "ggpo.fightcade.com"
+  },
+  {
+    "address": "10033380",
+    "type": "string",
+    "value": "Assertion: %s @ %s:%d"
+  },
+  {
+    "address": "100333a0",
+    "type": "string",
+    "value": "GGPO Assertion Failed"
+  },
+  {
+    "address": "10033400",
+    "type": "string",
+    "value": "vector<T> too long"
+  },
+  {
+    "address": "1003347c",
+    "type": "string",
+    "value": "e+000"
+  },
+  {
+    "address": "10033496",
+    "type": "string",
+    "value": "GAIsProcessorFeaturePresent"
+  },
+  {
+    "address": "100334b4",
+    "type": "string",
+    "value": "KERNEL32"
+  },
+  {
+    "address": "100334c0",
+    "type": "string",
+    "value": "1#QNAN"
+  },
+  {
+    "address": "100334c8",
+    "type": "string",
+    "value": "1#INF"
+  },
+  {
+    "address": "100334d0",
+    "type": "string",
+    "value": "1#IND"
+  },
+  {
+    "address": "100334d8",
+    "type": "string",
+    "value": "1#SNAN"
+  },
+  {
+    "address": "10035002",
+    "type": "TerminatedCString",
+    "value": "timeGetTime"
+  },
+  {
+    "address": "1003500e",
+    "type": "TerminatedCString",
+    "value": "WINMM.dll"
+  },
+  {
+    "address": "1003501a",
+    "type": "TerminatedCString",
+    "value": "WSAGetOverlappedResult"
+  },
+  {
+    "address": "10035034",
+    "type": "TerminatedCString",
+    "value": "WSASend"
+  },
+  {
+    "address": "1003503e",
+    "type": "TerminatedCString",
+    "value": "WSARecv"
+  },
+  {
+    "address": "10035046",
+    "type": "TerminatedCString",
+    "value": "WS2_32.dll"
+  },
+  {
+    "address": "10035054",
+    "type": "TerminatedCString",
+    "value": "Sleep"
+  },
+  {
+    "address": "1003505c",
+    "type": "TerminatedCString",
+    "value": "GetFileAttributesExA"
+  },
+  {
+    "address": "10035074",
+    "type": "TerminatedCString",
+    "value": "CreateDirectoryA"
+  },
+  {
+    "address": "10035088",
+    "type": "TerminatedCString",
+    "value": "OutputDebugStringA"
+  },
+  {
+    "address": "1003509e",
+    "type": "TerminatedCString",
+    "value": "DebugBreak"
+  },
+  {
+    "address": "100350ac",
+    "type": "TerminatedCString",
+    "value": "SetEvent"
+  },
+  {
+    "address": "100350b8",
+    "type": "TerminatedCString",
+    "value": "CreateEventA"
+  },
+  {
+    "address": "100350c8",
+    "type": "TerminatedCString",
+    "value": "GetLastError"
+  },
+  {
+    "address": "100350d8",
+    "type": "TerminatedCString",
+    "value": "ResetEvent"
+  },
+  {
+    "address": "100350e6",
+    "type": "TerminatedCString",
+    "value": "CloseHandle"
+  },
+  {
+    "address": "100350f4",
+    "type": "TerminatedCString",
+    "value": "WideCharToMultiByte"
+  },
+  {
+    "address": "1003510a",
+    "type": "TerminatedCString",
+    "value": "MultiByteToWideChar"
+  },
+  {
+    "address": "10035120",
+    "type": "TerminatedCString",
+    "value": "GetCurrentProcessId"
+  },
+  {
+    "address": "10035136",
+    "type": "TerminatedCString",
+    "value": "WaitForMultipleObjects"
+  },
+  {
+    "address": "1003514e",
+    "type": "TerminatedCString",
+    "value": "KERNEL32.dll"
+  },
+  {
+    "address": "1003515e",
+    "type": "TerminatedCString",
+    "value": "MessageBoxA"
+  },
+  {
+    "address": "1003516a",
+    "type": "TerminatedCString",
+    "value": "USER32.dll"
+  },
+  {
+    "address": "10035178",
+    "type": "TerminatedCString",
+    "value": "HeapFree"
+  },
+  {
+    "address": "10035184",
+    "type": "TerminatedCString",
+    "value": "HeapAlloc"
+  },
+  {
+    "address": "10035190",
+    "type": "TerminatedCString",
+    "value": "TerminateProcess"
+  },
+  {
+    "address": "100351a4",
+    "type": "TerminatedCString",
+    "value": "GetCurrentProcess"
+  },
+  {
+    "address": "100351b8",
+    "type": "TerminatedCString",
+    "value": "UnhandledExceptionFilter"
+  },
+  {
+    "address": "100351d4",
+    "type": "TerminatedCString",
+    "value": "SetUnhandledExceptionFilter"
+  },
+  {
+    "address": "100351f2",
+    "type": "TerminatedCString",
+    "value": "IsDebuggerPresent"
+  },
+  {
+    "address": "10035206",
+    "type": "TerminatedCString",
+    "value": "GetModuleHandleW"
+  },
+  {
+    "address": "1003521a",
+    "type": "TerminatedCString",
+    "value": "GetProcAddress"
+  },
+  {
+    "address": "1003522c",
+    "type": "TerminatedCString",
+    "value": "ExitProcess"
+  },
+  {
+    "address": "1003523a",
+    "type": "TerminatedCString",
+    "value": "HeapReAlloc"
+  },
+  {
+    "address": "10035248",
+    "type": "TerminatedCString",
+    "value": "GetCurrentThreadId"
+  },
+  {
+    "address": "1003525e",
+    "type": "TerminatedCString",
+    "value": "GetCommandLineA"
+  },
+  {
+    "address": "10035270",
+    "type": "TerminatedCString",
+    "value": "RaiseException"
+  },
+  {
+    "address": "10035282",
+    "type": "TerminatedCString",
+    "value": "RtlUnwind"
+  },
+  {
+    "address": "1003528e",
+    "type": "TerminatedCString",
+    "value": "HeapCreate"
+  },
+  {
+    "address": "1003529c",
+    "type": "TerminatedCString",
+    "value": "HeapDestroy"
+  },
+  {
+    "address": "100352aa",
+    "type": "TerminatedCString",
+    "value": "VirtualFree"
+  },
+  {
+    "address": "100352b8",
+    "type": "TerminatedCString",
+    "value": "DeleteCriticalSection"
+  },
+  {
+    "address": "100352d0",
+    "type": "TerminatedCString",
+    "value": "LeaveCriticalSection"
+  },
+  {
+    "address": "100352e8",
+    "type": "TerminatedCString",
+    "value": "EnterCriticalSection"
+  },
+  {
+    "address": "10035300",
+    "type": "TerminatedCString",
+    "value": "VirtualAlloc"
+  },
+  {
+    "address": "10035310",
+    "type": "TerminatedCString",
+    "value": "WriteFile"
+  },
+  {
+    "address": "1003531c",
+    "type": "TerminatedCString",
+    "value": "GetStdHandle"
+  },
+  {
+    "address": "1003532c",
+    "type": "TerminatedCString",
+    "value": "GetModuleFileNameA"
+  },
+  {
+    "address": "10035342",
+    "type": "TerminatedCString",
+    "value": "TlsGetValue"
+  },
+  {
+    "address": "10035350",
+    "type": "TerminatedCString",
+    "value": "TlsAlloc"
+  },
+  {
+    "address": "1003535c",
+    "type": "TerminatedCString",
+    "value": "TlsSetValue"
+  },
+  {
+    "address": "1003536a",
+    "type": "TerminatedCString",
+    "value": "TlsFree"
+  },
+  {
+    "address": "10035374",
+    "type": "TerminatedCString",
+    "value": "InterlockedIncrement"
+  },
+  {
+    "address": "1003538c",
+    "type": "TerminatedCString",
+    "value": "SetLastError"
+  },
+  {
+    "address": "1003539c",
+    "type": "TerminatedCString",
+    "value": "InterlockedDecrement"
+  },
+  {
+    "address": "100353b4",
+    "type": "TerminatedCString",
+    "value": "ReadFile"
+  },
+  {
+    "address": "100353c0",
+    "type": "TerminatedCString",
+    "value": "SetHandleCount"
+  },
+  {
+    "address": "100353d2",
+    "type": "TerminatedCString",
+    "value": "GetFileType"
+  },
+  {
+    "address": "100353e0",
+    "type": "TerminatedCString",
+    "value": "GetStartupInfoA"
+  },
+  {
+    "address": "100353f2",
+    "type": "TerminatedCString",
+    "value": "LoadLibraryA"
+  },
+  {
+    "address": "10035402",
+    "type": "TerminatedCString",
+    "value": "InitializeCriticalSectionAndSpinCount"
+  },
+  {
+    "address": "1003542a",
+    "type": "TerminatedCString",
+    "value": "GetConsoleCP"
+  },
+  {
+    "address": "1003543a",
+    "type": "TerminatedCString",
+    "value": "GetConsoleMode"
+  },
+  {
+    "address": "1003544c",
+    "type": "TerminatedCString",
+    "value": "FlushFileBuffers"
+  },
+  {
+    "address": "10035460",
+    "type": "TerminatedCString",
+    "value": "FreeEnvironmentStringsA"
+  },
+  {
+    "address": "1003547a",
+    "type": "TerminatedCString",
+    "value": "GetEnvironmentStrings"
+  },
+  {
+    "address": "10035492",
+    "type": "TerminatedCString",
+    "value": "FreeEnvironmentStringsW"
+  },
+  {
+    "address": "100354ac",
+    "type": "TerminatedCString",
+    "value": "GetEnvironmentStringsW"
+  },
+  {
+    "address": "100354c6",
+    "type": "TerminatedCString",
+    "value": "QueryPerformanceCounter"
+  },
+  {
+    "address": "100354e0",
+    "type": "TerminatedCString",
+    "value": "GetTickCount"
+  },
+  {
+    "address": "100354f0",
+    "type": "TerminatedCString",
+    "value": "GetSystemTimeAsFileTime"
+  },
+  {
+    "address": "1003550a",
+    "type": "TerminatedCString",
+    "value": "SetFilePointer"
+  },
+  {
+    "address": "1003551c",
+    "type": "TerminatedCString",
+    "value": "GetCPInfo"
+  },
+  {
+    "address": "10035528",
+    "type": "TerminatedCString",
+    "value": "GetACP"
+  },
+  {
+    "address": "10035532",
+    "type": "TerminatedCString",
+    "value": "GetOEMCP"
+  },
+  {
+    "address": "1003553e",
+    "type": "TerminatedCString",
+    "value": "IsValidCodePage"
+  },
+  {
+    "address": "10035550",
+    "type": "TerminatedCString",
+    "value": "HeapSize"
+  },
+  {
+    "address": "1003555c",
+    "type": "TerminatedCString",
+    "value": "GetLocaleInfoA"
+  },
+  {
+    "address": "1003556e",
+    "type": "TerminatedCString",
+    "value": "CreateFileA"
+  },
+  {
+    "address": "1003557c",
+    "type": "TerminatedCString",
+    "value": "SetStdHandle"
+  },
+  {
+    "address": "1003558c",
+    "type": "TerminatedCString",
+    "value": "CompareStringA"
+  },
+  {
+    "address": "1003559e",
+    "type": "TerminatedCString",
+    "value": "CompareStringW"
+  },
+  {
+    "address": "100355b0",
+    "type": "TerminatedCString",
+    "value": "SetEnvironmentVariableA"
+  },
+  {
+    "address": "100355ca",
+    "type": "TerminatedCString",
+    "value": "WriteConsoleA"
+  },
+  {
+    "address": "100355da",
+    "type": "TerminatedCString",
+    "value": "GetConsoleOutputCP"
+  },
+  {
+    "address": "100355f0",
+    "type": "TerminatedCString",
+    "value": "WriteConsoleW"
+  },
+  {
+    "address": "10035600",
+    "type": "TerminatedCString",
+    "value": "LCMapStringA"
+  },
+  {
+    "address": "10035610",
+    "type": "TerminatedCString",
+    "value": "LCMapStringW"
+  },
+  {
+    "address": "10035620",
+    "type": "TerminatedCString",
+    "value": "GetStringTypeA"
+  },
+  {
+    "address": "10035632",
+    "type": "TerminatedCString",
+    "value": "GetStringTypeW"
+  },
+  {
+    "address": "10035644",
+    "type": "TerminatedCString",
+    "value": "SetEndOfFile"
+  },
+  {
+    "address": "10035654",
+    "type": "TerminatedCString",
+    "value": "GetProcessHeap"
+  },
+  {
+    "address": "10035666",
+    "type": "TerminatedCString",
+    "value": "GetModuleHandleA"
+  },
+  {
+    "address": "1003573e",
+    "type": "TerminatedCString",
+    "value": "ggponet.dll"
+  },
+  {
+    "address": "1003574a",
+    "type": "TerminatedCString",
+    "value": "ggpo_advance_frame"
+  },
+  {
+    "address": "1003575d",
+    "type": "TerminatedCString",
+    "value": "ggpo_client_chat"
+  },
+  {
+    "address": "1003576e",
+    "type": "TerminatedCString",
+    "value": "ggpo_client_connect"
+  },
+  {
+    "address": "10035782",
+    "type": "TerminatedCString",
+    "value": "ggpo_client_set_game_event"
+  },
+  {
+    "address": "1003579d",
+    "type": "TerminatedCString",
+    "value": "ggpo_close_session"
+  },
+  {
+    "address": "100357b0",
+    "type": "TerminatedCString",
+    "value": "ggpo_get_stats"
+  },
+  {
+    "address": "100357bf",
+    "type": "TerminatedCString",
+    "value": "ggpo_idle"
+  },
+  {
+    "address": "100357c9",
+    "type": "TerminatedCString",
+    "value": "ggpo_log"
+  },
+  {
+    "address": "100357d2",
+    "type": "TerminatedCString",
+    "value": "ggpo_logv"
+  },
+  {
+    "address": "100357dc",
+    "type": "TerminatedCString",
+    "value": "ggpo_set_frame_delay"
+  },
+  {
+    "address": "100357f1",
+    "type": "TerminatedCString",
+    "value": "ggpo_start_replay"
+  },
+  {
+    "address": "10035803",
+    "type": "TerminatedCString",
+    "value": "ggpo_start_session"
+  },
+  {
+    "address": "10035816",
+    "type": "TerminatedCString",
+    "value": "ggpo_start_streaming"
+  },
+  {
+    "address": "1003582b",
+    "type": "TerminatedCString",
+    "value": "ggpo_start_synctest"
+  },
+  {
+    "address": "1003583f",
+    "type": "TerminatedCString",
+    "value": "ggpo_synchronize_input"
+  },
+  {
+    "address": "10036000",
+    "type": "string",
+    "value": "1.1.4"
+  },
+  {
+    "address": "1003600c",
+    "type": "string",
+    "value": "need dictionary"
+  },
+  {
+    "address": "1003601c",
+    "type": "string",
+    "value": "incorrect data check"
+  },
+  {
+    "address": "10036034",
+    "type": "string",
+    "value": "incorrect header check"
+  },
+  {
+    "address": "1003604c",
+    "type": "string",
+    "value": "invalid window size"
+  },
+  {
+    "address": "10036060",
+    "type": "string",
+    "value": "unknown compression method"
+  },
+  {
+    "address": "100360a4",
+    "type": "string",
+    "value": "incompatible version"
+  },
+  {
+    "address": "100360bc",
+    "type": "string",
+    "value": "buffer error"
+  },
+  {
+    "address": "100360cc",
+    "type": "string",
+    "value": "insufficient memory"
+  },
+  {
+    "address": "100360e0",
+    "type": "string",
+    "value": "data error"
+  },
+  {
+    "address": "100360ec",
+    "type": "string",
+    "value": "stream error"
+  },
+  {
+    "address": "100360fc",
+    "type": "string",
+    "value": "file error"
+  },
+  {
+    "address": "10036108",
+    "type": "string",
+    "value": "stream end"
+  },
+  {
+    "address": "1003615c",
+    "type": "string",
+    "value": "invalid bit length repeat"
+  },
+  {
+    "address": "10036178",
+    "type": "string",
+    "value": "too many length or distance symbols"
+  },
+  {
+    "address": "1003619c",
+    "type": "string",
+    "value": "invalid stored block lengths"
+  },
+  {
+    "address": "100361bc",
+    "type": "string",
+    "value": "invalid block type"
+  },
+  {
+    "address": "100361d0",
+    "type": "string",
+    "value": "invalid distance code"
+  },
+  {
+    "address": "100361e8",
+    "type": "string",
+    "value": "invalid literal/length code"
+  },
+  {
+    "address": "10037310",
+    "type": "string",
+    "value": "incomplete dynamic bit lengths tree"
+  },
+  {
+    "address": "10037334",
+    "type": "string",
+    "value": "oversubscribed dynamic bit lengths tree"
+  },
+  {
+    "address": "1003735c",
+    "type": "string",
+    "value": "incomplete literal/length tree"
+  },
+  {
+    "address": "1003737c",
+    "type": "string",
+    "value": "oversubscribed literal/length tree"
+  },
+  {
+    "address": "100373a0",
+    "type": "string",
+    "value": "empty distance tree with lengths"
+  },
+  {
+    "address": "100373c4",
+    "type": "string",
+    "value": "incomplete distance tree"
+  },
+  {
+    "address": "100373e0",
+    "type": "string",
+    "value": "oversubscribed distance tree"
+  },
+  {
+    "address": "10037d7e",
+    "type": "string",
+    "value": "abcdefghijklmnopqrstuvwxyz"
+  },
+  {
+    "address": "10037d9e",
+    "type": "string",
+    "value": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  },
+  {
+    "address": "10037f89",
+    "type": "string",
+    "value": "abcdefghijklmnopqrstuvwxyz"
+  },
+  {
+    "address": "10037fa9",
+    "type": "string",
+    "value": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  }
+]

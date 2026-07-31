@@ -1,12 +1,12 @@
 # ggpomac
 
-`ggpomac` is Macade's native macOS replacement boundary for Fightcade's
+`ggpomac` is Macade's native macOS replacement package for Fightcade's
 `ggponet.dll` export surface.
 
-The package goal is API parity with the Windows DLL exports used by
-Fightcade FBNeo, while keeping the implementation native to macOS. Consumers
-should include `ggpomac.h` instead of reaching into Macade-specific GGPO
-implementation headers.
+The package goal is API parity with the DLL exports used by Fightcade FBNeo,
+while keeping the implementation native to macOS. Consumers should include
+`ggpomac.h` instead of reaching into Macade-specific GGPO implementation
+headers.
 
 ## Export Surface
 
@@ -30,11 +30,16 @@ The native surface intentionally keeps the original exported symbol names:
 | `ggpo_log` | Implemented by native Macade GGPO runtime |
 | `ggpo_logv` | Implemented by native Macade GGPO runtime |
 
-## Implementation Notes
+## Source Layout
 
-The current implementation lives in `src/macade/macade_ggpo_*.cpp` because it
-is still tightly coupled to the embedded FBNeo runtime, savestates, overlays,
-and launch flow. `ggpomac.h` is the public package facade; implementation can
-move behind it incrementally without changing callers.
+| File | Role |
+| --- | --- |
+| `ggpomac.h` | Public DLL-compatible API surface. |
+| `ggpomac_internal.h` | Native session state and internal runtime contracts. |
+| `ggpomac_api.cpp` | Exported `ggpo_*` and Fightcade client API functions. |
+| `ggpomac_runtime.cpp` | Shared session state, event bridge, logging, rollback, and input storage helpers. |
 
-Use `docs/ggponet/` as the authority for matching Fightcade-specific behavior.
+The transport, chat, replay upload, stream, and emulator integration pieces are
+still implemented by the existing FBNeo integration files under `src/macade`.
+Those files depend on `ggpomac_internal.h`; they no longer own the public
+`ggpo_*` API implementation.
