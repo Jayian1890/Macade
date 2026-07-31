@@ -26,18 +26,23 @@ static void GGPOMacEmitEvent(GGPOSession* session, GGPOEventCode code)
 	session->callbacks.on_event(&event);
 }
 
-static void GGPOMacQueueLocalInput(GGPOSession* session, const std::vector<unsigned char>& input)
+static bool GGPOMacQueueLocalInput(GGPOSession* session, const std::vector<unsigned char>& input)
 {
-	if (session == NULL || input.empty()) return;
+	if (session == NULL || input.empty()) return false;
 	int delay = session->delay < 0 ? 0 : session->delay;
 	int targetFrame = session->currentFrame + delay;
 	int nextFrame = session->lastLocalQueuedFrame + 1;
 	if (nextFrame < 0) nextFrame = 0;
+	if (targetFrame < nextFrame) {
+		MacadeLog("Macade GGPO: dropping delayed local input frame=%d expected=%d\n", targetFrame, nextFrame);
+		return false;
+	}
 	for (int frame = nextFrame; frame < targetFrame; frame++) session->localInputs[frame] = input;
 	session->localInputs[targetFrame] = input;
 	session->lastLocalQueuedFrame = targetFrame;
 	if (targetFrame > session->localSendHighFrame) session->localSendHighFrame = targetFrame;
 	session->lastLocalInput = input;
+	return true;
 }
 
 static std::vector<unsigned char> GGPOMacInputForFrame(const std::map<int, std::vector<unsigned char> >& inputs, int frame, int size, const std::vector<unsigned char>& fallback)
@@ -202,9 +207,9 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 			session->remoteTimeoutCount++;
 			return false;
 		}
-		GGPOMacQueueLocalInput(session, rawLocal);
+		bool queuedLocalInput = GGPOMacQueueLocalInput(session, rawLocal);
 		MacadePumpUDPControl(session);
-		MacadeSendUDPInput(session, rawLocal.data(), size, session->localSendHighFrame);
+		if (queuedLocalInput) MacadeSendUDPInput(session, rawLocal.data(), size, session->localSendHighFrame);
 		MacadeSendTCPReadyIfNeeded(session);
 		MacadeSendTCPFrameBatch(session);
 		MacadePollTCP(session, 0);
