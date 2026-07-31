@@ -1,7 +1,7 @@
 // Run module
 #include "burner.h"
+#include "luaengine.h"
 #include "macade_embedded.h"
-
 #include <sys/time.h>
 
 void DetectorUpdate(); static unsigned int nDoFPS = 0;
@@ -10,7 +10,6 @@ bool bAltPause = 0;
 int bAlwaysDrawFrames = 0;
 
 int counter;                                // General purpose variable used when debugging
-
 static unsigned int nNormalLast = 0;        // Last value of GetTime()
 static int          nNormalFrac = 0;        // Extra fraction we did
 static double       nEmbeddedNetFrameLast = 0;
@@ -166,6 +165,7 @@ int RunFrame(int bDraw, int bPause, int bInput, int bNotifyGGPO)
 	if (MacadeEmbeddedEnabled() && kNetGame && !kNetSpectator && bAudPlaying) {
 		pBurnSoundOut = nAudNextSound;
 	}
+	if (kNetLua) { CallRegisteredLuaFunctions(LUACALL_BEFOREEMULATION); if (FBA_LuaUsingJoypad()) FBA_LuaReadJoypad(); }
 
 	if (bDraw)
 	{
@@ -184,7 +184,7 @@ int RunFrame(int bDraw, int bPause, int bInput, int bNotifyGGPO)
 
 	if (kNetGame && bNotifyGGPO) {
 		QuarkIncrementFrame();
-	} DetectorUpdate();
+	} DetectorUpdate(); if (kNetLua) { FBA_LuaFrameBoundary(); CallRegisteredLuaFunctions(LUACALL_AFTEREMULATION); }
 
 	if (bAppShowFPS) {
 		if (nDoFPS < nFramesRendered) {

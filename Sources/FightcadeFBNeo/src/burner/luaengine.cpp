@@ -38,6 +38,9 @@ extern "C" {
 #include "win32/resource.h"
 #endif
 #include "luaengine.h"
+#ifndef _WIN32
+#include "sdl_lua_shims.h"
+#endif
 #include "luasav.h"
 #include "../cpu/m68000_intf.h"
 #include "../cpu/z80/z80.h"

@@ -50,6 +50,7 @@ struct PlayerListView: View {
                                     isFocused: state.detailRow?.id == row.id
                                 ) {
                                     detailUserID = row.id
+                                    viewModel.clearPlayerListFocusRequest()
                                 }
                                 .id(row.id)
                             }
@@ -63,6 +64,9 @@ struct PlayerListView: View {
                 }
                 .onChange(of: viewModel.playerListFocusRequest) { _, request in
                     applyFocusRequest(request, proxy: proxy)
+                }
+                .onChange(of: users) { _, _ in
+                    applyFocusRequest(viewModel.playerListFocusRequest, proxy: proxy)
                 }
             }
 
@@ -214,6 +218,7 @@ struct PlayerListView: View {
 
         detailUserID = user.id
         isDetailPaneMinimized = false
+        viewModel.clearPlayerListFocusRequest(request)
 
         DispatchQueue.main.async {
             withAnimation(.smooth(duration: 0.18)) {

@@ -492,9 +492,3 @@ final class AuthenticatedHomeViewModel {
         }
     }
 }
-
-enum GameLaunchMode {
-    case checkROM
-    case test
-    case training
-}

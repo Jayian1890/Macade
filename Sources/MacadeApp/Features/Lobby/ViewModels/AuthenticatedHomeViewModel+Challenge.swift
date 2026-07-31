@@ -216,15 +216,16 @@ extension AuthenticatedHomeViewModel {
     }
 
     func matchOpponentUsername(for start: FightcadeMatchStart) -> String? {
+        if activeMatchOpponentChannelName == start.channelName,
+           let activeMatchOpponentUsername {
+            return activeMatchOpponentUsername
+        }
+
         if let challenge = (incomingChallenges + outgoingChallenges).first(where: { $0.channelName == start.channelName }) {
             return challenge.username
         }
 
-        return usersByChannel[start.channelName]?.first {
-            $0.isPlaying
-                && $0.name.compare(session.displayName, options: [.caseInsensitive, .diacriticInsensitive]) != .orderedSame
-                && $0.name.compare(session.username, options: [.caseInsensitive, .diacriticInsensitive]) != .orderedSame
-        }?.name
+        return nil
     }
 
     func rememberMatchOpponent(_ challenge: FightcadeChallenge) {
@@ -235,6 +236,7 @@ extension AuthenticatedHomeViewModel {
     func rememberMatchOpponent(for start: FightcadeMatchStart) {
         if let username = matchOpponentUsername(for: start) {
             activeMatchOpponentUsername = username
+            requestPlayerListFocus(username: username, channelName: start.channelName, selectChannel: true)
         } else if activeMatchOpponentChannelName != start.channelName {
             activeMatchOpponentUsername = nil
         }

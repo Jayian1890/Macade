@@ -3,6 +3,8 @@ import Foundation
 import AppKit
 import UserNotifications
 
+private let channelChatScrollbackLimit = 500
+
 struct PlayerListFocusRequest: Equatable {
     let id = UUID()
     let channelName: String
@@ -108,13 +110,42 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
-        selectedChannelID = channel.id
-        isShowingChannelBrowser = false
-        playerListFocusRequest = PlayerListFocusRequest(channelName: channel.name, username: username)
+        requestPlayerListFocus(username: username, channelName: channel.name, selectChannel: true)
+    }
+
+    func requestPlayerListFocus(username: String, channelName: String, selectChannel: Bool = false) {
+        if selectChannel {
+            selectedChannelID = channelName
+            isShowingChannelBrowser = false
+        }
+
+        playerListFocusRequest = PlayerListFocusRequest(channelName: channelName, username: username)
+    }
+
+    func clearPlayerListFocusRequest(_ request: PlayerListFocusRequest? = nil) {
+        guard request == nil || playerListFocusRequest == request else {
+            return
+        }
+
+        playerListFocusRequest = nil
     }
 
     private func append(_ message: FightcadeChatMessage) {
-        chatMessagesByChannel[message.channelName, default: []].append(message)
+        var messages = chatMessagesByChannel[message.channelName] ?? []
+        messages.append(message)
+        chatMessagesByChannel[message.channelName] = limitedScrollback(messages)
+    }
+
+    private func limitedScrollback(_ messages: [FightcadeChatMessage]) -> [FightcadeChatMessage] {
+        let recentMessageIDs = Set(messages
+            .filter { $0.kind != .motd }
+            .suffix(channelChatScrollbackLimit)
+            .map(\.id))
+        let motdID = messages.last(where: { $0.kind == .motd })?.id
+
+        return messages.filter { message in
+            message.id == motdID || recentMessageIDs.contains(message.id)
+        }
     }
 
     private func normalizedChatMessage(_ message: FightcadeChatMessage) -> FightcadeChatMessage {

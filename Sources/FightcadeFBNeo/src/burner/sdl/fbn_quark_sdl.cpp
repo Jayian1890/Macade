@@ -1,6 +1,7 @@
 #include "burner.h"
 #include "ggpoclient.h"
 #include "ggponet.h"
+#include "luaengine.h"
 #include "macade_embedded.h"
 #include "sdl_quark_detector.h"
 
@@ -369,6 +370,7 @@ bool QuarkInit(const char *connect)
       ggpo = ggpo_client_connect(&cb, game, quark_id, port);
       snprintf(kNetQuarkId, sizeof(kNetQuarkId), "%s", quark_id);
       kNetLua = 1;
+      FBA_LoadLuaCode("fbneo-training-mode/fbneo-training-mode.lua");
    } else if (strncmp(connect, "quark:direct", strlen("quark:direct")) == 0) {
       sscanf(connect, "quark:direct,%127[^,],%d,%127[^,],%d,%d,%d,%d", game, &local_port, server,
              &remote_port, &player, &delay, &ranked);

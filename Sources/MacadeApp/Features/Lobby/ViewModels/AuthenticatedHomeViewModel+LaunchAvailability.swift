@@ -49,3 +49,9 @@ extension AuthenticatedHomeViewModel {
         return launcher.hasLocalROM(emulator: emulator, gameID: gameID)
     }
 }
+
+enum GameLaunchMode {
+    case checkROM
+    case test
+    case training
+}

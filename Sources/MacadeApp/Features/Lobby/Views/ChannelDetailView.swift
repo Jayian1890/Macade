@@ -95,7 +95,7 @@ private struct ChannelChatView: View {
                 .onAppear {
                     scrollToInitialPosition(proxy)
                 }
-                .onChange(of: viewModel.selectedChannelMessages.count) { _, _ in
+                .onChange(of: viewModel.selectedChannelMessages.last?.id) { _, _ in
                     scrollAfterMessagesChanged(proxy)
                 }
                 .onChange(of: channel.id) { _, _ in
@@ -111,7 +111,7 @@ private struct ChannelChatView: View {
 
     private func scrollToInitialPosition(_ proxy: ScrollViewProxy) {
         DispatchQueue.main.async {
-            if viewModel.selectedChannelMessages.first?.kind == .motd {
+            if shouldShowOnlyMOTD {
                 proxy.scrollTo(topID, anchor: .top)
             } else {
                 proxy.scrollTo(bottomID, anchor: .bottom)
@@ -121,13 +121,19 @@ private struct ChannelChatView: View {
 
     private func scrollAfterMessagesChanged(_ proxy: ScrollViewProxy) {
         DispatchQueue.main.async {
-            let messages = viewModel.selectedChannelMessages
-            if messages.count == 1, messages.first?.kind == .motd {
+            if shouldShowOnlyMOTD {
                 proxy.scrollTo(topID, anchor: .top)
             } else {
-                proxy.scrollTo(bottomID, anchor: .bottom)
+                withAnimation(.smooth(duration: 0.14)) {
+                    proxy.scrollTo(bottomID, anchor: .bottom)
+                }
             }
         }
+    }
+
+    private var shouldShowOnlyMOTD: Bool {
+        let messages = viewModel.selectedChannelMessages
+        return messages.count == 1 && messages.first?.kind == .motd
     }
 
     private var chatBackground: some View {
@@ -163,7 +169,7 @@ private struct ChatInput: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 16, weight: .regular, design: .rounded))
                     .focused($isChatFocused)
-                    .disabled(!viewModel.joinedChannelIDs.contains(channel.id) || viewModel.isSendingChat)
+                    .disabled(!viewModel.joinedChannelIDs.contains(channel.id))
                     .onSubmit(sendChatKeepingFocus)
                     .onKeyPress(.tab) {
                         guard let user = mentionSuggestions.first else {

@@ -1,5 +1,7 @@
 #include "burner.h"
 
+#include "luaengine.h"
+
 int kNetGame = 0;
 int kNetSpectator = 0;
 int kNetLua = 1;
@@ -11,32 +13,9 @@ int bRunaheadFrame = 0;
 
 INT32 Init_Joysticks(int p1_use_joystick);
 
-struct lua_State;
-lua_State* FBA_GetLuaState()
-{
-	return NULL;
-}
-
 INT32 VidSNewTinyMsg(const TCHAR*, INT32, INT32, INT32)
 {
 	return 0;
-}
-
-void CallRegisteredLuaMemHook(unsigned int, int, unsigned int, LuaMemHookType)
-{
-}
-
-int FBA_LuaRerecordCountSkip()
-{
-	return 0;
-}
-
-void luasav_save(const char*)
-{
-}
-
-void luasav_load(const char*)
-{
 }
 
 int  nAppVirtualFps = 0;         // App fps * 100
@@ -51,6 +30,7 @@ TCHAR szAppBurnVer[16];
 char videofiltering[3];
 
 static bool bQuarkLaunch = false;
+static bool bMacadeTrainingLaunch = false;
 static char szQuarkLaunchCommand[1024];
 
 static const char* MacadeLaunchGameArgument(const char* argument)
@@ -61,6 +41,7 @@ static const char* MacadeLaunchGameArgument(const char* argument)
 
 	const char* prefix = "macade:training,";
 	if (strncmp(argument, prefix, strlen(prefix)) == 0) {
+		bMacadeTrainingLaunch = true;
 		snprintf(game, sizeof(game), "%s", argument + strlen(prefix));
 		printf("Macade launch: local training game=%s\n", game);
 		return game;
@@ -260,6 +241,7 @@ void DoGame(int gameToRun)
 	if (!DrvInit(gameToRun, 0))
 	{
 		MediaInit();
+		if (bMacadeTrainingLaunch) FBA_LoadLuaCode("fbneo-training-mode/fbneo-training-mode.lua");
 		Init_Joysticks(usejoy);
 		RunMessageLoop();
 	}
