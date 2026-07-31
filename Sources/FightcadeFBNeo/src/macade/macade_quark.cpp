@@ -3,7 +3,7 @@
 #define __declspec(x)
 #endif
 #include "burnint.h"
-#include "macade_ggpo_session.h"
+#include "ggpomac_internal.h"
 #include "macade_overlay.h"
 
 #include <stdio.h>

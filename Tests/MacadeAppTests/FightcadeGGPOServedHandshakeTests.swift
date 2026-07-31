@@ -67,7 +67,7 @@ final class FightcadeGGPOServedHandshakeTests: XCTestCase {
         XCTAssertEqual(summary.holePunchPacketCount, 1)
         XCTAssertEqual(summary.binaryTypeCounts, [1: 1, 3: 1, 4: 1, 5: 1])
         XCTAssertEqual(summary.payloadLengthCounts, [5: 2, 14: 1, 6: 1])
-        XCTAssertEqual(packets[1].kind, .syncProbe(type: 1, nonce: 32125))
+        XCTAssertEqual(packets[1].kind, .syncRequest(nonce: 32125))
         XCTAssertEqual(packets[2].kind, .input(.init(
             startFrame: 1,
             ackFrame: -1,
@@ -81,8 +81,8 @@ final class FightcadeGGPOServedHandshakeTests: XCTestCase {
         } else {
             XCTFail("Expected input packet")
         }
-        XCTAssertEqual(packets[3].kind, .syncReply(type: 4, value: 12, nonce: 11814668))
-        XCTAssertEqual(packets[4].kind, .inputAck(nonce: 11814668))
+        XCTAssertEqual(packets[3].kind, .qualityReport(frameAdvantage: 12, nonce: 11814668))
+        XCTAssertEqual(packets[4].kind, .qualityReply(nonce: 11814668))
     }
 
     func testPeerUDPInputPacketValidatesCompressedPayloadLength() {

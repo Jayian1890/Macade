@@ -3,10 +3,11 @@ import Foundation
 struct FightcadeGGPOPeerUDPPacket: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case holePunch(FightcadeHolePunchMessage)
-        case syncProbe(type: UInt8, nonce: UInt32)
+        case syncRequest(nonce: UInt32)
+        case syncReply(nonce: UInt32)
         case input(FightcadeGGPOPeerUDPInputPacket)
-        case syncReply(type: UInt8, value: UInt8, nonce: UInt32)
-        case inputAck(nonce: UInt32)
+        case qualityReport(frameAdvantage: Int8, nonce: UInt32)
+        case qualityReply(nonce: UInt32)
         case binary(type: UInt8, payloadLength: Int)
     }
 
@@ -30,8 +31,10 @@ struct FightcadeGGPOPeerUDPPacket: Equatable, Sendable {
 
     private static func parseKnownBinary(_ data: Data) -> Kind? {
         switch data.first {
-        case 1 where data.count == 5, 2 where data.count == 5:
-            return .syncProbe(type: data[0], nonce: data.readLittleEndianUInt32(at: 1))
+        case 1 where data.count == 5:
+            return .syncRequest(nonce: data.readLittleEndianUInt32(at: 1))
+        case 2 where data.count == 5:
+            return .syncReply(nonce: data.readLittleEndianUInt32(at: 1))
         case 3 where data.count >= 12:
             let packet = FightcadeGGPOPeerUDPInputPacket(
                 startFrame: data.readLittleEndianUInt32(at: 1),
@@ -43,9 +46,9 @@ struct FightcadeGGPOPeerUDPPacket: Equatable, Sendable {
             guard packet.hasExpectedBitPayloadLength else { return nil }
             return .input(packet)
         case 4 where data.count == 6:
-            return .syncReply(type: 4, value: data[1], nonce: data.readLittleEndianUInt32(at: 2))
+            return .qualityReport(frameAdvantage: Int8(bitPattern: data[1]), nonce: data.readLittleEndianUInt32(at: 2))
         case 5 where data.count == 5:
-            return .inputAck(nonce: data.readLittleEndianUInt32(at: 1))
+            return .qualityReply(nonce: data.readLittleEndianUInt32(at: 1))
         default:
             return nil
         }
@@ -92,16 +95,19 @@ struct FightcadeGGPOPeerUDPPacketSummary: Equatable, Sendable {
             switch packet.kind {
             case .holePunch:
                 holePunchPacketCount += 1
-            case let .syncProbe(type, _):
-                binaryTypeCounts[type, default: 0] += 1
+            case .syncRequest:
+                binaryTypeCounts[1, default: 0] += 1
+                payloadLengthCounts[packet.rawPayload.count, default: 0] += 1
+            case .syncReply:
+                binaryTypeCounts[2, default: 0] += 1
                 payloadLengthCounts[packet.rawPayload.count, default: 0] += 1
             case .input:
                 binaryTypeCounts[3, default: 0] += 1
                 payloadLengthCounts[packet.rawPayload.count, default: 0] += 1
-            case .syncReply:
+            case .qualityReport:
                 binaryTypeCounts[4, default: 0] += 1
                 payloadLengthCounts[packet.rawPayload.count, default: 0] += 1
-            case .inputAck:
+            case .qualityReply:
                 binaryTypeCounts[5, default: 0] += 1
                 payloadLengthCounts[packet.rawPayload.count, default: 0] += 1
             case let .binary(type, payloadLength):

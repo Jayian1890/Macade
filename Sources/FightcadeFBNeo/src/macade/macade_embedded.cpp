@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #include "macade_embedded.h"
-#include "macade_ggpo_session.h"
+#include "ggpomac_internal.h"
 #include "macade_overlay.h"
 
 extern GGPOSession* ggpo;

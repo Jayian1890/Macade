@@ -1,4 +1,4 @@
-#include "macade_ggpo_session.h"
+#include "ggpomac_internal.h"
 
 #include <string.h>
 #include <zlib.h>

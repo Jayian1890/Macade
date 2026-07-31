@@ -1,6 +1,6 @@
 #include "burner.h"
 #include "macade_detector.h"
-#include "macade_ggpo_session.h"
+#include "ggpomac_internal.h"
 #include "macade_overlay.h"
 
 #include <stdio.h>

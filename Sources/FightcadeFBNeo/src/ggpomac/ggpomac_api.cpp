@@ -225,7 +225,7 @@ bool __cdecl ggpo_get_stats(GGPOSession* session, GGPONetworkStats* stats)
 	memset(stats, 0, sizeof(*stats));
 	if (session == NULL) return true;
 	stats->network.predict_queue_len = (int)session->predictedRemoteInputs.size();
-	stats->network.send_queue_len = session->localAckFrame < 0 ? session->localSendHighFrame + 1 : session->localSendHighFrame - session->localAckFrame;
+	stats->network.send_queue_len = session->localAckFrame < 0 ? session->localSendHighFrame + 1 : session->localSendHighFrame - session->localAckFrame + 1;
 	if (stats->network.send_queue_len < 0) stats->network.send_queue_len = 0;
 	stats->network.recv_queue_len = session->remoteLastFrame >= session->currentFrame ? session->remoteLastFrame - session->currentFrame + 1 : 0;
 	stats->network.ping = session->udpPingMs;

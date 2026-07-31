@@ -1,5 +1,5 @@
 #include "burner.h"
-#include "macade_ggpo_session.h"
+#include "ggpomac_internal.h"
 
 #include <stdio.h>
 #include <string.h>

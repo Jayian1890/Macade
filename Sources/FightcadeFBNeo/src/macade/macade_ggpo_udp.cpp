@@ -1,4 +1,4 @@
-#include "macade_ggpo_session.h"
+#include "ggpomac_internal.h"
 
 #include <arpa/inet.h>
 #include <stdint.h>
@@ -157,7 +157,7 @@ void MacadePumpUDPControl(GGPOSession* session)
 	long long now = MacadeUDPMilliseconds();
 	if (session->udpSyncSentAtMs == 0 || now - session->udpSyncSentAtMs >= kUDPSyncIntervalMs) SendUDPSyncProbe(session, now);
 	if (session->udpQualitySentAtMs == 0 || now - session->udpQualitySentAtMs >= kUDPQualityIntervalMs) SendUDPQualityReport(session, now);
-	if (session->inputSize > 0 && session->localSendHighFrame > session->localAckFrame && session->udpLastInputSendAtMs > 0 && now - session->udpLastInputSendAtMs >= kUDPResendIntervalMs) {
+	if (session->inputSize > 0 && session->localSendHighFrame >= 0 && session->localSendHighFrame >= session->localAckFrame && session->udpLastInputSendAtMs > 0 && now - session->udpLastInputSendAtMs >= kUDPResendIntervalMs) {
 		const unsigned char* fallback = session->lastLocalInput.empty() ? NULL : session->lastLocalInput.data();
 		if (fallback != NULL) MacadeSendUDPInput(session, fallback, session->inputSize, session->localSendHighFrame);
 	}
@@ -175,7 +175,7 @@ void MacadePumpUDPControl(GGPOSession* session)
 void MacadeSendUDPInput(GGPOSession* session, const unsigned char* bytes, int size, int frame)
 {
 	if (session == NULL || session->udpFd < 0 || !session->hasPeer || bytes == NULL || size <= 0 || frame < 0) return;
-	int startFrame = session->localAckFrame + 1;
+	int startFrame = session->localAckFrame < 0 ? 0 : session->localAckFrame;
 	if (startFrame < 0) startFrame = 0;
 	if (startFrame > frame) startFrame = frame;
 	while (startFrame <= frame) {

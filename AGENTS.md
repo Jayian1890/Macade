@@ -14,8 +14,8 @@
 - Never use Keychain access patterns that can trigger the macOS credential prompt shown as "wants to use your confidential information stored in ... in your keychain." Session persistence must not require users to enter the login keychain password during normal app launch, login, restore, or sign-out. Prefer non-prompting storage attributes such as app-accessible generic password items, or remove persistence rather than shipping a flow that displays that system prompt.
 - Do not introduce a replacement matchmaking backend. Macade targets Fightcade compatibility.
 - Treat Fightcade protocol research as implementation context and keep related notes under `docs/`.
-- Before any task that touches Fightcade, FBNeo, GGPO, quark routes, netplay, emulator launch/runtime behavior, packet captures, or related docs, read `docs/macade-fightcade-ai-context.md` first and treat it as the single source of truth.
-- After any task in those areas, update `docs/macade-fightcade-ai-context.md` or explicitly verify that it still matches the changed behavior/evidence.
+- Before any task that touches Fightcade, FBNeo, GGPO, quark routes, netplay, emulator launch/runtime behavior, packet captures, or related docs, read `docs/` first and treat it as the single source of truth.
+- After any task in those areas, explicitly verify that it still matches the changed behavior/evidence.
 - Do not use the official macOS Fightcade DMG as implementation authority; it is considered outdated and broken for Macade's current native runtime work.
 - Do not model Macade protocol behavior, user agents, or runtime assumptions after the Linux Fightcade client. Macade is native macOS and should use macOS-native assumptions unless current Fightcade web protocol evidence says otherwise.
 - Always use `xcodebuild` for build verification. Do not use `swift build` unless the user explicitly asks for SwiftPM-only verification.
