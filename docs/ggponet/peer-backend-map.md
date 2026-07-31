@@ -83,18 +83,20 @@ Both exports depend on `Peer2PeerBackend` behavior.
 
 ## Client TCP Events
 
+`TcpProtocol` first dispatches negative wire/server codes through `PTR_FUN_100332c4`. The queued event consumed by `10029c30` is not always the same number as the wire code.
+
 `10029c30` consumes `TcpProtocol` events for `GGPOBackend`:
 
-| Event | Source parser | Behavior |
-| ---: | ---: | --- |
-| `0` | version/connect response | sends command `0xb` with match id and local user id, emits `5001` connected |
-| `1` / `10` | disconnect | emits `5006` disconnected and returns |
-| `2` | no-op/empty | returns |
-| `8` | start match | calls `10028ac0`, sets local player flags, requests match info, emits `5002` retrieving matchinfo |
-| `0xb` | match info | emits `5003`, then `5004`, then `5005` system chat prompt |
-| `0xc` | chat | emits `5005` chat only if match id matches |
-| `0x10` | spectator count | emits `5004` |
-| `0x11` | upload trigger | starts delayed replay-state upload when streaming is enabled |
+| Wire | Queued Event | Source parser | Behavior |
+| ---: | ---: | --- | --- |
+| response to command `0` | `0` | version/connect response | sends command `0xb` with match id and local user id, emits `5001` connected |
+| `9` / queued `1` | `1` / `10` | disconnect | emits `5006` disconnected and returns |
+| queued `2` | `2` | no-op/empty | returns |
+| `7` | `8` | `10025740` start match | calls `10028ac0`, sets local player flags, requests match info, emits `5002` retrieving matchinfo |
+| response to command `0xc` | `0xb` | `10025810` match info | emits `5003`, then `5004`, then `5005` system chat prompt |
+| `8` | `0xc` | `10025680` chat | emits `5005` chat only if match id matches |
+| `10` | `0x10` | `100253e0` spectator count | emits `5004` |
+| `11` | `0x11` | `10025460` upload trigger | starts delayed replay-state upload when streaming is enabled |
 
 ## Native Peer Core Batch
 

@@ -149,6 +149,20 @@ struct FightcadeLauncher: FightcadeLaunching {
             inputClient: resources.inputClient
         )
 
+        var embeddedEnvironment = [
+            "MACADE_EMBEDDED_SESSION_ID": resources.id.uuidString,
+            "MACADE_EMBEDDED_VIDEO_PATH": resources.videoStream.fileURL.path,
+            "MACADE_EMBEDDED_VIDEO_BYTES": String(resources.videoStream.byteCount),
+            "MACADE_EMBEDDED_INPUT_SOCKET": resources.inputClient.socketPath,
+            "MACADE_EMBEDDED_HIDE_WINDOW": "1",
+            "SDL_MAC_BACKGROUND_APP": "1"
+        ]
+        if launch.mode == .match {
+            embeddedEnvironment["quark.log"] = "1"
+            embeddedEnvironment["quark.log.timestamps"] = "1"
+            embeddedEnvironment["MACADE_QUARK_LOG_DIR"] = resources.launchLog.url.deletingLastPathComponent().path
+        }
+
         do {
             let process = try launchProcess(
                 emulator: launch.emulator,
@@ -156,14 +170,7 @@ struct FightcadeLauncher: FightcadeLaunching {
                 runtime: runtimeRoot,
                 expectedROM: expectedROM,
                 launchLog: resources.launchLog,
-                additionalEnvironment: [
-                    "MACADE_EMBEDDED_SESSION_ID": resources.id.uuidString,
-                    "MACADE_EMBEDDED_VIDEO_PATH": resources.videoStream.fileURL.path,
-                    "MACADE_EMBEDDED_VIDEO_BYTES": String(resources.videoStream.byteCount),
-                    "MACADE_EMBEDDED_INPUT_SOCKET": resources.inputClient.socketPath,
-                    "MACADE_EMBEDDED_HIDE_WINDOW": "1",
-                    "SDL_MAC_BACKGROUND_APP": "1"
-                ],
+                additionalEnvironment: embeddedEnvironment,
                 embeddedSession: session
             )
             session.attach(process: process)
@@ -266,7 +273,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
 
         do {
-            enforceSingleFBNeoProcess(executable: executable, launchLog: launchLog)
+            enforceSingleFBNeoProcess(executable: executable, launchLog: launchLog, keepManagedProcesses: embeddedSession?.mode == .match || embeddedSession?.mode == .direct)
             try process.run()
             processRegistry.insert(process, log: launchLog)
             launchLog.write("Process started: pid=\(process.processIdentifier)\n")
@@ -380,11 +387,14 @@ struct FightcadeLauncher: FightcadeLaunching {
         return executable
     }
 
-    private func enforceSingleFBNeoProcess(executable: URL, launchLog: FightcadeLaunchLog) {
+    private func enforceSingleFBNeoProcess(executable: URL, launchLog: FightcadeLaunchLog, keepManagedProcesses: Bool) {
         guard executable.lastPathComponent == "macfbneo" else { return }
-        processRegistry.terminateAll(reason: "single macfbneo launch", graceSeconds: 0.75)
+        if !keepManagedProcesses {
+            processRegistry.terminateAll(reason: "single macfbneo launch", graceSeconds: 0.75)
+        }
 
-        let processIDs = ["macfbneo", "fcadefbneo"].flatMap(runningProcessIDs(named:))
+        let managedProcessIDs = keepManagedProcesses ? processRegistry.processIDs() : []
+        let processIDs = ["macfbneo", "fcadefbneo"].flatMap(runningProcessIDs(named:)).filter { !managedProcessIDs.contains($0) }
         guard !processIDs.isEmpty else { return }
 
         for processID in processIDs {

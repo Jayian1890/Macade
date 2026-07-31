@@ -45,7 +45,18 @@ void quark_logv(const char *format, va_list args)
 
    if (quark_log_file == nullptr) {
       char path[1024];
+#ifdef _WIN32
       std::snprintf(path, sizeof(path), "c:\\users\\ponder\\log-%d.log", getpid());
+#else
+      const char *dir = std::getenv("MACADE_QUARK_LOG_DIR");
+      if (dir == nullptr || dir[0] == '\0') {
+         dir = std::getenv("TMPDIR");
+      }
+      if (dir == nullptr || dir[0] == '\0') {
+         dir = "/tmp";
+      }
+      std::snprintf(path, sizeof(path), "%s%squark-%d.log", dir, dir[std::strlen(dir) - 1] == '/' ? "" : "/", getpid());
+#endif
       quark_log_file = std::fopen(path, "w");
    }
 

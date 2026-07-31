@@ -28,6 +28,6 @@ This map is derived from verified `docs/ggponet/functions` and `docs/ggponet/raw
 
 ## Native Mapping
 
-The Windows DLL uses manual-reset events and `WaitForMultipleObjects`. The native macOS implementation uses `poll(2)` and a nonblocking wake pipe for the constructor-created manual event. This preserves the evidenced behavior without depending on Windows handles.
+The Windows DLL uses manual-reset events and `WaitForMultipleObjects`. The native macOS implementation uses `poll(2)` and a nonblocking wake pipe for the constructor-created manual event. The wake pipe is an implementation detail: when it is readable, native drains it and continues to the first real registered handle callback so the synthetic wake cannot consume the official one-handle dispatch slot. This preserves the evidenced behavior without depending on Windows handles.
 
 Socket-specific `SetEvent`/`ResetEvent` calls remain part of the UDP and TCP socket gates; the poll module exposes signal/reset hooks for those later conversions.

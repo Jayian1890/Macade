@@ -126,12 +126,14 @@ bool poll_backend_run(PollBackend *poller, int timeout_ms)
          }
          if (i == 0 && poller->handle_callbacks[i].target == nullptr) {
             drain_fd(poller->wake_read_fd);
-         } else if (i < poller->handle_callbacks.size()) {
+            continue;
+         }
+         if (i < poller->handle_callbacks.size()) {
             const PollCallback &callback = poller->handle_callbacks[i];
             failed = accumulate_failure(failed,
                                         callback.target->vtable->on_handle(callback.target, callback.context));
+            break;
          }
-         break;
       }
    }
 

@@ -13,6 +13,8 @@ int counter;                                // General purpose variable used whe
 
 static unsigned int nNormalLast = 0;        // Last value of GetTime()
 static int          nNormalFrac = 0;        // Extra fraction we did
+static double       nEmbeddedNetFrameLast = 0;
+static int          nEmbeddedNetRunQuark = 1;
 
 static bool bAppDoStep = 0;
 bool        bAppDoFast = 0;
@@ -131,7 +133,6 @@ unsigned int GetTime(void)
 	return ticks;
 }
 
-// With or without sound, run one frame.
 // If bDraw is true, it's the last frame before we are up to date, and so we should draw the screen
 int RunFrame(int bDraw, int bPause, int bInput, int bNotifyGGPO)
 {
@@ -160,6 +161,10 @@ int RunFrame(int bDraw, int bPause, int bInput, int bNotifyGGPO)
 		} else {
 			InputMake(true);
 		}
+	}
+
+	if (MacadeEmbeddedEnabled() && kNetGame && !kNetSpectator && bAudPlaying) {
+		pBurnSoundOut = nAudNextSound;
 	}
 
 	if (bDraw)
@@ -199,7 +204,9 @@ static int RunGetNextSound(int bDraw)
 		return 1;
 	}
 
-	if (MacadeEmbeddedEnabled() && kNetSpectator) {
+	if (MacadeEmbeddedEnabled() && kNetGame && !kNetSpectator) {
+		return 0;
+	} else if (MacadeEmbeddedEnabled() && kNetSpectator) {
 		bDraw = 1;
 	}
 
@@ -239,6 +246,54 @@ static int RunGetNextSound(int bDraw)
 	return 0;
 }
 
+static int RunEmbeddedNetGameIdle()
+{
+	const double now = GetTime() / 1000.0;
+	if (nEmbeddedNetFrameLast == 0) {
+		nEmbeddedNetFrameLast = now;
+	}
+	const double frameMs = nAppVirtualFps > 0 ? 1000.0 * 100.0 / nAppVirtualFps : 16.6667;
+	const double idleMs = frameMs - 1.0;
+	double accMs = now - nEmbeddedNetFrameLast;
+
+	if (accMs < frameMs || nEmbeddedNetRunQuark) {
+		if (accMs < idleMs || nEmbeddedNetRunQuark) {
+			InputMake(false);
+			QuarkRunIdle(1);
+			nEmbeddedNetRunQuark = 0;
+		}
+		return 0;
+	}
+	nEmbeddedNetRunQuark = 1;
+
+	int count = -1;
+	do {
+		accMs -= frameMs;
+		nEmbeddedNetFrameLast += frameMs;
+		count++;
+	} while (accMs > frameMs);
+	if (count > 10) {
+		count = 10;
+	}
+
+	if (bRunPause) {
+		if (!bAppDoStep) {
+			RunFrame(1, 1);
+			return 0;
+		}
+		count = 0;
+	}
+	bAppDoStep = 0;
+
+	if (!bAlwaysDrawFrames) {
+		for (int i = count; i > 0; i--) {
+			RunFrame(0, 0);
+		}
+	}
+	RunFrame(1, 0);
+	return 0;
+}
+
 int delay_ticks(int ticks)
 {
 //sdl_delay can take up to 10 - 15 ticks it doesnt guarentee below this
@@ -259,6 +314,13 @@ int delay_ticks(int ticks)
 int RunIdle()
 {
 	int nTime, nCount;
+
+	if (MacadeEmbeddedEnabled() && kNetGame && !kNetSpectator)
+	{
+		int ret = RunEmbeddedNetGameIdle();
+		if (bAudPlaying) AudSoundCheck();
+		return ret;
+	}
 
 	if (bAudPlaying)
 	{
@@ -325,7 +387,9 @@ int RunReset()
 {
 	// Reset the speed throttling code
 	nNormalLast = 0; nNormalFrac = 0;
-	if (!bAudPlaying)
+	nEmbeddedNetFrameLast = 0;
+	nEmbeddedNetRunQuark = 1;
+	if (!bAudPlaying || (MacadeEmbeddedEnabled() && kNetGame && !kNetSpectator))
 	{
 		// run without sound
 		nNormalLast = GetTime();

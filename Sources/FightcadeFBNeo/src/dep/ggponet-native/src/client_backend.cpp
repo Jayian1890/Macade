@@ -162,25 +162,27 @@ void parse_matchinfo(ClientBackend *client, const unsigned char *payload, size_t
        read_string(payload, size, &offset, &event.blurb) && offset + 4 <= size) {
       event.count = static_cast<int>(read_be32(payload + offset));
       client->events.push_back(std::move(event));
+   } else {
+      quark_log("TcpProtocol dropped malformed matchinfo response (%zu bytes).\n", size);
    }
 }
 
 void parse_server_event(ClientBackend *client, int code, const unsigned char *payload, size_t size)
 {
-   if (code == 8) {
+   quark_log("TcpProtocol received server event %d (%zu bytes).\n", code, size);
+   if (code == 7) {
       size_t offset = 0;
       ClientEvent event{};
       event.type = 8;
       if (read_string(payload, size, &offset, &event.p1) && offset + 8 <= size) {
          event.remote_port = static_cast<int>(read_be32(payload + offset));
          event.player_side = static_cast<int>(read_be32(payload + offset + 4));
+         quark_log("Starting match %s (port %d).\n", event.p1.c_str(), event.remote_port);
          client->events.push_back(std::move(event));
+      } else {
+         quark_log("TcpProtocol dropped malformed match start event (%zu bytes).\n", size);
       }
-   } else if (code == 9) {
-      client->events.push_back({10});
-   } else if (code == 10 && size >= 4) {
-      client->events.push_back({0x10, static_cast<int>(read_be32(payload))});
-   } else if (code == 12) {
+   } else if (code == 8) {
       size_t offset = 0;
       ClientEvent event{};
       event.type = 0xc;
@@ -188,7 +190,11 @@ void parse_server_event(ClientBackend *client, int code, const unsigned char *pa
           read_string(payload, size, &offset, &event.p2)) {
          client->events.push_back(std::move(event));
       }
-   } else if (code == 17) {
+   } else if (code == 9) {
+      client->events.push_back({10});
+   } else if (code == 10 && size >= 4) {
+      client->events.push_back({0x10, static_cast<int>(read_be32(payload))});
+   } else if (code == 11) {
       client->events.push_back({0x11});
    }
 }
@@ -197,10 +203,12 @@ void parse_response(ClientBackend *client, unsigned int sequence, int response, 
 {
    auto found = client->pending_commands.find(sequence);
    if (found == client->pending_commands.end()) {
+      quark_log("TcpProtocol dropped response for unknown sequence %u (%d, %zu bytes).\n", sequence, response, size);
       return;
    }
    const int command = found->second;
    client->pending_commands.erase(found);
+   quark_log("TcpProtocol received response for command %d: %d (%zu bytes).\n", command, response, size);
    if (command == 0) {
       client->events.push_back({response == 0 ? 0 : 10});
    } else if (command == 0xc && response == 0) {
@@ -214,6 +222,11 @@ void parse_packets(ClientBackend *client)
       const uint32_t length = read_be32(client->receive_buffer.data());
       if (client->receive_buffer.size() < static_cast<size_t>(length + 4)) {
          return;
+      }
+      if (length < 4) {
+         quark_log("TcpProtocol dropped short packet length %u.\n", length);
+         client->receive_buffer.erase(client->receive_buffer.begin(), client->receive_buffer.begin() + length + 4);
+         continue;
       }
       const unsigned char *packet = client->receive_buffer.data() + 4;
       const int sequence_or_event = static_cast<int>(read_be32(packet));

@@ -217,6 +217,8 @@ final class FightcadeProcessRegistry: @unchecked Sendable {
         }
     }
 
+    func processIDs() -> Set<pid_t> { lock.withLock { Set(launchedProcesses.keys) } }
+
     func terminateAll(
         reason: String,
         graceSeconds: TimeInterval = 1.5,

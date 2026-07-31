@@ -196,6 +196,8 @@ bool __cdecl ggpo_begin_game_callback(char *name)
          return false;
       }
       MediaInit();
+   } else {
+      MediaInit();
    }
    MacadeEmbeddedSetOverlayGameInfo("Player1#0,0", "Player2#0,0", 0, ranked_match, local_player);
    MacadeEmbeddedSetOverlayStats(0, frame_delay);
@@ -205,7 +207,7 @@ bool __cdecl ggpo_begin_game_callback(char *name)
 bool __cdecl ggpo_advance_frame_callback(int)
 {
    nFramesEmulated--;
-   return RunFrame(0, 0, 0, 0) == 0;
+   return RunFrame(0, 0, 0, 1) == 0;
 }
 
 bool __cdecl ggpo_save_game_state_callback(unsigned char **buffer, int *len, int *checksum, int)
