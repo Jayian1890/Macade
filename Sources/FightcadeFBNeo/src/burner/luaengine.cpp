@@ -25,7 +25,7 @@
 using std::min;
 using std::max;
 
-#include "ggponet.h"
+#include "ggpomac.h"
 extern GGPOSession *ggpo;
 
 #ifdef __linux

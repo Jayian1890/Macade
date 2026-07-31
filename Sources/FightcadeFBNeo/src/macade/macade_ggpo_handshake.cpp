@@ -351,6 +351,15 @@ static void MacadeSendTCPSnapshot(GGPOSession* session)
 	}
 }
 
+static void AppendTCPInputFrame(std::vector<unsigned char>& payload, GGPOSession* session, int frame)
+{
+	std::vector<unsigned char> input((size_t)session->inputSize, 0);
+	std::map<int, std::vector<unsigned char> >::iterator found = session->localInputs.find(frame);
+	if (found != session->localInputs.end() && found->second.size() == (size_t)session->inputSize) input = found->second;
+	else if (session->lastLocalInput.size() == (size_t)session->inputSize) input = session->lastLocalInput;
+	payload.insert(payload.end(), input.begin(), input.end());
+}
+
 void MacadeSendTCPFrameBatch(GGPOSession* session)
 {
 	if (session == NULL || session->tcpFd < 0 || session->inputSize <= 0 || session->quarkId[0] == 0 || session->localSendHighFrame < 0) return;
@@ -361,12 +370,14 @@ void MacadeSendTCPFrameBatch(GGPOSession* session)
 	const int frameCount = 60;
 	std::vector<unsigned char> payload;
 	AppendString(payload, session->quarkId); AppendBE32(payload, frameCount); AppendBE32(payload, (unsigned int)session->inputSize);
-	payload.insert(payload.end(), (size_t)frameCount * (size_t)session->inputSize, 0);
+	int startFrame = session->tcpLastBatchFrame;
+	if (startFrame < 0) startFrame = 0;
+	for (int i = 0; i < frameCount; i++) AppendTCPInputFrame(payload, session, startFrame + i);
 	if (SendCommand(session->tcpFd, session->tcpSequence++, 17, payload)) {
 		session->bytesSent += (unsigned long long)payload.size() + 12ULL;
 		session->tcpLastBatchFrame = session->currentFrame;
 		session->tcpBatchSendCount++;
-		if (ShouldLogCount(session->tcpBatchLogCount)) MacadeLog("Macade GGPO: TCP frame batch sent frame=%d count=%d size=%d\n", session->currentFrame, session->tcpBatchSendCount, session->inputSize);
+		if (ShouldLogCount(session->tcpBatchLogCount)) MacadeLog("Macade GGPO: TCP frame batch sent start=%d frame=%d count=%d size=%d\n", startFrame, session->currentFrame, session->tcpBatchSendCount, session->inputSize);
 		session->tcpBatchLogCount++;
 		bool needsSnapshot = session->tcpBatchSendCount >= kTCPSnapshotFirstBatch &&
 			(session->tcpSnapshotSendCount == 0 || session->tcpBatchSendCount - session->tcpLastSnapshotBatch >= kTCPSnapshotIntervalBatches);

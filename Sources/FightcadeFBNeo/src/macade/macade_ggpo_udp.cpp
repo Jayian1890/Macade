@@ -14,6 +14,8 @@ static const long long kUDPSyncIntervalMs = 2000;
 static const long long kUDPResendIntervalMs = 200;
 static const long long kUDPInterruptNotifyMs = 5000;
 static const long long kUDPDisconnectTimeoutMs = 30000;
+static int gUDPInputSendLogCount = 0;
+static int gUDPInputReceiveLogCount = 0;
 
 static long long MacadeUDPMilliseconds()
 {
@@ -208,7 +210,16 @@ void MacadeSendUDPInput(GGPOSession* session, const unsigned char* bytes, int si
 		int count = 12 + ((bitCount + 7) / 8);
 		if (count > (int)sizeof(packet)) return;
 		ssize_t sent = sendto(session->udpFd, packet, count, 0, (sockaddr*)&session->peer, sizeof(session->peer));
-		if (sent > 0) { session->udpInputSendCount++; session->udpLastInputSendAtMs = MacadeUDPMilliseconds(); NoteUDPSend(session, sent); }
+		if (sent > 0) {
+			session->udpInputSendCount++;
+			session->udpLastInputSendAtMs = MacadeUDPMilliseconds();
+			NoteUDPSend(session, sent);
+			if (gUDPInputSendLogCount < 20 || gUDPInputSendLogCount % 120 == 0) {
+				MacadeLog("Macade diagnostic: UDP input send count=%d start=%d end=%d ack=%d inputBytes=%d bits=%d packetBytes=%d\n",
+					session->udpInputSendCount, packetStart, inputFrame - 1, session->remoteLastFrame, size, bitCount, count);
+			}
+			gUDPInputSendLogCount++;
+		}
 		startFrame = inputFrame;
 	}
 }
@@ -271,6 +282,11 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 			int bitCount = ReadLE16(buffer + 9);
 			int inputBytes = buffer[11];
 			int payloadBytes = (bitCount + 7) / 8;
+			if (gUDPInputReceiveLogCount < 20 || gUDPInputReceiveLogCount % 120 == 0) {
+				MacadeLog("Macade diagnostic: UDP input recv count=%d start=%d ack=%d inputBytes=%d bits=%d packetBytes=%zd localSize=%d remoteLast=%d\n",
+					session->udpInputReceiveCount, startFrame, ackFrame, inputBytes, bitCount, count, session->inputSize, session->remoteLastFrame);
+			}
+			gUDPInputReceiveLogCount++;
 			if (inputBytes > 0 && inputBytes <= 64 && count >= 12 + payloadBytes) {
 				if (session->lastRemoteInput.size() != (size_t)inputBytes) session->lastRemoteInput.assign(inputBytes, 0);
 				int expectedFrame = session->remoteLastFrame < 0 ? startFrame : session->remoteLastFrame + 1;

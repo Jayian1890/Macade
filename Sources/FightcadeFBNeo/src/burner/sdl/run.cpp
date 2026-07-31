@@ -641,6 +641,12 @@ int RunMessageLoop()
 				macadeElapsedTicks = SDL_GetTicks() - macadeLoopStartTicks;
 				printf("Macade diagnostic: SDL_QUIT received kNetGame=%d frames=%u elapsed=%u ignored=%d\n", kNetGame, nFramesRendered, macadeElapsedTicks, macadeIgnoredStartupQuits);
 				fflush(stdout);
+				if (MacadeEmbeddedEnabled() && kNetGame) {
+					macadeIgnoredStartupQuits++;
+					printf("Macade diagnostic: ignoring embedded netplay SDL_QUIT; Swift owns runtime lifecycle\n");
+					fflush(stdout);
+					break;
+				}
 				if (kNetGame && macadeElapsedTicks < 5000 && macadeIgnoredStartupQuits < 4) {
 					macadeIgnoredStartupQuits++;
 					printf("Macade diagnostic: ignoring startup SDL_QUIT before first render\n");

@@ -22,6 +22,28 @@ static int gDIPOffset = 0;
 static unsigned char gControls[kInputSize];
 static int gNetworkGetInputLogCount = 0;
 static int gNetworkReplayFrameLogCount = 0;
+static int gNetworkLocalNonzeroLogCount = 0;
+
+static bool BufferHasNonzeroByte(const unsigned char* bytes, int size)
+{
+	for (int i = 0; i < size; i++) if (bytes[i] != 0) return true;
+	return false;
+}
+
+static void FormatBytes(const unsigned char* bytes, int size, char* out, int outSize)
+{
+	static const char* hex = "0123456789abcdef";
+	if (out == NULL || outSize <= 0) return;
+	out[0] = 0;
+	if (bytes == NULL || size <= 0) return;
+	int written = 0;
+	int limit = size < 8 ? size : 8;
+	for (int i = 0; i < limit && written + 2 < outSize; i++) {
+		out[written++] = hex[(bytes[i] >> 4) & 0xf];
+		out[written++] = hex[bytes[i] & 0xf];
+	}
+	out[written] = 0;
+}
 
 static bool InputNameHasPrefix(const BurnInputInfo& input, const char* prefix)
 {
@@ -129,7 +151,8 @@ static bool MacadeCaptureLocalControls(int* blockSize)
 		}
 	}
 
-	*blockSize = j;
+	// Fightcade's FBNeo bridge passes one padding byte past the serialized controls.
+	*blockSize = j + 1;
 	if (*blockSize <= 0 || *blockSize * kNetPlayers > kInputSize) {
 		printf("Macade GGPO: invalid input block size=%d max=%d\n", *blockSize, kInputSize / kNetPlayers);
 		fflush(stdout);
@@ -198,6 +221,13 @@ int MacadeNetworkGetInput()
 		printf("Macade diagnostic: NetworkGetInput=%d frame=%d block=%d player=%d remoteLast=%d localAck=%d\n",
 			gNetworkGetInputLogCount, ggpo->currentFrame, blockSize, ggpo->playerIndex, ggpo->remoteLastFrame, ggpo->localAckFrame);
 		fflush(stdout);
+	}
+	if (BufferHasNonzeroByte(gControls, blockSize) && gNetworkLocalNonzeroLogCount < 20) {
+		char localBytes[32];
+		FormatBytes(gControls, blockSize, localBytes, sizeof(localBytes));
+		printf("Macade diagnostic: local input nonzero frame=%d block=%d bytes=%s\n", ggpo->currentFrame, blockSize, localBytes);
+		fflush(stdout);
+		gNetworkLocalNonzeroLogCount++;
 	}
 	bool synchronized = ggpo_synchronize_input(ggpo, gControls, blockSize, kNetPlayers);
 	if (gNetworkGetInputLogCount < 20 || gNetworkGetInputLogCount % 120 == 0 || !synchronized) {

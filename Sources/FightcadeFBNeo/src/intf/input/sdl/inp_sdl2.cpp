@@ -647,6 +647,16 @@ int SDLinpFind(bool CreateBaseline)
 {
 	int nRetVal = -1;										// assume nothing pressed
 
+	if (MacadeEmbeddedEnabled()) {
+		for (int i = 0; i < 0x100; i++) {
+			int embeddedScancode = FBKtoSDL[i];
+			if (embeddedScancode > 0 && MacadeEmbeddedKeyState(embeddedScancode)) {
+				nRetVal = i;
+				goto End;
+			}
+		}
+	}
+
 	// check if any keyboard keys are pressed
 	if (ReadKeyboard() == 0) {
 		for (int i = 0; i < 0x100; i++) {

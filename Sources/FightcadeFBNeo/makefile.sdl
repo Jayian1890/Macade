@@ -87,6 +87,7 @@ alldir	= burn \
 		burn/snd \
 		burner \
 		burner/sdl \
+		ggpomac \
 		macade \
 		intf \
 		intf/audio \

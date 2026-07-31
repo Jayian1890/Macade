@@ -5,14 +5,7 @@
 #include <map>
 #include <vector>
 
-#ifndef __declspec
-#define __declspec(x)
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-
-#include "ggpoclient.h"
+#include "ggpomac.h"
 
 struct MacadeSavedFrame {
 	int frame = -1;
