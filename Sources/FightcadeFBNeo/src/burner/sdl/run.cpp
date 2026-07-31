@@ -154,6 +154,7 @@ int RunFrame(int bDraw, int bPause, int bInput, int bNotifyGGPO)
 				InputMake(true);
 			}
 			if (NetworkGetInput()) {
+				QuarkRunIdle(1);
 				return 1;
 			}
 		} else {
