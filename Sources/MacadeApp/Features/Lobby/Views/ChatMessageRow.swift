@@ -91,9 +91,9 @@ struct ChatMessageRow: View {
     private var translationText: some View {
         if case .translated(let translation) = viewModel.chatTranslation.translationsByMessageID[message.id],
            !translation.translatedBody.isEmpty,
-           translation.translatedBody != message.body {
+            translation.translatedBody != message.body {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Translated to \(translation.targetLanguageIdentifier.uppercased())")
+                Text(translationHeader(for: translation))
                     .font(.system(size: 10, weight: .black, design: .rounded))
                     .foregroundStyle(MacadeColor.neonCyan.opacity(0.75))
 
@@ -106,6 +106,25 @@ struct ChatMessageRow: View {
             }
             .padding(.top, 2)
         }
+    }
+
+    private func translationHeader(for translation: ChatMessageTranslation) -> String {
+        let target = languageName(for: translation.targetLanguageIdentifier)
+        guard let sourceLanguageIdentifier = translation.sourceLanguageIdentifier?.nonEmpty else {
+            return "Translated to \(target)"
+        }
+
+        return "Translated from \(languageName(for: sourceLanguageIdentifier)) to \(target)"
+    }
+
+    private func languageName(for identifier: String) -> String {
+        let normalized = identifier.replacingOccurrences(of: "_", with: "-")
+        let family = ChatTranslationPreferences.languageFamily(normalized)
+        let locale = Locale.current
+        let name = locale.localizedString(forIdentifier: normalized)
+            ?? locale.localizedString(forLanguageCode: family)
+            ?? normalized.uppercased()
+        return name.capitalized
     }
 
     @ViewBuilder

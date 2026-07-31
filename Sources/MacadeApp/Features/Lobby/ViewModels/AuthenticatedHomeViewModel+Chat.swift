@@ -1,11 +1,9 @@
 import Foundation
 
 import AppKit
-import NaturalLanguage
 import UserNotifications
 
 private let channelChatScrollbackLimit = 500
-private let chatTranslationMaximumCharacters = 500
 
 struct ChatTranslationPreferences: Equatable, Sendable {
     var isEnabled = false
@@ -88,6 +86,17 @@ final class ChatTranslationStore {
             requests.contains { $0.id == request.id }
         }
         return requests
+    }
+
+    func drainPendingRequests(targetLanguageIdentifier: String, limit: Int) -> [ChatTranslationRequest] {
+        let targetFamily = ChatTranslationPreferences.languageFamily(targetLanguageIdentifier)
+        let requests = pendingRequests.filter {
+            ChatTranslationPreferences.languageFamily($0.targetLanguageIdentifier) == targetFamily
+        }.prefix(limit)
+        pendingRequests.removeAll { request in
+            requests.contains { $0.id == request.id }
+        }
+        return Array(requests)
     }
 
     func complete(_ translation: ChatMessageTranslation) {
@@ -306,75 +315,29 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
-        let body = message.body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard shouldTranslateChatBody(body) else { return }
-
         let target = preferences.resolvedTargetLanguageIdentifier
-        guard let source = detectedLanguageIdentifier(in: body) else {
-            chatTranslation.fail(
-                ChatTranslationRequest(
-                    id: message.id,
-                    channelName: message.channelName,
-                    sourceBody: body,
-                    protectedBody: body,
-                    placeholders: [:],
-                    sourceLanguageIdentifier: nil,
-                    targetLanguageIdentifier: target
-                ),
-                reason: "Could not identify source language."
+        let messageID = message.id
+        let channelName = message.channelName
+        let body = message.body
+
+        Task { [weak self] in
+            let result = await ChatTranslationRequestBuilder.build(
+                id: messageID,
+                channelName: channelName,
+                body: body,
+                targetLanguageIdentifier: target
             )
-            return
-        }
-        if ChatTranslationPreferences.languageFamily(source) == ChatTranslationPreferences.languageFamily(target) {
-            return
-        }
 
-        let protected = protectChatTranslationTokens(in: body)
-        chatTranslation.enqueue(ChatTranslationRequest(
-            id: message.id,
-            channelName: message.channelName,
-            sourceBody: body,
-            protectedBody: protected.text,
-            placeholders: protected.placeholders,
-            sourceLanguageIdentifier: source,
-            targetLanguageIdentifier: target
-        ))
-    }
-
-    private func shouldTranslateChatBody(_ body: String) -> Bool {
-        guard body.count >= 3, body.count <= chatTranslationMaximumCharacters else { return false }
-        if body.range(of: #"^https?://\S+$"#, options: .regularExpression) != nil { return false }
-        return body.contains { $0.isLetter }
-    }
-
-    private func detectedLanguageIdentifier(in body: String) -> String? {
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(body)
-        let language = recognizer.dominantLanguage
-        guard language != .undetermined else { return nil }
-        return language?.rawValue
-    }
-
-    private func protectChatTranslationTokens(in body: String) -> (text: String, placeholders: [String: String]) {
-        var text = body
-        var placeholders: [String: String] = [:]
-        var index = 0
-        let patterns = [#"https?://\S+"#, #"@[A-Za-z0-9_\-]+"#]
-
-        for pattern in patterns {
-            guard let regex = try? NSRegularExpression(pattern: pattern) else { continue }
-            let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).reversed()
-
-            for match in matches {
-                guard let range = Range(match.range, in: text) else { continue }
-                let token = "__MACADE_TOKEN_\(index)__"
-                placeholders[token] = String(text[range])
-                text.replaceSubrange(range, with: token)
-                index += 1
+            guard let self else { return }
+            switch result {
+            case .request(let request):
+                chatTranslation.enqueue(request)
+            case .failed(let request, let reason):
+                chatTranslation.fail(request, reason: reason)
+            case .skipped:
+                break
             }
         }
-
-        return (text, placeholders)
     }
 
     private func trackPendingSentMessage(_ body: String, channelName: String) {

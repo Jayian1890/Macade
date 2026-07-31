@@ -58,6 +58,7 @@
 		BF00000B000000000000001E /* FightcadeLaunchSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001E /* FightcadeLaunchSupport.swift */; };
 		BF00000B000000000000001F /* FightcadeFBNeoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */; };
 		BF00000B0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */; };
+		BF00000B00000000000000C0 /* ChatTranslationRequestBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000C0 /* ChatTranslationRequestBuilder.swift */; };
 		BF00000B0000000000000021 /* ChannelHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000021 /* ChannelHeaderView.swift */; };
 		BF00000B0000000000000023 /* FightcadeROMLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000023 /* FightcadeROMLibrary.swift */; };
 		BF00000B0000000000000024 /* FightcadeFBNeoSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */; };
@@ -170,6 +171,7 @@
 		BF00000C000000000000001E /* FightcadeLaunchSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLaunchSupport.swift; sourceTree = "<group>"; };
 		BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeFBNeoConfig.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Chat.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000C0 /* ChatTranslationRequestBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatTranslationRequestBuilder.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000021 /* ChannelHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelHeaderView.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000023 /* FightcadeROMLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeROMLibrary.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeFBNeoSettings.swift; sourceTree = "<group>"; };
@@ -456,6 +458,7 @@
 				BF00000C0000000000000009 /* AuthenticatedHomeViewModel.swift */,
 				BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */,
 				BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */,
+				BF00000C00000000000000C0 /* ChatTranslationRequestBuilder.swift */,
 				BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */,
 				BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */,
 				BF00000C0000000000000033 /* AuthenticatedHomeViewModel+JoinedChannels.swift */,
@@ -722,6 +725,7 @@
 				BF00000B00000000000000A5 /* FightcadeProxyDiagnostics.swift in Sources */,
 				BF00000B000000000000001F /* FightcadeFBNeoConfig.swift in Sources */,
 				BF00000B0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift in Sources */,
+				BF00000B00000000000000C0 /* ChatTranslationRequestBuilder.swift in Sources */,
 				BF00000B0000000000000021 /* ChannelHeaderView.swift in Sources */,
 				BF00000B0000000000000023 /* FightcadeROMLibrary.swift in Sources */,
 				BF00000B0000000000000024 /* FightcadeFBNeoSettings.swift in Sources */,
