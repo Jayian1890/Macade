@@ -104,6 +104,27 @@ static std::vector<unsigned char> GGPOMacNormalizeInputRecord(GGPOSession* sessi
 	return normalized;
 }
 
+static bool GGPOMacBlockHasInput(const unsigned char* bytes, int size)
+{
+	if (bytes == NULL || size <= 0) return false;
+	for (int i = 0; i < size; i++) if (bytes[i] != 0) return true;
+	return false;
+}
+
+static void GGPOMacMergeInputSlots(std::vector<unsigned char>& output, const std::vector<unsigned char>& input, int playerSize, int expectedSize)
+{
+	if (playerSize <= 0 || expectedSize <= 0 || input.empty()) return;
+	int copySize = input.size() < (size_t)expectedSize ? (int)input.size() : expectedSize;
+	if ((int)output.size() < expectedSize) output.resize((size_t)expectedSize, 0);
+	int players = expectedSize / playerSize;
+	for (int player = 0; player < players; player++) {
+		int offset = player * playerSize;
+		if (offset >= copySize) break;
+		int slotSize = copySize - offset < playerSize ? copySize - offset : playerSize;
+		if (GGPOMacBlockHasInput(input.data() + offset, slotSize)) memcpy(output.data() + offset, input.data() + offset, (size_t)slotSize);
+	}
+}
+
 static std::vector<unsigned char> GGPOMacPopStreamInput(GGPOSession* session, int playerSize, int expectedSize)
 {
 	std::vector<unsigned char> input = session->streamInputs.front();
@@ -111,24 +132,36 @@ static std::vector<unsigned char> GGPOMacPopStreamInput(GGPOSession* session, in
 	int frame = 0;
 	int payloadSize = 0;
 	if (!GGPOMacInputRecordInfo(input, expectedSize, &frame, &payloadSize)) return input;
-	if (payloadSize > playerSize) return GGPOMacNormalizeInputRecord(session, input, expectedSize);
-
-	std::vector<unsigned char> merged((size_t)expectedSize, 0);
-	memcpy(merged.data(), input.data() + 8, (size_t)payloadSize);
-	char p1[32]; GGPOMacFormatBytes(merged.data(), playerSize, p1, sizeof(p1));
-	bool mergedSecondPlayer = false;
-	if (!session->streamInputs.empty()) {
+	std::vector<unsigned char> merged;
+	int splitSlot = 0;
+	if (payloadSize <= playerSize) {
+		merged.assign((size_t)expectedSize, 0);
+		memcpy(merged.data(), input.data() + 8, (size_t)payloadSize);
+		splitSlot = 1;
+	} else {
+		merged = GGPOMacNormalizeInputRecord(session, input, expectedSize);
+	}
+	int mergedRecords = 1;
+	while (!session->streamInputs.empty()) {
 		std::vector<unsigned char>& next = session->streamInputs.front();
 		int nextFrame = 0;
 		int nextPayloadSize = 0;
-		if (GGPOMacInputRecordInfo(next, expectedSize, &nextFrame, &nextPayloadSize) && nextFrame == frame && nextPayloadSize <= playerSize) {
-			memcpy(merged.data() + playerSize, next.data() + 8, (size_t)nextPayloadSize);
+		if (!GGPOMacInputRecordInfo(next, expectedSize, &nextFrame, &nextPayloadSize) || nextFrame != frame) break;
+		if (nextPayloadSize <= playerSize && splitSlot * playerSize < expectedSize) {
+			memcpy(merged.data() + splitSlot * playerSize, next.data() + 8, (size_t)nextPayloadSize);
+			splitSlot++;
 			session->streamInputs.pop_front();
-			mergedSecondPlayer = true;
+			mergedRecords++;
+			continue;
 		}
+		std::vector<unsigned char> normalized = GGPOMacNormalizeInputRecord(session, next, expectedSize);
+		GGPOMacMergeInputSlots(merged, normalized, playerSize, expectedSize);
+		session->streamInputs.pop_front();
+		mergedRecords++;
 	}
+	char p1[32]; GGPOMacFormatBytes(merged.data(), playerSize, p1, sizeof(p1));
 	char p2[32]; GGPOMacFormatBytes(merged.data() + playerSize, playerSize, p2, sizeof(p2));
-	if (session->streamFrameReadCount < 24 || !mergedSecondPlayer) MacadeLog("Macade GGPO: stream input frame=%d split payload=%d mergedP2=%d p1=%s p2=%s remaining=%zu\n", frame, payloadSize, mergedSecondPlayer ? 1 : 0, p1, p2, session->streamInputs.size());
+	if (session->streamFrameReadCount < 24 || mergedRecords > 1) MacadeLog("Macade GGPO: stream input frame=%d payload=%d mergedRecords=%d p1=%s p2=%s remaining=%zu\n", frame, payloadSize, mergedRecords, p1, p2, session->streamInputs.size());
 	return merged;
 }
 
