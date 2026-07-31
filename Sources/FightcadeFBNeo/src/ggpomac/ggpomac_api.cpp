@@ -50,6 +50,14 @@ static std::vector<unsigned char> GGPOMacInputForFrame(const std::map<int, std::
 	return std::vector<unsigned char>(size, 0);
 }
 
+static bool GGPOMacReadyForLocalInput(GGPOSession* session)
+{
+	if (session == NULL) return false;
+	int barrier = session->maxPredictionFrames - 1;
+	if (barrier < 1) barrier = 1;
+	return (int)session->predictedRemoteInputs.size() < barrier;
+}
+
 GGPOSession* __cdecl ggpo_client_connect(GGPOSessionCallbacks* cb, char* game, char* matchid, int serverport)
 {
 	GGPOSession* session = new GGPOSession();
@@ -191,6 +199,11 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 	session->inputSize = size;
 	std::vector<unsigned char> rawLocal(bytes, bytes + size);
 	if (!session->replaying) {
+		if (!GGPOMacReadyForLocalInput(session)) {
+			if (session->remoteTimeoutCount < 8 || session->remoteTimeoutCount % 120 == 0) MacadeLog("Macade GGPO: rejecting input from emulator; reached prediction barrier queue=%zu max=%d\n", session->predictedRemoteInputs.size(), session->maxPredictionFrames);
+			session->remoteTimeoutCount++;
+			return false;
+		}
 		GGPOMacQueueLocalInput(session, rawLocal);
 		MacadePumpUDPControl(session);
 		MacadeSendUDPInput(session, rawLocal.data(), size, session->localSendHighFrame);
@@ -208,8 +221,9 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 		int copySize = remote->second.size() < (size_t)size ? (int)remote->second.size() : size;
 		memcpy(bytes + remoteSlot * size, remote->second.data(), copySize);
 		session->predictedRemoteInputs.erase(session->currentFrame);
+		session->remoteTimeoutCount = 0;
 	} else {
-		if (session->currentFrame - session->remoteLastFrame > session->maxPredictionFrames) {
+		if ((int)session->predictedRemoteInputs.size() >= session->maxPredictionFrames) {
 			if (session->remoteTimeoutCount < 8 || session->remoteTimeoutCount % 120 == 0) MacadeLog("Macade GGPO: remote frame %d missing beyond prediction window; netplay cannot advance\n", session->currentFrame);
 			session->remoteTimeoutCount++;
 			return false;
