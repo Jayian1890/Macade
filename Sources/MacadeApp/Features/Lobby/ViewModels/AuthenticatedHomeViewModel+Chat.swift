@@ -18,6 +18,14 @@ struct ChatTranslationPreferences: Equatable, Sendable {
     var resolvedTargetLanguage: Locale.Language {
         Locale.Language(identifier: resolvedTargetLanguageIdentifier)
     }
+
+    static func languageFamily(_ identifier: String) -> String {
+        identifier
+            .replacingOccurrences(of: "_", with: "-")
+            .split(separator: "-")
+            .first
+            .map(String.init) ?? identifier
+    }
 }
 
 struct ChatMessageTranslation: Equatable, Sendable {
@@ -69,6 +77,19 @@ final class ChatTranslationStore {
         return requests
     }
 
+    func drainPendingRequests(sourceLanguageIdentifier: String, targetLanguageIdentifier: String) -> [ChatTranslationRequest] {
+        let sourceFamily = ChatTranslationPreferences.languageFamily(sourceLanguageIdentifier)
+        let targetFamily = ChatTranslationPreferences.languageFamily(targetLanguageIdentifier)
+        let requests = pendingRequests.filter {
+            $0.sourceLanguageIdentifier.map(ChatTranslationPreferences.languageFamily) == sourceFamily
+                && ChatTranslationPreferences.languageFamily($0.targetLanguageIdentifier) == targetFamily
+        }
+        pendingRequests.removeAll { request in
+            requests.contains { $0.id == request.id }
+        }
+        return requests
+    }
+
     func complete(_ translation: ChatMessageTranslation) {
         translationsByMessageID[translation.messageID] = .translated(translation)
     }
@@ -80,6 +101,10 @@ final class ChatTranslationStore {
     func prune(retaining retainedMessageIDs: Set<FightcadeChatMessage.ID>) {
         translationsByMessageID = translationsByMessageID.filter { retainedMessageIDs.contains($0.key) }
         pendingRequests.removeAll { !retainedMessageIDs.contains($0.id) }
+    }
+
+    var nextPendingRequest: ChatTranslationRequest? {
+        pendingRequests.first
     }
 }
 
@@ -285,8 +310,22 @@ extension AuthenticatedHomeViewModel {
         guard shouldTranslateChatBody(body) else { return }
 
         let target = preferences.resolvedTargetLanguageIdentifier
-        let source = detectedLanguageIdentifier(in: body)
-        if let source, languageFamily(source) == languageFamily(target) {
+        guard let source = detectedLanguageIdentifier(in: body) else {
+            chatTranslation.fail(
+                ChatTranslationRequest(
+                    id: message.id,
+                    channelName: message.channelName,
+                    sourceBody: body,
+                    protectedBody: body,
+                    placeholders: [:],
+                    sourceLanguageIdentifier: nil,
+                    targetLanguageIdentifier: target
+                ),
+                reason: "Could not identify source language."
+            )
+            return
+        }
+        if ChatTranslationPreferences.languageFamily(source) == ChatTranslationPreferences.languageFamily(target) {
             return
         }
 
@@ -311,15 +350,9 @@ extension AuthenticatedHomeViewModel {
     private func detectedLanguageIdentifier(in body: String) -> String? {
         let recognizer = NLLanguageRecognizer()
         recognizer.processString(body)
-        return recognizer.dominantLanguage?.rawValue
-    }
-
-    private func languageFamily(_ identifier: String) -> String {
-        identifier
-            .replacingOccurrences(of: "_", with: "-")
-            .split(separator: "-")
-            .first
-            .map(String.init) ?? identifier
+        let language = recognizer.dominantLanguage
+        guard language != .undetermined else { return nil }
+        return language?.rawValue
     }
 
     private func protectChatTranslationTokens(in body: String) -> (text: String, placeholders: [String: String]) {

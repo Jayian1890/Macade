@@ -154,6 +154,8 @@ private struct ChannelChatView: View {
 private struct ChatTranslationSessionHost: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
     @State private var configuration: TranslationSession.Configuration?
+    @State private var activeSourceLanguageIdentifier: String?
+    @State private var activeTargetLanguageIdentifier: String?
 
     var body: some View {
         Color.clear
@@ -163,7 +165,15 @@ private struct ChatTranslationSessionHost: View {
                 activateIfNeeded()
             }
             .translationTask(configuration) { session in
-                let requests = viewModel.chatTranslation.drainPendingRequests()
+                guard let sourceLanguageIdentifier = activeSourceLanguageIdentifier,
+                      let targetLanguageIdentifier = activeTargetLanguageIdentifier else {
+                    return
+                }
+
+                let requests = viewModel.chatTranslation.drainPendingRequests(
+                    sourceLanguageIdentifier: sourceLanguageIdentifier,
+                    targetLanguageIdentifier: targetLanguageIdentifier
+                )
                 guard !requests.isEmpty else { return }
 
                 do {
@@ -190,6 +200,8 @@ private struct ChatTranslationSessionHost: View {
                         viewModel.chatTranslation.fail(request, reason: error.localizedDescription)
                     }
                 }
+
+                activateIfNeeded()
             }
     }
 
@@ -201,15 +213,21 @@ private struct ChatTranslationSessionHost: View {
 
     private func activateIfNeeded() {
         guard viewModel.chatTranslation.preferences.isEnabled,
-              !viewModel.chatTranslation.pendingRequests.isEmpty else {
+              let request = viewModel.chatTranslation.nextPendingRequest,
+              let sourceLanguageIdentifier = request.sourceLanguageIdentifier else {
             return
         }
 
-        let target = viewModel.chatTranslation.preferences.resolvedTargetLanguage
-        if configuration?.target == target {
+        let targetLanguageIdentifier = request.targetLanguageIdentifier
+        let source = Locale.Language(identifier: sourceLanguageIdentifier)
+        let target = Locale.Language(identifier: targetLanguageIdentifier)
+        if activeSourceLanguageIdentifier == sourceLanguageIdentifier,
+           activeTargetLanguageIdentifier == targetLanguageIdentifier {
             configuration?.invalidate()
         } else {
-            configuration = TranslationSession.Configuration(source: nil, target: target)
+            activeSourceLanguageIdentifier = sourceLanguageIdentifier
+            activeTargetLanguageIdentifier = targetLanguageIdentifier
+            configuration = TranslationSession.Configuration(source: source, target: target)
         }
     }
 }
