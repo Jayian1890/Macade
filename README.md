@@ -76,4 +76,6 @@ The bundled FBNeo runtime is built separately from `Sources/FightcadeFBNeo` when
 
 ## License
 
-Licensing for bundled third-party components is preserved in their source directories. A top-level app license will be finalized before a stable 1.0 release.
+Macade's original app code is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). You can use, study, modify, and share Macade for non-commercial purposes, but you cannot sell it, bundle it into a paid product, use it to provide paid services, or otherwise profit from it without separate written permission.
+
+Bundled third-party components keep their own licenses in their source directories.
