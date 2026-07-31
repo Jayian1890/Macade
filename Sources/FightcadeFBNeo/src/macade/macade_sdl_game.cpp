@@ -27,13 +27,14 @@ static void MacadeRunEmbeddedSpectatorLoop()
 	fflush(stdout);
 	RunInit();
 	int waitCount = 0;
-	while (MacadeQuarkSessionRunning() && !MacadeQuarkStreamInitialStateLoaded()) {
+	while (!MacadeQuarkStreamInitialStateLoaded()) {
 		MacadeQuarkRunIdle(10);
 		int stateStatus = MacadeQuarkLoadStateIfAvailable();
 		if (waitCount < 20 || waitCount % 100 == 0 || stateStatus == 0) {
-			printf("Macade diagnostic: spectator idle wait=%d state=%d loaded=%d\n", waitCount, stateStatus, MacadeQuarkStreamInitialStateLoaded() ? 1 : 0);
+			printf("Macade diagnostic: spectator idle wait=%d state=%d loaded=%d running=%d\n", waitCount, stateStatus, MacadeQuarkStreamInitialStateLoaded() ? 1 : 0, MacadeQuarkSessionRunning() ? 1 : 0);
 			fflush(stdout);
 		}
+		if (!MacadeQuarkSessionRunning()) break;
 		waitCount++;
 	}
 	while (MacadeQuarkSessionRunning() && !RunIdle()) { }

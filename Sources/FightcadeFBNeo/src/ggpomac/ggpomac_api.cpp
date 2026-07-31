@@ -62,6 +62,22 @@ static bool GGPOMacReadyForLocalInput(GGPOSession* session)
 	return (int)session->predictedRemoteInputs.size() < barrier;
 }
 
+static int GGPOMacReadLE32(const unsigned char* bytes)
+{
+	return (int)bytes[0] | ((int)bytes[1] << 8) | ((int)bytes[2] << 16) | ((int)bytes[3] << 24);
+}
+
+static std::vector<unsigned char> GGPOMacNormalizeInputRecord(GGPOSession* session, const std::vector<unsigned char>& input, int expectedSize)
+{
+	if (expectedSize <= 0 || input.size() < 8) return input;
+	int payloadSize = GGPOMacReadLE32(input.data() + 4);
+	if (payloadSize <= 0 || payloadSize > expectedSize || input.size() < (size_t)(8 + payloadSize)) return input;
+	if (session != NULL && session->streamFrameReadCount < 8) MacadeLog("Macade GGPO: normalized streamed GameInput frame=%d payload=%d raw=%zu expected=%d\n", GGPOMacReadLE32(input.data()), payloadSize, input.size(), expectedSize);
+	std::vector<unsigned char> normalized((size_t)expectedSize, 0);
+	memcpy(normalized.data(), input.data() + 8, (size_t)payloadSize);
+	return normalized;
+}
+
 GGPOSession* __cdecl ggpo_client_connect(GGPOSessionCallbacks* cb, char* game, char* matchid, int serverport)
 {
 	GGPOSession* session = new GGPOSession();
@@ -171,7 +187,7 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 		memset(values, 0, (size_t)totalSize);
 		if (!session->replayInitialStateLoaded) return false;
 		if (session->replayReadFrame >= (int)session->replayInputs.size()) return false;
-		std::vector<unsigned char>& input = session->replayInputs[session->replayReadFrame++];
+		std::vector<unsigned char> input = GGPOMacNormalizeInputRecord(session, session->replayInputs[session->replayReadFrame++], copySize);
 		if (copySize > (int)input.size()) copySize = (int)input.size();
 		if (copySize > 0) memcpy(values, input.data(), (size_t)copySize);
 		session->inputSize = size;
@@ -188,7 +204,7 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 		int streamPlayers = players < 2 ? players : 2;
 		int streamSize = size * streamPlayers;
 		memset(values, 0, (size_t)totalSize);
-		std::vector<unsigned char> input = session->streamInputs.front();
+		std::vector<unsigned char> input = GGPOMacNormalizeInputRecord(session, session->streamInputs.front(), streamSize);
 		session->streamInputs.pop_front();
 		int copySize = input.size() < (size_t)streamSize ? (int)input.size() : streamSize;
 		memcpy(values, input.data(), copySize);

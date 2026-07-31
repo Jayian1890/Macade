@@ -46,6 +46,14 @@ static void HandleTCPStreamFrameBatch(GGPOSession* session, const unsigned char*
 	if (ShouldLogCount(session->streamFrameBatchCount)) MacadeLog("Macade GGPO: stream frame batch received frameSize=%u count=%u queued=%zu batches=%d\n", frameSize, frameCount, session->streamInputs.size(), session->streamFrameBatchCount);
 }
 
+static void HandleTCPStreamFrame(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize)
+{
+	if (session == NULL || payload == NULL || payloadSize == 0 || payloadSize > 512) return;
+	session->streamInputs.push_back(std::vector<unsigned char>(payload, payload + payloadSize));
+	session->streamReceiveFrame++;
+	if (ShouldLogCount(session->streamFrameBatchCount)) MacadeLog("Macade GGPO: stream frame received size=%u queued=%zu\n", payloadSize, session->streamInputs.size());
+}
+
 static void HandleTCPStreamSpectatorCount(GGPOSession* session, const unsigned char* payload, unsigned int payloadSize)
 {
 	if (session == NULL || payload == NULL || payloadSize < 4) return;
@@ -57,6 +65,7 @@ void MacadeHandleTCPStreamRecord(GGPOSession* session, int code, const unsigned 
 {
 	if (session == NULL) return;
 	if (code == 3) MacadeHandleTCPMatchInfoRecord(session, payload, payloadSize);
+	else if (code == 14) HandleTCPStreamFrame(session, payload, payloadSize);
 	else if (code == -12) HandleTCPStreamGameBuffer(session, payload, payloadSize);
 	else if (code == -13) HandleTCPStreamFrameBatch(session, payload, payloadSize);
 	else if (code == -10) HandleTCPStreamSpectatorCount(session, payload, payloadSize);
