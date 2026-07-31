@@ -10,6 +10,7 @@ extern int kNetGame;
 extern int kNetVersion;
 
 static const int kMaxPlayers = 4;
+static const int kNetPlayers = 2;
 static const int kInputSize = 8 * (4 + 8);
 
 static int gPlayerInputs[kMaxPlayers];
@@ -128,14 +129,9 @@ static bool MacadeCaptureLocalControls(int* blockSize)
 		}
 	}
 
-	for (i = 0; i < gDIPInputs && j < kInputSize; i++, j++) {
-		if (!ReadInputInfo(i + gDIPOffset, &input) || input.pVal == NULL) continue;
-		gControls[j] = *input.pVal;
-	}
-
 	*blockSize = j;
-	if (*blockSize <= 0 || *blockSize * kMaxPlayers > kInputSize) {
-		printf("Macade GGPO: invalid input block size=%d max=%d\n", *blockSize, kInputSize / kMaxPlayers);
+	if (*blockSize <= 0 || *blockSize * kNetPlayers > kInputSize) {
+		printf("Macade GGPO: invalid input block size=%d max=%d\n", *blockSize, kInputSize / kNetPlayers);
 		fflush(stdout);
 		return false;
 	}
@@ -169,11 +165,6 @@ static void MacadeApplySynchronizedControls(int blockSize)
 		}
 	}
 
-	for (i = 0; i < gDIPInputs && j < kInputSize; i++, j++) {
-		if (!ReadInputInfo(i + gDIPOffset, &input) || input.pVal == NULL) continue;
-		*input.pVal = gControls[j];
-	}
-
 	for (int player = 1; player < kMaxPlayers; player++) {
 		if (gPlayerInputs[player] == 0) continue;
 		int bitOffset = blockSize * player * 8;
@@ -194,10 +185,6 @@ static void MacadeApplySynchronizedControls(int blockSize)
 			}
 		}
 
-		for (i = 0; i < gDIPInputs && j < kInputSize; i++, j++) {
-			if (!ReadInputInfo(i + gDIPOffset, &input) || input.pVal == NULL) continue;
-			*input.pVal &= gControls[j];
-		}
 	}
 }
 
@@ -212,7 +199,7 @@ int MacadeNetworkGetInput()
 			gNetworkGetInputLogCount, ggpo->currentFrame, blockSize, ggpo->playerIndex, ggpo->remoteLastFrame, ggpo->localAckFrame);
 		fflush(stdout);
 	}
-	bool synchronized = ggpo_synchronize_input(ggpo, gControls, blockSize, kMaxPlayers);
+	bool synchronized = ggpo_synchronize_input(ggpo, gControls, blockSize, kNetPlayers);
 	if (gNetworkGetInputLogCount < 20 || gNetworkGetInputLogCount % 120 == 0 || !synchronized) {
 		printf("Macade diagnostic: NetworkGetInput=%d synchronized=%d frame=%d remoteLast=%d remoteStored=%zu\n",
 			gNetworkGetInputLogCount, synchronized ? 1 : 0, ggpo->currentFrame, ggpo->remoteLastFrame, ggpo->remoteInputs.size());
@@ -233,7 +220,7 @@ int MacadeNetworkReplayFrame()
 	std::map<int, std::vector<unsigned char> >::iterator local = ggpo->localInputs.find(ggpo->currentFrame);
 	if (local != ggpo->localInputs.end() && local->second.size() == (size_t)ggpo->inputSize) memcpy(gControls, local->second.data(), ggpo->inputSize);
 	nCurrentFrame++;
-	bool synchronized = ggpo_synchronize_input(ggpo, gControls, ggpo->inputSize, kMaxPlayers);
+	bool synchronized = ggpo_synchronize_input(ggpo, gControls, ggpo->inputSize, kNetPlayers);
 	if (!synchronized) return 1;
 	MacadeApplySynchronizedControls(ggpo->inputSize);
 	UINT8* oldDraw = pBurnDraw;

@@ -48,7 +48,7 @@ struct PlayerRow: View {
 
             Menu("Challenge") {
                 Button("Unranked") {
-                    viewModel.challenge(user, in: channel)
+                    viewModel.challenge(user, in: channel, ranked: 0)
                 }
 
                 ForEach(FightcadeChallenge.rankedValues, id: \.self) { rounds in

@@ -285,59 +285,6 @@ static void HandleTCPServerRecord(GGPOSession* session, int code, const unsigned
 	else if (code == 14) HandleTCPFrameBatch(session, payload, payloadSize);
 }
 
-static bool PayloadContains(const unsigned char* payload, unsigned int payloadSize, const char* needle)
-{
-	unsigned int needleSize = needle == NULL ? 0 : (unsigned int)strlen(needle);
-	if (payload == NULL || needleSize == 0 || payloadSize < needleSize) return false;
-	for (unsigned int offset = 0; offset <= payloadSize - needleSize; offset++) {
-		if (memcmp(payload + offset, needle, needleSize) == 0) return true;
-	}
-	return false;
-}
-
-static bool MacadeWaitForTCPStartup(GGPOSession* session)
-{
-	if (session == NULL || session->tcpFd < 0) return false;
-	std::vector<unsigned char>& tcpBuffer = session->tcpReceiveBuffer;
-	int elapsedMs = 0;
-	bool commandEcho = false;
-	while (elapsedMs < 10000) {
-		fd_set readSet; FD_ZERO(&readSet); FD_SET(session->tcpFd, &readSet);
-		timeval tv; tv.tv_sec = 0; tv.tv_usec = 250000;
-		int ready = select(session->tcpFd + 1, &readSet, NULL, NULL, &tv);
-		elapsedMs += 250;
-		if (ready < 0) { MacadeMarkDisconnected(session); return false; }
-		if (ready == 0) continue;
-		unsigned char buffer[4096]; ssize_t count = recv(session->tcpFd, buffer, sizeof(buffer), 0);
-		if (count <= 0) { MacadeMarkDisconnected(session); return false; }
-		session->bytesReceived += (unsigned long long)count;
-		tcpBuffer.insert(tcpBuffer.end(), buffer, buffer + count);
-		while (tcpBuffer.size() >= 8) {
-			unsigned int length = ReadBE32(&tcpBuffer[0]);
-			if (length < 4 || length > 1024 * 1024) { tcpBuffer.clear(); MacadeMarkDisconnected(session); return false; }
-			if (tcpBuffer.size() < length + 4) break;
-			int code = (int)(int32_t)ReadBE32(&tcpBuffer[4]);
-			const unsigned char* payload = &tcpBuffer[8];
-			unsigned int payloadSize = length - 4;
-			MacadeLog("Macade GGPO: TCP startup record code=%d payload=%u\n", code, payloadSize);
-			if (code == -7) ApplyTCPEndpointNotice(session, payload, payloadSize);
-			if (code == 3) MacadeHandleTCPMatchInfoRecord(session, payload, payloadSize);
-			if (code == 14) HandleTCPFrameBatch(session, payload, payloadSize);
-			if (code == -8 && PayloadContains(payload, payloadSize, "Command")) {
-				MacadeLog("Macade GGPO: TCP startup command echo received\n");
-				commandEcho = true;
-			}
-			if (commandEcho && (!session->openPortFallback || session->hasPeer)) {
-				tcpBuffer.erase(tcpBuffer.begin(), tcpBuffer.begin() + length + 4);
-				return true;
-			}
-			tcpBuffer.erase(tcpBuffer.begin(), tcpBuffer.begin() + length + 4);
-		}
-	}
-	MacadeLog(commandEcho ? "Macade GGPO: TCP startup open-port peer timeout\n" : "Macade GGPO: TCP startup command echo timeout\n");
-	return false;
-}
-
 static bool ShouldLogCount(int count) { return count < 8 || count % 120 == 0; }
 
 void MacadePollTCP(GGPOSession* session, int timeoutMs)
@@ -408,27 +355,43 @@ void MacadeSendTCPFrameBatch(GGPOSession* session)
 {
 	if (session == NULL || session->tcpFd < 0 || session->inputSize <= 0 || session->quarkId[0] == 0 || session->localSendHighFrame < 0) return;
 	if (session->currentFrame - session->tcpLastBatchFrame < kTCPFrameBatchInterval) return;
+	MacadeSendTCPReadyIfNeeded(session);
+	if (!session->tcpReadySent) return;
+	if (session->currentFrame - session->tcpLastBatchFrame < kTCPFrameBatchInterval) return;
 	const int frameCount = 60;
 	std::vector<unsigned char> payload;
 	AppendString(payload, session->quarkId); AppendBE32(payload, frameCount); AppendBE32(payload, (unsigned int)session->inputSize);
-	std::vector<unsigned char> empty(session->inputSize, 0);
-	std::vector<unsigned char> previous = empty;
-	int firstFrame = session->localSendHighFrame - frameCount + 1;
-	for (int frame = firstFrame; frame <= session->localSendHighFrame; frame++) {
-		std::map<int, std::vector<unsigned char> >::iterator input = session->localInputs.find(frame);
-		const std::vector<unsigned char>& bytes = input == session->localInputs.end() ? previous : input->second;
-		payload.insert(payload.end(), bytes.begin(), bytes.begin() + session->inputSize);
-		previous = bytes;
-	}
+	payload.insert(payload.end(), (size_t)frameCount * (size_t)session->inputSize, 0);
 	if (SendCommand(session->tcpFd, session->tcpSequence++, 17, payload)) {
 		session->bytesSent += (unsigned long long)payload.size() + 12ULL;
 		session->tcpLastBatchFrame = session->currentFrame;
 		session->tcpBatchSendCount++;
-		if (ShouldLogCount(session->tcpBatchLogCount)) MacadeLog("Macade GGPO: TCP frame batch sent frame=%d count=%d\n", session->currentFrame, session->tcpBatchSendCount);
+		if (ShouldLogCount(session->tcpBatchLogCount)) MacadeLog("Macade GGPO: TCP frame batch sent frame=%d count=%d size=%d\n", session->currentFrame, session->tcpBatchSendCount, session->inputSize);
 		session->tcpBatchLogCount++;
 		bool needsSnapshot = session->tcpBatchSendCount >= kTCPSnapshotFirstBatch &&
 			(session->tcpSnapshotSendCount == 0 || session->tcpBatchSendCount - session->tcpLastSnapshotBatch >= kTCPSnapshotIntervalBatches);
 		if (needsSnapshot) MacadeSendTCPSnapshot(session);
+	}
+}
+
+void MacadeSendTCPReadyIfNeeded(GGPOSession* session)
+{
+	if (session == NULL || session->tcpReadySent || session->tcpFd < 0 || session->inputSize <= 0 || session->quarkId[0] == 0 || session->localSendHighFrame < 0) return;
+	const int frameCount = 60;
+	std::vector<unsigned char> payload;
+	AppendString(payload, session->quarkId); AppendBE32(payload, frameCount); AppendBE32(payload, (unsigned int)session->inputSize);
+	payload.insert(payload.end(), (size_t)frameCount * (size_t)session->inputSize, 0);
+	if (!SendCommand(session->tcpFd, session->tcpSequence++, 17, payload)) return;
+	char ready[64]; snprintf(ready, sizeof(ready), "C2,%d,%d,%d", iPlayer, iDelay, iRanked);
+	std::vector<unsigned char> readyPayload;
+	AppendString(readyPayload, session->quarkId); AppendString(readyPayload, ready);
+	if (SendCommand(session->tcpFd, session->tcpSequence++, 15, readyPayload)) {
+		session->bytesSent += (unsigned long long)payload.size() + 12ULL;
+		session->tcpLastBatchFrame = session->currentFrame;
+		session->tcpBatchSendCount++;
+		session->tcpReadySent = true;
+		MacadeLog("Macade GGPO: TCP ready sent quark=%s inputSize=%d ready=%s\n", session->quarkId, session->inputSize, ready);
+		session->tcpBatchLogCount++;
 	}
 }
 
@@ -441,11 +404,8 @@ static void StartTCP(GGPOSession* session, const char* quark)
 	payload.clear(); AppendString(payload, quark); AppendBE32(payload, kRegisterValue); SendCommand(fd, 2, 11, payload);
 	payload.clear(); AppendString(payload, quark); SendCommand(fd, 3, 12, payload);
 	payload.clear(); AppendString(payload, quark); AppendString(payload, "V14"); SendCommand(fd, 4, 15, payload);
-	payload.clear(); AppendString(payload, quark); AppendBE32(payload, 60); AppendBE32(payload, 10); payload.insert(payload.end(), 60 * 10, 0); SendCommand(fd, 5, 17, payload);
-	char ready[64]; snprintf(ready, sizeof(ready), "C2,%d,%d,%d", iPlayer, iDelay, iRanked);
-	payload.clear(); AppendString(payload, quark); AppendString(payload, ready); SendCommand(fd, 6, 15, payload);
-	session->tcpSequence = 7;
-	MacadeLog("Macade GGPO: served TCP startup sent quark=%s ready=%s\n", quark, ready);
+	session->tcpSequence = 5;
+	MacadeLog("Macade GGPO: served TCP negotiation sent quark=%s\n", quark);
 }
 bool MacadeStartStreamingTCPIfNeeded(GGPOSession* session)
 {
@@ -468,7 +428,6 @@ bool MacadeEstablishServedSession(GGPOSession* session, const char* quark, int s
 	session->tcpFd = ConnectTCP(serverport);
 	if (session->tcpFd < 0) { MacadeLog("Macade GGPO: TCP connect failed after UDP punch\n"); return false; }
 	StartTCP(session, quark);
-	if (!MacadeWaitForTCPStartup(session)) return false;
 	return true;
 }
 

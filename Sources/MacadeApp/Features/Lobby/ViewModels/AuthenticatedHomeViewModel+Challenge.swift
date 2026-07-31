@@ -41,7 +41,7 @@ extension AuthenticatedHomeViewModel {
         }
     }
 
-    func challenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel, ranked: Int = 0) {
+    func challenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel, ranked: Int = FightcadeChallenge.defaultRankedValue) {
         guard canChallenge(user, in: channel) else {
             return
         }
@@ -63,7 +63,7 @@ extension AuthenticatedHomeViewModel {
         }
     }
 
-    func challenge(_ username: String, in channel: FightcadeChannel, ranked: Int = 0) {
+    func challenge(_ username: String, in channel: FightcadeChannel, ranked: Int = FightcadeChallenge.defaultRankedValue) {
         guard let user = challengeableUser(named: username, in: channel) else {
             return
         }

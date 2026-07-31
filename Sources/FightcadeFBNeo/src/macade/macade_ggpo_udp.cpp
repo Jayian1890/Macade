@@ -283,13 +283,10 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 				bool malformed = false;
 				std::vector<std::pair<int, std::vector<unsigned char> > > decodedFrames;
 				std::vector<unsigned char> previous(inputBytes, 0);
-				if (startFrame > 0) {
-					std::map<int, std::vector<unsigned char> >::iterator prior = session->remoteInputs.find(startFrame - 1);
-					if (prior != session->remoteInputs.end() && prior->second.size() == (size_t)inputBytes) previous = prior->second;
-					else if (startFrame == session->remoteLastFrame + 1) previous = session->lastRemoteInput;
-				}
+				if (session->remoteLastFrame >= 0 && session->lastRemoteInput.size() == (size_t)inputBytes) previous = session->lastRemoteInput;
 				while (bitOffset < bitCount) {
 					std::vector<unsigned char> current = previous;
+					bool shouldApplyFrame = frame >= expectedFrame;
 					while (bitOffset < bitCount) {
 						bool changed = false;
 						if (!ReadCompressedBit(buffer + 12, bitCount, &bitOffset, &changed)) { malformed = true; break; }
@@ -303,9 +300,13 @@ bool MacadePollUDP(GGPOSession* session, int timeoutMs)
 							if (indexValue) index |= 1 << indexBit;
 						}
 						if (malformed) break;
-						if (index >= 0 && index < inputBytes * 8) SetInputBit(current, index, value);
+						if (shouldApplyFrame && index >= 0 && index < inputBytes * 8) SetInputBit(current, index, value);
 					}
 					if (malformed) break;
+					if (frame < expectedFrame) {
+						frame++;
+						continue;
+					}
 					if (frame == expectedFrame + (int)decodedFrames.size()) decodedFrames.push_back(std::make_pair(frame, current));
 					else if (frame > expectedFrame + (int)decodedFrames.size()) {
 						MacadeLog("Macade GGPO: UDP input batch gap frame=%d remoteLast=%d decoded=%zu\n", frame, session->remoteLastFrame, decodedFrames.size());

@@ -89,11 +89,22 @@ final class EmbeddedInputEventRouter {
     }
 
     private func shouldRoute(_ event: NSEvent) -> Bool {
+        if isTextInputFocused {
+            return false
+        }
+
         if event.modifierFlags.intersection(.deviceIndependentFlagsMask).contains(.command) {
             return false
         }
 
         return event.type == .keyDown || event.type == .keyUp
+    }
+
+    private var isTextInputFocused: Bool {
+        guard let responder = NSApp.keyWindow?.firstResponder else { return false }
+        if responder is NSTextView { return true }
+        if responder is NSTextField { return true }
+        return false
     }
 
     private func send(event: NSEvent, isPressed: Bool, session: FightcadeEmbeddedSession) {

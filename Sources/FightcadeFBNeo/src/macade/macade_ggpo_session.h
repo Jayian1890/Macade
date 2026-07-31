@@ -47,6 +47,7 @@ struct GGPOSession {
 	int tcpBatchSendCount = 0;
 	int tcpSnapshotSendCount = 0;
 	int tcpLastSnapshotBatch = 0;
+	bool tcpReadySent = false;
 	int remoteTimeoutCount = 0;
 	int udpInputSendCount = 0;
 	int udpInputReceiveCount = 0;
@@ -131,6 +132,7 @@ void MacadePollTCP(GGPOSession* session, int timeoutMs);
 bool MacadeSendTCPChat(GGPOSession* session, const char* text);
 bool MacadeHandleGameEvent(GGPOSession* session, GGPOClientGameEventType type, void* data);
 void MacadeReplayRecordInput(GGPOSession* session, const unsigned char* bytes, int size);
+void MacadeSendTCPReadyIfNeeded(GGPOSession* session);
 void MacadeSendTCPFrameBatch(GGPOSession* session);
 bool MacadePollUDP(GGPOSession* session, int timeoutMs);
 void MacadeSendUDPInput(GGPOSession* session, const unsigned char* bytes, int size, int frame);

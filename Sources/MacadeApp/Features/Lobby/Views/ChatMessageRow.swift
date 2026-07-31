@@ -103,14 +103,16 @@ struct ChatMessageRow: View {
                     .background(MacadeColor.warning.opacity(isHoveringName ? 0.95 : 0.18), in: Circle())
             }
             .buttonStyle(.plain)
-            .help("Challenge unranked")
+            .help("Challenge FT\(FightcadeChallenge.defaultRankedValue)")
         }
     }
 
     @ViewBuilder
     private var challengeMenu: some View {
         Menu("Challenge") {
-            Button("Unranked", action: challengeFromChat)
+            Button("Unranked") {
+                challengeFromChat(ranked: 0)
+            }
 
             ForEach(FightcadeChallenge.rankedValues, id: \.self) { rounds in
                 Button("FT\(rounds)") {
@@ -184,7 +186,7 @@ struct ChatMessageRow: View {
     }
 
     private func challengeFromChat() {
-        challengeFromChat(ranked: 0)
+        challengeFromChat(ranked: FightcadeChallenge.defaultRankedValue)
     }
 
     private func focusChatUser() {

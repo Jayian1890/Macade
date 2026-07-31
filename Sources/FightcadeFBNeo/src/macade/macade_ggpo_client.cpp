@@ -349,6 +349,7 @@ bool __cdecl ggpo_synchronize_input(GGPOSession* session, void* values, int size
 		MacadeQueueLocalInput(session, rawLocal);
 		MacadePumpUDPControl(session);
 		MacadeSendUDPInput(session, rawLocal.data(), size, session->localSendHighFrame);
+		MacadeSendTCPReadyIfNeeded(session);
 		MacadeSendTCPFrameBatch(session);
 		MacadePollTCP(session, 0);
 		MacadePollUDP(session, 0);
