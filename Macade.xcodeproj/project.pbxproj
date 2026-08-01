@@ -105,6 +105,7 @@
 		BF00000B00000000000000A5 /* FightcadeProxyDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A5 /* FightcadeProxyDiagnostics.swift */; };
 		BF00000B00000000000000A6 /* FightcadeChannelBrowserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A6 /* FightcadeChannelBrowserModels.swift */; };
 		BF00000B00000000000000A7 /* FightcadeLobbyService+Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */; };
+		BF00000B00000000000000C5 /* FightcadeLobbyService+Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000C5 /* FightcadeLobbyService+Connection.swift */; };
 		BF00000B00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */; };
 		BF00000B00000000000000A9 /* ChannelBrowserControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A9 /* ChannelBrowserControls.swift */; };
 		BF00000B00000000000000AA /* ChannelBrowserCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AA /* ChannelBrowserCards.swift */; };
@@ -222,6 +223,7 @@
 		BF00000C00000000000000A5 /* FightcadeProxyDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeProxyDiagnostics.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000A6 /* FightcadeChannelBrowserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChannelBrowserModels.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyService+Browser.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000C5 /* FightcadeLobbyService+Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyService+Connection.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Browser.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000A9 /* ChannelBrowserControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserControls.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000AA /* ChannelBrowserCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserCards.swift; sourceTree = "<group>"; };
@@ -450,6 +452,7 @@
 				BF00000C0000000000000007 /* FightcadeLobbyServicing.swift */,
 				BF00000C0000000000000008 /* FightcadeLobbyService.swift */,
 				BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */,
+				BF00000C00000000000000C5 /* FightcadeLobbyService+Connection.swift */,
 				BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */,
 				BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */,
 				BF00000C00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift */,
@@ -676,6 +679,7 @@
 				BF00000B000000000000000D /* ChannelBrowserView.swift in Sources */,
 				BF00000B00000000000000A6 /* FightcadeChannelBrowserModels.swift in Sources */,
 				BF00000B00000000000000A7 /* FightcadeLobbyService+Browser.swift in Sources */,
+				BF00000B00000000000000C5 /* FightcadeLobbyService+Connection.swift in Sources */,
 				BF00000B00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift in Sources */,
 				BF00000B00000000000000A9 /* ChannelBrowserControls.swift in Sources */,
 				BF00000B00000000000000AA /* ChannelBrowserCards.swift in Sources */,
