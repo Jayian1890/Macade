@@ -40,11 +40,11 @@ struct FightcadeFriendRowState: Identifiable, Equatable {
 
     var statusText: String {
         guard let user else {
-            return "Offline"
+            return "Not seen in joined rooms"
         }
 
         if user.isPlaying {
-            return channel.map { "Playing \($0.title)" } ?? "Playing"
+            return channel.map { "Playing in \($0.title)" } ?? "Playing"
         }
 
         if user.isAway {
@@ -55,4 +55,14 @@ struct FightcadeFriendRowState: Identifiable, Equatable {
     }
 
     var isOnline: Bool { user != nil }
+
+    var onlineStateText: String {
+        isOnline ? "ONLINE" : "OFFLINE"
+    }
+
+    var onlineHelpText: String {
+        isOnline
+            ? "This friend is actively online in a joined room roster."
+            : "This friend is not present in any joined room roster."
+    }
 }

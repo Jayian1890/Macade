@@ -23,10 +23,17 @@ struct FriendsSidebarSection: View {
 
             Spacer()
 
-            Text("\(viewModel.friends.count)")
+            Text(onlineCountText)
                 .font(MacadeTypography.caption)
                 .foregroundStyle(MacadeColor.inkMuted.opacity(0.78))
+                .help("Friends actively online in joined room rosters")
         }
+    }
+
+    private var onlineCountText: String {
+        let rows = viewModel.friendRows
+        let onlineCount = rows.filter(\.isOnline).count
+        return "\(onlineCount)/\(rows.count) online"
     }
 
     private var addField: some View {
@@ -83,7 +90,7 @@ private struct FriendSidebarRow: View {
             Circle()
                 .fill(statusColor)
                 .frame(width: 8, height: 8)
-                .help(row.statusText)
+                .help(row.onlineHelpText)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(row.title)
@@ -99,6 +106,7 @@ private struct FriendSidebarRow: View {
 
             Spacer(minLength: 0)
 
+            onlineBadge
             actionButtons
         }
         .padding(.horizontal, MacadeSpacing.xSmall)
@@ -126,6 +134,16 @@ private struct FriendSidebarRow: View {
                 .disabled(row.isChallenging)
             }
         }
+    }
+
+    private var onlineBadge: some View {
+        Text(row.onlineStateText)
+            .font(.system(size: 8, weight: .black, design: .rounded))
+            .foregroundStyle(row.isOnline ? MacadeColor.midnight : MacadeColor.inkMuted)
+            .padding(.horizontal, 5)
+            .frame(height: 17)
+            .background(row.isOnline ? statusColor : MacadeColor.panel.opacity(0.8), in: Capsule())
+            .help(row.onlineHelpText)
     }
 
     private func iconButton(_ systemName: String, help: String, action: @escaping () -> Void) -> some View {

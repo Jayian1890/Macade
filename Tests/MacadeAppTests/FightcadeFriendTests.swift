@@ -79,11 +79,16 @@ final class FightcadeFriendTests: XCTestCase {
 
         XCTAssertEqual(rows["readyfriend"]?.user?.name, "ReadyFriend")
         XCTAssertEqual(rows["readyfriend"]?.channel?.id, channel.id)
+        XCTAssertEqual(rows["readyfriend"]?.onlineStateText, "ONLINE")
+        XCTAssertEqual(rows["readyfriend"]?.statusText, "Ready in Street Fighter III")
         XCTAssertEqual(rows["readyfriend"]?.isChallengeable, true)
         XCTAssertEqual(rows["readyfriend"]?.isWatchable, false)
         XCTAssertEqual(rows["playingfriend"]?.isChallengeable, false)
         XCTAssertEqual(rows["playingfriend"]?.isWatchable, true)
+        XCTAssertEqual(rows["playingfriend"]?.statusText, "Playing in Street Fighter III")
         XCTAssertEqual(rows["missing"]?.isOnline, false)
+        XCTAssertEqual(rows["missing"]?.onlineStateText, "OFFLINE")
+        XCTAssertEqual(rows["missing"]?.statusText, "Not seen in joined rooms")
     }
 
     private func temporaryDirectory() -> URL {
