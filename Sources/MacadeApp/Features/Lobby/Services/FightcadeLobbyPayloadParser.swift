@@ -21,7 +21,6 @@ struct FightcadeLobbyPayloadParser: Sendable {
                 return token
             }
         }
-
         return nil
     }
 
@@ -48,6 +47,7 @@ struct FightcadeLobbyPayloadParser: Sendable {
         }
 
         if let result = intValue(in: payload, keys: ["result"]), result != 200 {
+            if result == 400, stringValue(in: payload, keys: ["req"]) == "join" { return .unexpectedResponse("Could not join room. Leave another joined room and try again.") }
             return .unexpectedResponse(errorMessage(in: payload))
         }
 

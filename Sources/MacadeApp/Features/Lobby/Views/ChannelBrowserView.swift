@@ -113,21 +113,8 @@ struct ChannelBrowserView: View {
                     ContentUnavailableView("No Channels", systemImage: "magnifyingglass")
                         .foregroundStyle(MacadeColor.inkMuted)
                         .frame(maxWidth: .infinity, minHeight: 300)
-                } else if viewModel.browser.mode == .all && !viewModel.browser.hasActiveFilters && viewModel.browser.results.isEmpty {
-                    ChannelCardSection(title: "POPULAR GAMES", channels: viewModel.popularChannels)
-                    CategoryStrip(
-                        channels: viewModel.channels,
-                        favoriteCount: viewModel.favoriteChannels.count,
-                        onSelectPopular: viewModel.showChannelBrowser,
-                        onSelectFavorites: viewModel.showFavoriteChannels,
-                        onSelectSystem: selectCategory
-                    )
-                    ChannelCardSection(title: "HIDDEN GEMS", channels: viewModel.hiddenGemChannels)
-                    EventCardSection(title: "UPCOMING EVENTS", events: viewModel.upcomingEvents)
-
-                    if !viewModel.favoriteChannels.isEmpty {
-                        ChannelCardSection(title: "FAVORITES", channels: viewModel.favoriteChannels)
-                    }
+                } else if isShowingLandingSections {
+                    landingSections
                 } else {
                     if viewModel.browser.layoutMode == .grid {
                         ChannelCardSection(title: resultsTitle, channels: viewModel.browserChannels)
@@ -147,6 +134,58 @@ struct ChannelBrowserView: View {
             .padding(MacadeSpacing.medium)
         }
         .scrollIndicators(.hidden)
+    }
+
+    private var isShowingLandingSections: Bool {
+        viewModel.browser.mode == .all && !viewModel.browser.hasActiveFilters && viewModel.browser.results.isEmpty
+    }
+
+    @ViewBuilder
+    private var landingSections: some View {
+        if viewModel.browserLandingSections.isEmpty {
+            fallbackLandingSections
+        } else {
+            ForEach(viewModel.browserLandingSections) { section in
+                welcomeSection(section)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var fallbackLandingSections: some View {
+        ChannelCardSection(title: "POPULAR GAMES", channels: viewModel.popularChannels)
+        CategoryStrip(
+            channels: viewModel.channels,
+            favoriteCount: viewModel.favoriteChannels.count,
+            onSelectCategory: selectCategory
+        )
+        ChannelCardSection(title: "HIDDEN GEMS", channels: viewModel.hiddenGemChannels)
+        EventCardSection(title: "UPCOMING EVENTS", events: viewModel.upcomingEvents)
+
+        if !viewModel.favoriteChannels.isEmpty {
+            ChannelCardSection(title: "FAVORITES", channels: viewModel.favoriteChannels)
+        }
+    }
+
+    @ViewBuilder
+    private func welcomeSection(_ section: FightcadeWelcomeSection) -> some View {
+        if !section.categories.isEmpty {
+            CategoryStrip(
+                title: section.title.uppercased(),
+                categories: section.categories,
+                channels: viewModel.channels,
+                favoriteCount: viewModel.favoriteChannels.count,
+                onSelectCategory: selectCategory
+            )
+        }
+
+        if !section.channels.isEmpty {
+            ChannelCardSection(title: section.title.uppercased(), channels: section.channels)
+        }
+
+        if !section.events.isEmpty {
+            EventCardSection(title: section.title.uppercased(), events: section.events)
+        }
     }
 
     private var activeFilterChips: some View {
@@ -262,9 +301,44 @@ struct ChannelBrowserView: View {
         )
     }
 
-    private func selectCategory(_ system: String) {
+    private func selectCategory(_ category: String) {
+        let normalizedCategory = category.normalizedBrowserCategory
+        if normalizedCategory == "popular" {
+            viewModel.showPopularChannels()
+            return
+        }
+
+        if normalizedCategory == "my favorites" || normalizedCategory == "favorites" {
+            viewModel.showFavoriteChannels()
+            return
+        }
+
         viewModel.browser.mode = .all
-        viewModel.applyBrowserSystem(system)
+        viewModel.browser.query = ""
+        viewModel.browser.selectedYear = nil
+
+        if let genre = matchingOption(category, in: viewModel.browser.filterOptions.genres) {
+            viewModel.browser.selectedSystem = nil
+            viewModel.browser.selectedGenre = genre
+            viewModel.scheduleBrowserSearch()
+            return
+        }
+
+        if let system = matchingOption(category, in: filterSystems) {
+            viewModel.browser.selectedGenre = nil
+            viewModel.applyBrowserSystem(system)
+            return
+        }
+
+        viewModel.browser.selectedGenre = nil
+        viewModel.browser.selectedSystem = nil
+        viewModel.browser.query = category
+        viewModel.scheduleBrowserSearch()
+    }
+
+    private func matchingOption(_ value: String, in options: [String]) -> String? {
+        let normalizedValue = value.normalizedBrowserCategory
+        return options.first { $0.normalizedBrowserCategory == normalizedValue }
     }
 
     private var resultsTitle: String {
@@ -288,8 +362,8 @@ struct ChannelBrowserView: View {
                     ForEach(channels) { channel in
                         ChannelCard(
                             channel: channel,
-                            isSelected: viewModel.browser.selectedPreviewChannelID == channel.id,
-                            isJoined: viewModel.joinedChannelIDs.contains(channel.id),
+                            isSelected: viewModel.isBrowserChannelSelected(channel),
+                            isJoined: viewModel.isBrowserChannelJoined(channel),
                             previewAction: { viewModel.selectBrowserPreview(channel) },
                             openAction: { viewModel.joinFromBrowser(channel) },
                             favoriteAction: { viewModel.toggleFavorite(channel) },
@@ -310,8 +384,8 @@ struct ChannelBrowserView: View {
                 ForEach(channels) { channel in
                     ChannelListRow(
                         channel: channel,
-                        isSelected: viewModel.browser.selectedPreviewChannelID == channel.id,
-                        isJoined: viewModel.joinedChannelIDs.contains(channel.id),
+                        isSelected: viewModel.isBrowserChannelSelected(channel),
+                        isJoined: viewModel.isBrowserChannelJoined(channel),
                         previewAction: { viewModel.selectBrowserPreview(channel) },
                         openAction: { viewModel.joinFromBrowser(channel) },
                         favoriteAction: { viewModel.toggleFavorite(channel) },

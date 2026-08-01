@@ -27,6 +27,7 @@ extension FightcadeLobbyService {
             }
 
             if parser.hasLoggedInUser(in: payload) {
+                favoriteChannelKeys = parser.favoriteChannelKeys(in: payload)
                 return parser.launcherToken(in: payload)
             }
         }
@@ -83,6 +84,7 @@ extension FightcadeLobbyService {
         joinedChannelNames.removeAll()
         canonicalChannelNames.removeAll()
         challengeIDsByChannel.removeAll()
+        favoriteChannelKeys.removeAll()
         pendingRequestIDs.removeAll()
         pendingResponses.removeAll()
         rateLimitedUntil = nil

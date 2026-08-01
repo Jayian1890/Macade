@@ -30,8 +30,25 @@ struct FightcadeChannel: Identifiable, Equatable, Codable, Sendable {
         }
 
         let previewID = previewSource.replacingOccurrences(of: "fc1_", with: "")
-        let imageID = ["kof9", "kof2", "kf2k"].contains { previewID.contains($0) } ? "unsupported" : previewID
-        return URL(string: "https://web.fightcade.com/static/previews/\(imageID).png")
+        return Self.previewURL(for: previewID)
+    }
+
+    var fallbackPreviewURL: URL? {
+        Self.unsupportedPreviewURL
+    }
+
+    var favoriteMatchKeys: Set<String> {
+        [id, name, title, gameID ?? ""]
+            .map(\.normalizedFightcadeFavoriteKey)
+            .filter { !$0.isEmpty }
+            .asSet
+    }
+
+    static let unsupportedPreviewURL = URL(string: "https://web.fightcade.com/static/previews/unsupported.png")
+
+    static func previewURL(for gameID: String) -> URL? {
+        let previewID = gameID.replacingOccurrences(of: "fc1_", with: "")
+        return URL(string: "https://web.fightcade.com/static/previews/\(previewID).png")
     }
 
     func withFavorite(_ favorite: Bool) -> FightcadeChannel {
@@ -48,5 +65,19 @@ struct FightcadeChannel: Identifiable, Equatable, Codable, Sendable {
             isFavorite: favorite,
             supportsTraining: supportsTraining
         )
+    }
+}
+
+extension String {
+    var normalizedFightcadeFavoriteKey: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "’", with: "'")
+            .lowercased()
+    }
+}
+
+private extension Array where Element == String {
+    var asSet: Set<String> {
+        Set(self)
     }
 }

@@ -91,15 +91,36 @@ extension AuthenticatedHomeViewModel {
     }
 
     func selectBrowserPreview(_ channel: FightcadeChannel) {
-        browser.selectedPreviewChannelID = channel.id
+        browser.selectedPreviewChannelID = canonicalBrowserChannel(for: channel).id
     }
 
     func joinFromBrowser(_ channel: FightcadeChannel) {
-        selectedChannelID = channel.id
-        isShowingChannelBrowser = false
-        isShowingGameplay = false
-        isShowingChannelChat = false
+        let channel = canonicalBrowserChannel(for: channel)
+        browser.selectedPreviewChannelID = channel.id
+        rememberChannel(channel)
+
+        if joinedChannelIDs.contains(channel.id) {
+            selectedChannelID = channel.id
+            isShowingChannelBrowser = false
+            isShowingGameplay = false
+            isShowingChannelChat = false
+            return
+        }
+
         join(channel)
+    }
+
+    func isBrowserChannelSelected(_ channel: FightcadeChannel) -> Bool {
+        guard let selectedPreviewChannelID = browser.selectedPreviewChannelID else {
+            return false
+        }
+
+        return channel.id == selectedPreviewChannelID
+            || canonicalBrowserChannel(for: channel).id == selectedPreviewChannelID
+    }
+
+    func isBrowserChannelJoined(_ channel: FightcadeChannel) -> Bool {
+        joinedChannelIDs.contains(canonicalBrowserChannel(for: channel).id)
     }
 
     func applyBrowserSystem(_ system: String?) {
@@ -115,6 +136,7 @@ extension AuthenticatedHomeViewModel {
     }
 
     func toggleFavorite(_ channel: FightcadeChannel) {
+        let channel = canonicalBrowserChannel(for: channel)
         let newValue = !channel.isFavorite
         Task {
             do {
@@ -152,11 +174,47 @@ extension AuthenticatedHomeViewModel {
             connectedUsername: dashboard.connectedUsername,
             welcomeMessage: dashboard.welcomeMessage,
             channels: updatedChannels,
+            browserSections: dashboard.browserSections.replacingChannel(channel),
             loadedAt: dashboard.loadedAt
         ), restoringJoinedChannels: false)
 
-        if let index = browser.results.firstIndex(where: { $0.id == channel.id }) {
+        if let index = browser.results.firstIndex(where: { $0.matchesBrowserChannel(channel) }) {
             browser.results[index] = channel
+        }
+    }
+
+    private func canonicalBrowserChannel(for channel: FightcadeChannel) -> FightcadeChannel {
+        if let exactMatch = channels.first(where: { $0.id == channel.id || $0.name == channel.name }) {
+            return exactMatch
+        }
+
+        if let gameID = channel.gameID?.nonEmpty,
+           let gameMatch = channels.first(where: { $0.gameID == gameID }) {
+            return gameMatch
+        }
+
+        return channels.first { $0.matchesBrowserChannel(channel) } ?? channel
+    }
+}
+
+private extension FightcadeChannel {
+    func matchesBrowserChannel(_ channel: FightcadeChannel) -> Bool {
+        id == channel.id
+            || name == channel.name
+            || (gameID?.nonEmpty != nil && gameID == channel.gameID)
+            || !favoriteMatchKeys.isDisjoint(with: channel.favoriteMatchKeys)
+    }
+}
+
+private extension Array where Element == FightcadeWelcomeSection {
+    func replacingChannel(_ channel: FightcadeChannel) -> [FightcadeWelcomeSection] {
+        map { section in
+            FightcadeWelcomeSection(
+                title: section.title,
+                channels: section.channels.map { $0.matchesBrowserChannel(channel) ? channel : $0 },
+                categories: section.categories,
+                events: section.events
+            )
         }
     }
 }

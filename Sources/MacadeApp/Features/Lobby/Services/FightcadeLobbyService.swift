@@ -17,6 +17,7 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
     var canonicalChannelNames: [String: String] = [:]
     var currentChannelName: String?
     var challengeIDsByChannel: [String: Int] = [:]
+    var favoriteChannelKeys = Set<String>()
     var requestIndex = 0
     var nextSendAllowedAt: Date = .distantPast
     var rateLimitedUntil: Date?
@@ -76,10 +77,15 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
                 webSocket: socket
             )
 
+            let browserSections = welcomePayload.map(parser.browserSections) ?? []
+            let favoriteKeys = favoriteChannelKeys.union(browserSections.favoriteMatchKeys)
+            favoriteChannelKeys = favoriteKeys
+
             let dashboard = FightcadeDashboard(
                 connectedUsername: authSession.displayName,
                 welcomeMessage: welcomePayload.flatMap(parser.welcomeMessage),
-                channels: parser.channels(in: channelsPayload)
+                channels: parser.channels(in: channelsPayload).markingFavorites(matching: favoriteKeys),
+                browserSections: browserSections.markingFavorites(matching: favoriteKeys)
             )
 
             return dashboard
@@ -104,7 +110,7 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
         }
 
         let payload = try await sendRequest(["req": "channels", "all": true], webSocket: webSocket)
-        emit(.channelsUpdated(parser.channels(in: payload)))
+        emit(.channelsUpdated(parser.channels(in: payload).markingFavorites(matching: favoriteChannelKeys)))
     }
 
     func join(channel: FightcadeChannel) async throws {
@@ -133,16 +139,15 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
     }
 
     func leave(channel: FightcadeChannel) async throws {
-        let channelName = canonicalChannelName(for: channel)
-        guard joinedChannelNames.contains(channelName) else {
-            return
+        guard let webSocket else {
+            throw FightcadeLobbyError.loginExpired
         }
 
-        try await send([
+        let channelName = canonicalChannelName(for: channel)
+        _ = try await sendRequest([
             "req": "leave",
-            "channelname": channelName,
-            "requestIdx": -1
-        ])
+            "channelname": channelName
+        ], webSocket: webSocket)
 
         joinedChannelNames.remove(channelName)
         canonicalChannelNames[channel.name] = nil
@@ -261,4 +266,37 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
         eventContinuations[id] = nil
     }
 
+}
+
+extension Array where Element == FightcadeChannel {
+    func markingFavorites(matching favoriteKeys: Set<String>) -> [FightcadeChannel] {
+        map { channel in
+            channel.favoriteMatchKeys.isDisjoint(with: favoriteKeys) ? channel : channel.withFavorite(true)
+        }
+    }
+}
+
+private extension Array where Element == FightcadeWelcomeSection {
+    var favoriteMatchKeys: Set<String> {
+        reduce(into: Set<String>()) { keys, section in
+            guard section.title.localizedCaseInsensitiveContains("favorite") else {
+                return
+            }
+
+            for channel in section.channels {
+                keys.formUnion(channel.favoriteMatchKeys)
+            }
+        }
+    }
+
+    func markingFavorites(matching favoriteKeys: Set<String>) -> [FightcadeWelcomeSection] {
+        map { section in
+            FightcadeWelcomeSection(
+                title: section.title,
+                channels: section.channels.markingFavorites(matching: favoriteKeys),
+                categories: section.categories,
+                events: section.events
+            )
+        }
+    }
 }

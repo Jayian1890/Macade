@@ -332,7 +332,7 @@ private struct FightcadeMotdEventCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            FightcadeArtworkImage(url: event.previewURL) { fallbackPreview }
+            FightcadeArtworkImage(url: event.previewURL, fallbackURLs: event.fallbackPreviewURLs) { fallbackPreview }
                 .frame(height: 82)
                 .clipShape(RoundedRectangle(cornerRadius: 9))
 

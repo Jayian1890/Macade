@@ -67,6 +67,19 @@ struct FightcadeChannelFilterOptions: Equatable, Sendable {
     var years: [String] = []
 }
 
+struct FightcadeWelcomeSection: Identifiable, Equatable, Sendable {
+    let title: String
+    let channels: [FightcadeChannel]
+    let categories: [String]
+    let events: [FightcadeEvent]
+
+    var id: String { title }
+
+    var isEmpty: Bool {
+        channels.isEmpty && categories.isEmpty && events.isEmpty
+    }
+}
+
 struct FightcadeEvent: Identifiable, Equatable, Sendable {
     let name: String
     let author: String?
@@ -84,9 +97,15 @@ struct FightcadeEvent: Identifiable, Equatable, Sendable {
             return imageURL
         }
 
-        let imageID = gameID.replacingOccurrences(of: "fc1_", with: "")
-        let previewID = ["kof9", "kof2", "kf2k"].contains { imageID.contains($0) } ? "unsupported" : imageID
-        return URL(string: "https://web.fightcade.com/static/previews/\(previewID).png")
+        return gamePreviewURL
+    }
+
+    var fallbackPreviewURLs: [URL] {
+        [gamePreviewURL, FightcadeChannel.unsupportedPreviewURL].compactMap { $0 }
+    }
+
+    private var gamePreviewURL: URL? {
+        FightcadeChannel.previewURL(for: gameID)
     }
 }
 

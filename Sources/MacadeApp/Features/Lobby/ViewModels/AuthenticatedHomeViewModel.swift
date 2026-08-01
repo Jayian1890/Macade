@@ -170,6 +170,10 @@ final class AuthenticatedHomeViewModel {
 
     var browserChannels: [FightcadeChannel] { browser.results.isEmpty ? filteredChannels : browser.results }
 
+    var browserLandingSections: [FightcadeWelcomeSection] {
+        dashboard?.browserSections.filter { !$0.isEmpty } ?? []
+    }
+
     var canSendChat: Bool {
         selectedChannel.map { canSendChat(to: $0) } == true
     }
@@ -282,6 +286,15 @@ final class AuthenticatedHomeViewModel {
         scheduleBrowserSearch()
     }
 
+    func showPopularChannels() {
+        browser.resetFilters()
+        browser.results = popularChannels
+        browser.hasMorePages = false
+        browser.lastSearchFailed = false
+        isShowingChannelBrowser = true
+        isShowingGameplay = false
+    }
+
     func showGameplay() {
         guard activeEmulationSession != nil else {
             return
@@ -302,6 +315,8 @@ final class AuthenticatedHomeViewModel {
     }
 
     func join(_ channel: FightcadeChannel, forcingServerJoin: Bool = false, restoringSavedChannel: Bool = false) {
+        rememberChannel(channel)
+
         guard (forcingServerJoin || !joinedChannelIDs.contains(channel.id)),
               !joiningChannelIDs.contains(channel.id) else {
             return
@@ -333,6 +348,23 @@ final class AuthenticatedHomeViewModel {
         }
     }
 
+    func rememberChannel(_ channel: FightcadeChannel) {
+        guard let dashboard,
+              !dashboard.channels.contains(where: { $0.id == channel.id }) else {
+            return
+        }
+
+        let channels = dashboard.channels + [channel]
+        applyDashboard(FightcadeDashboard(
+            connectedUsername: dashboard.connectedUsername,
+            welcomeMessage: dashboard.welcomeMessage,
+            channels: channels,
+            browserSections: dashboard.browserSections,
+            loadedAt: dashboard.loadedAt
+        ), restoringJoinedChannels: false)
+        saveChannelsToCache(channels)
+    }
+
     private func startListeningForEvents() {
         guard eventTask == nil else {
             return
@@ -351,16 +383,25 @@ final class AuthenticatedHomeViewModel {
     private func handle(_ event: FightcadeLobbyEvent) {
         switch event {
         case .channelsUpdated(let channels):
+            let refreshedIDs = Set(channels.map(\.id))
+            let rememberedJoinedChannels = self.channels.filter { channel in
+                joinedChannelIDs.contains(channel.id) && !refreshedIDs.contains(channel.id)
+            }
+            let mergedChannels = channels + rememberedJoinedChannels
             applyDashboard(FightcadeDashboard(
                 connectedUsername: dashboard?.connectedUsername ?? session.displayName,
                 welcomeMessage: dashboard?.welcomeMessage,
-                channels: channels
+                channels: mergedChannels,
+                browserSections: dashboard?.browserSections ?? []
             ), restoringJoinedChannels: false)
-            saveChannelsToCache(channels)
+            saveChannelsToCache(mergedChannels)
         case .joinedChannel(let channelName):
             joinedChannelIDs.insert(channelName)
             saveJoinedChannels()
-            if selectedChannelID == nil || isShowingChannelBrowser {
+            let selectedChannelMissing = selectedChannelID.map { selectedID in
+                !channels.contains { $0.id == selectedID }
+            } ?? true
+            if selectedChannelMissing || isShowingChannelBrowser {
                 selectedChannelID = channelName
                 isShowingChannelBrowser = false
             }

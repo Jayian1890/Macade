@@ -1,11 +1,25 @@
 import SwiftUI
 
 struct CategoryStrip: View {
+    let title: String
+    let categories: [String]
     let channels: [FightcadeChannel]
     let favoriteCount: Int
-    let onSelectPopular: () -> Void
-    let onSelectFavorites: () -> Void
-    let onSelectSystem: (String) -> Void
+    let onSelectCategory: (String) -> Void
+
+    init(
+        title: String = "BROWSE CATEGORIES",
+        categories: [String] = [],
+        channels: [FightcadeChannel],
+        favoriteCount: Int,
+        onSelectCategory: @escaping (String) -> Void
+    ) {
+        self.title = title
+        self.categories = categories
+        self.channels = channels
+        self.favoriteCount = favoriteCount
+        self.onSelectCategory = onSelectCategory
+    }
 
     var systems: [String] {
         Array(Set(channels.compactMap(\.system).filter { !$0.isEmpty }))
@@ -16,36 +30,60 @@ struct CategoryStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: MacadeSpacing.small) {
-            SectionTitle("BROWSE CATEGORIES")
+            SectionTitle(title)
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
-                CategoryTile(
-                    title: "Popular",
-                    subtitle: "Active rooms",
-                    icon: "flame.fill",
-                    imageURL: channels.first?.previewURL,
-                    action: onSelectPopular
-                )
-
-                CategoryTile(
-                    title: "My Favorites",
-                    subtitle: favoriteCount == 1 ? "1 saved" : "\(favoriteCount) saved",
-                    icon: "star.fill",
-                    imageURL: channels.first(where: \.isFavorite)?.previewURL,
-                    action: onSelectFavorites
-                )
-
-                ForEach(systems, id: \.self) { system in
+                ForEach(displayCategories, id: \.self) { category in
                     CategoryTile(
-                        title: system,
-                        subtitle: "System",
-                        icon: "rectangle.3.group",
-                        imageURL: channels.first { $0.system == system }?.previewURL
+                        title: category,
+                        subtitle: subtitle(for: category),
+                        icon: icon(for: category),
+                        imageURL: imageURL(for: category)
                     ) {
-                        onSelectSystem(system)
+                        onSelectCategory(category)
                     }
                 }
             }
+        }
+    }
+
+    private var displayCategories: [String] {
+        categories.isEmpty ? ["Popular", "My Favorites"] + systems : categories
+    }
+
+    private func subtitle(for category: String) -> String {
+        switch category.normalizedBrowserCategory {
+        case "popular":
+            return "Active rooms"
+        case "my favorites", "favorites":
+            return favoriteCount == 1 ? "1 saved" : "\(favoriteCount) saved"
+        default:
+            return "Browse"
+        }
+    }
+
+    private func icon(for category: String) -> String {
+        switch category.normalizedBrowserCategory {
+        case "popular":
+            return "flame.fill"
+        case "my favorites", "favorites":
+            return "star.fill"
+        default:
+            return "rectangle.3.group"
+        }
+    }
+
+    private func imageURL(for category: String) -> URL? {
+        switch category.normalizedBrowserCategory {
+        case "popular":
+            return channels.first?.previewURL
+        case "my favorites", "favorites":
+            return channels.first(where: \.isFavorite)?.previewURL
+        default:
+            return channels.first { channel in
+                channel.system?.normalizedBrowserCategory == category.normalizedBrowserCategory
+                    || channel.title.localizedCaseInsensitiveContains(category)
+            }?.previewURL
         }
     }
 }
@@ -57,18 +95,25 @@ private struct CategoryTile: View {
     let imageURL: URL?
     let action: () -> Void
 
+    private let tileHeight: CGFloat = 56
+
     var body: some View {
         Button(action: action) {
-            ZStack(alignment: .bottomLeading) {
-                FightcadeArtworkImage(url: imageURL) {
+            ZStack {
+                FightcadeArtworkImage(url: imageURL, fallbackURLs: fallbackURLs) {
                     categoryGradient
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: tileHeight)
+                .clipped()
 
                 LinearGradient(
-                    colors: [.black.opacity(0.12), .black.opacity(0.82)],
+                    colors: [.black.opacity(0.20), .black.opacity(0.88)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
+                .frame(maxWidth: .infinity)
+                .frame(height: tileHeight)
 
                 HStack(spacing: MacadeSpacing.small) {
                     Image(systemName: icon)
@@ -82,18 +127,23 @@ private struct CategoryTile: View {
                             .font(.system(size: 13, weight: .black, design: .rounded))
                             .foregroundStyle(MacadeColor.ink)
                             .lineLimit(1)
+                            .shadow(color: .black.opacity(0.65), radius: 2, x: 0, y: 1)
 
                         Text(subtitle.uppercased())
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundStyle(MacadeColor.inkMuted)
                             .lineLimit(1)
+                            .shadow(color: .black.opacity(0.65), radius: 2, x: 0, y: 1)
                     }
 
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, MacadeSpacing.small)
+                .frame(maxWidth: .infinity)
+                .frame(height: tileHeight, alignment: .center)
             }
-            .frame(height: 56)
+            .frame(height: tileHeight)
+            .contentShape(RoundedRectangle(cornerRadius: 8))
             .clipShape(RoundedRectangle(cornerRadius: 8))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(MacadeColor.stroke, lineWidth: 1))
         }
@@ -102,5 +152,16 @@ private struct CategoryTile: View {
 
     private var categoryGradient: LinearGradient {
         LinearGradient(colors: [.black.opacity(0.84), MacadeColor.panelStrong], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    private var fallbackURLs: [URL?] {
+        imageURL == nil ? [] : [FightcadeChannel.unsupportedPreviewURL]
+    }
+}
+
+extension String {
+    var normalizedBrowserCategory: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+            .normalizedFightcadeFavoriteKey
     }
 }

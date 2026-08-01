@@ -8,13 +8,8 @@ struct ChannelPreviewPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: MacadeSpacing.medium) {
-            AsyncImage(url: channel.previewURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    Rectangle().fill(MacadeColor.panelStrong)
-                }
+            FightcadeArtworkImage(url: channel.previewURL, fallbackURLs: [channel.fallbackPreviewURL]) {
+                Rectangle().fill(MacadeColor.panelStrong)
             }
             .frame(height: 160)
             .clipShape(RoundedRectangle(cornerRadius: 14))

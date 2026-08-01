@@ -97,7 +97,7 @@ struct ChannelCard: View {
     }
 
     private var preview: some View {
-        FightcadeArtworkImage(url: channel.previewURL) {
+        FightcadeArtworkImage(url: channel.previewURL, fallbackURLs: [channel.fallbackPreviewURL]) {
             fallbackPreview
         }
     }
@@ -113,34 +113,43 @@ struct ChannelCard: View {
 }
 
 struct FightcadeArtworkImage<Placeholder: View>: View {
-    let url: URL?
+    let urls: [URL]
     let placeholder: () -> Placeholder
 
     @State private var image: Image?
-    @State private var failedURL: URL?
 
-    init(url: URL?, @ViewBuilder placeholder: @escaping () -> Placeholder) {
-        self.url = url
+    init(url: URL?, fallbackURLs: [URL?] = [], @ViewBuilder placeholder: @escaping () -> Placeholder) {
+        var uniqueURLs: [URL] = []
+        for candidate in ([url] + fallbackURLs).compactMap({ $0 }) where !uniqueURLs.contains(candidate) {
+            uniqueURLs.append(candidate)
+        }
+
+        self.urls = uniqueURLs
         self.placeholder = placeholder
     }
 
     var body: some View {
-        Group {
-            if let image {
-                image
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                placeholder()
+        GeometryReader { proxy in
+            Group {
+                if let image {
+                    image
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    placeholder()
+                }
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .clipped()
         }
-        .task(id: url) {
+        .clipped()
+        .task(id: urls) {
             await loadImage()
         }
     }
 
     private func loadImage() async {
-        guard let url, failedURL != url else {
+        guard !urls.isEmpty else {
             return
         }
 
@@ -148,26 +157,32 @@ struct FightcadeArtworkImage<Placeholder: View>: View {
             image = nil
         }
 
-        do {
-            var request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 15)
-            request.setValue(FightcadeEndpoint.userAgent, forHTTPHeaderField: "User-Agent")
-            let (data, response) = try await URLSession.shared.data(for: request)
+        for url in urls {
+            do {
+                var request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 15)
+                request.setValue(FightcadeEndpoint.userAgent, forHTTPHeaderField: "User-Agent")
+                let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200..<300).contains(httpResponse.statusCode),
-                  let nsImage = NSImage(data: data) else {
-                throw URLError(.badServerResponse)
-            }
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200..<300).contains(httpResponse.statusCode) else {
+                    throw URLError(.badServerResponse)
+                }
 
-            await MainActor.run {
-                image = Image(nsImage: nsImage)
-                failedURL = nil
+                guard let nsImage = await MainActor.run(body: { NSImage(data: data) }) else {
+                    throw URLError(.cannotDecodeContentData)
+                }
+
+                await MainActor.run {
+                    image = Image(nsImage: nsImage)
+                }
+                return
+            } catch {
+                continue
             }
-        } catch {
-            await MainActor.run {
-                image = nil
-                failedURL = url
-            }
+        }
+
+        await MainActor.run {
+            image = nil
         }
     }
 }
@@ -177,7 +192,7 @@ struct FightcadeEventCard: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            FightcadeArtworkImage(url: event.previewURL) { fallbackPreview }
+            FightcadeArtworkImage(url: event.previewURL, fallbackURLs: event.fallbackPreviewURLs) { fallbackPreview }
             LinearGradient(colors: [.black.opacity(0.12), .black.opacity(0.88)], startPoint: .top, endPoint: .bottom)
             content
             dateBadge

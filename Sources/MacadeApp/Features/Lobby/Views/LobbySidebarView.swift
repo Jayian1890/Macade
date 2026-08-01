@@ -9,8 +9,8 @@ struct LobbySidebarView: View {
             sidebarHeader
             filters
             ChallengeSidebarSection(viewModel: viewModel)
-            FriendsSidebarSection(viewModel: viewModel)
             joinedSection
+            FriendsSidebarSection(viewModel: viewModel)
             Spacer(minLength: MacadeSpacing.medium)
             statusFooter
             accountFooter
@@ -43,10 +43,28 @@ struct LobbySidebarView: View {
             SidebarButton(
                 icon: "magnifyingglass",
                 title: "Browse",
-                value: "\(viewModel.channels.count)",
+                value: nil,
                 isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .all
             ) {
                 viewModel.showChannelBrowser()
+            }
+
+            SidebarButton(
+                icon: "rosette",
+                title: "Ranked",
+                value: nil,
+                isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .ranked
+            ) {
+                viewModel.showRankedChannels()
+            }
+
+            SidebarButton(
+                icon: "star.fill",
+                title: "Favorites",
+                value: nil,
+                isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .favorites
+            ) {
+                viewModel.showFavoriteChannels()
             }
 
             SidebarButton(
@@ -56,24 +74,6 @@ struct LobbySidebarView: View {
                 isSelected: viewModel.isShowingGameplay
             ) {
                 viewModel.showGameplay()
-            }
-
-            SidebarButton(
-                icon: "rosette",
-                title: "Ranked",
-                value: rankedCount,
-                isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .ranked
-            ) {
-                viewModel.showRankedChannels()
-            }
-
-            SidebarButton(
-                icon: "star.fill",
-                title: "Favorites",
-                value: "\(viewModel.favoriteChannels.count)",
-                isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .favorites
-            ) {
-                viewModel.showFavoriteChannels()
             }
         }
     }
@@ -193,10 +193,6 @@ struct LobbySidebarView: View {
         }
         .buttonStyle(.plain)
         .help(help)
-    }
-
-    private var rankedCount: String {
-        "\(viewModel.channels.filter(\.isRanked).count)"
     }
 
     private var gameplayValue: String? {

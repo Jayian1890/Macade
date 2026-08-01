@@ -7,11 +7,11 @@ extension FightcadeLobbyService {
         }
 
         let payload = try await sendRequest(request.payload(), webSocket: webSocket)
-        let channels = parser.channels(in: payload)
+        let channels = parser.channels(in: payload).markingFavorites(matching: favoriteChannelKeys)
         return FightcadeChannelSearchResult(
             channels: channels,
             page: request.page,
-            hasMorePages: request.paginated && !channels.isEmpty
+            hasMorePages: request.paginated && hasMoreChannels(in: payload, returnedChannelCount: channels.count)
         )
     }
 
@@ -57,7 +57,35 @@ extension FightcadeLobbyService {
             "channelname": channel.name,
             "fav": isFavorite
         ], webSocket: webSocket)
+
+        if isFavorite {
+            favoriteChannelKeys.formUnion(channel.favoriteMatchKeys)
+        } else {
+            favoriteChannelKeys.subtract(channel.favoriteMatchKeys)
+        }
     }
+}
+
+private func hasMoreChannels(in payload: [String: Any], returnedChannelCount: Int) -> Bool {
+    guard returnedChannelCount > 0,
+          let totalChannels = intValue(in: payload, keys: ["totalChannels", "total_channels", "total"]) else {
+        return false
+    }
+
+    let page = max((intValue(in: payload, keys: ["page"]) ?? 1) - 1, 0)
+    let pageSize = intValue(in: payload, keys: ["count", "limit"]) ?? returnedChannelCount
+    let offset = intValue(in: payload, keys: ["offset"]) ?? page * pageSize
+    return offset + returnedChannelCount < totalChannels
+}
+
+private func intValue(in payload: [String: Any], keys: [String]) -> Int? {
+    for key in keys {
+        if let value = payload[key] as? Int { return value }
+        if let number = payload[key] as? NSNumber { return number.intValue }
+        if let string = payload[key] as? String, let value = Int(string) { return value }
+    }
+
+    return nil
 }
 
 private extension FightcadeEvent {
