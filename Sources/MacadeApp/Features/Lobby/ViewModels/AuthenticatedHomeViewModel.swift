@@ -176,6 +176,11 @@ final class AuthenticatedHomeViewModel {
 
         isLoading = true
         errorMessage = nil
+        let savedJoinedChannelCount = joinedChannelStore.joinedChannelIDs(for: session).count
+        if savedJoinedChannelCount > 0 {
+            restoringJoinedChannelCount = savedJoinedChannelCount
+            isRestoringJoinedChannels = true
+        }
         startListeningForEvents()
         await loadCachedChannelsIfAvailable(replacingCurrentDashboard: false)
         defer { isLoading = false }
@@ -187,8 +192,12 @@ final class AuthenticatedHomeViewModel {
             loadBrowserFilterOptions()
             loadUpcomingEvents()
         } catch let error as FightcadeLobbyError {
+            isRestoringJoinedChannels = false
+            restoringJoinedChannelCount = 0
             errorMessage = error.localizedDescription
         } catch {
+            isRestoringJoinedChannels = false
+            restoringJoinedChannelCount = 0
             errorMessage = "Could not load lobby."
         }
     }

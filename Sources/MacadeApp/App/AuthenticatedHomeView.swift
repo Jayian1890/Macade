@@ -19,25 +19,26 @@ struct AuthenticatedHomeView: View {
         ZStack {
             MacadeBackground()
 
-            HStack(spacing: 0) {
-                LobbySidebarView(viewModel: viewModel, onSignOut: signOut)
-                    .frame(width: lobbySidebarWidth)
-                    .overlay(alignment: .trailing) {
-                        SidebarResizeHandle(width: $lobbySidebarWidth, range: 148...280)
-                    }
-
-                if viewModel.isShowingChannelBrowser {
-                    ChannelBrowserView(viewModel: viewModel)
-                } else {
-                    ChannelDetailView(viewModel: viewModel)
-                }
-            }
-            .background(.black.opacity(0.22))
-
             if viewModel.isRestoringJoinedChannels {
                 LobbyRestoreLoadingView(channelCount: viewModel.restoringJoinedChannelCount)
-                    .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                    .transition(.opacity)
                     .zIndex(5)
+            } else {
+                HStack(spacing: 0) {
+                    LobbySidebarView(viewModel: viewModel, onSignOut: signOut)
+                        .frame(width: lobbySidebarWidth)
+                        .overlay(alignment: .trailing) {
+                            SidebarResizeHandle(width: $lobbySidebarWidth, range: 148...280)
+                        }
+
+                    if viewModel.isShowingChannelBrowser {
+                        ChannelBrowserView(viewModel: viewModel)
+                    } else {
+                        ChannelDetailView(viewModel: viewModel)
+                    }
+                }
+                .background(.black.opacity(0.22))
+                .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.28), value: viewModel.isRestoringJoinedChannels)

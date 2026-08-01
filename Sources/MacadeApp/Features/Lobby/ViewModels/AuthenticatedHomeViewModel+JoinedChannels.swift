@@ -45,12 +45,20 @@ extension AuthenticatedHomeViewModel {
     func restoreJoinedChannels(from dashboard: FightcadeDashboard, joiningServerChannels: Bool) {
         let savedIDs = joinedChannelStore.joinedChannelIDs(for: session)
         guard !savedIDs.isEmpty else {
+            if joiningServerChannels {
+                isRestoringJoinedChannels = false
+                restoringJoinedChannelCount = 0
+            }
             return
         }
 
         let channelsByID = Dictionary(uniqueKeysWithValues: dashboard.channels.map { ($0.id, $0) })
         let channels = savedIDs.compactMap { channelsByID[$0] }
         guard !channels.isEmpty else {
+            if joiningServerChannels {
+                isRestoringJoinedChannels = false
+                restoringJoinedChannelCount = 0
+            }
             return
         }
 

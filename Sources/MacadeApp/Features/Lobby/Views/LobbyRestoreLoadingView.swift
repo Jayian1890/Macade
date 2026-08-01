@@ -6,16 +6,16 @@ struct LobbyRestoreLoadingView: View {
 
     var body: some View {
         ZStack {
-            Rectangle()
-                .fill(.black.opacity(0.46))
-                .ignoresSafeArea()
+            fullScreenBackground
 
-            VStack(spacing: MacadeSpacing.large) {
+            VStack(spacing: MacadeSpacing.extraLarge) {
+                header
+
                 orbitalLoader
 
                 VStack(spacing: MacadeSpacing.xSmall) {
                     Text("Rejoining Rooms")
-                        .font(.system(size: 26, weight: .black, design: .rounded))
+                        .font(.system(size: 34, weight: .black, design: .rounded))
                         .foregroundStyle(MacadeColor.ink)
 
                     Text(subtitle)
@@ -26,13 +26,10 @@ struct LobbyRestoreLoadingView: View {
 
                 loadingRail
             }
-            .padding(.horizontal, MacadeSpacing.extraLarge)
-            .padding(.vertical, MacadeSpacing.jumbo)
-            .frame(width: 420)
-            .background(cardBackground, in: RoundedRectangle(cornerRadius: 32, style: .continuous))
-            .overlay(cardStroke, in: RoundedRectangle(cornerRadius: 32, style: .continuous))
-            .shadow(color: MacadeColor.neonCyan.opacity(0.20), radius: 42, y: 18)
+            .padding(MacadeSpacing.jumbo)
+            .frame(maxWidth: 560)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear { isAnimating = true }
     }
 
@@ -41,26 +38,60 @@ struct LobbyRestoreLoadingView: View {
         return "Restoring your saved lobby stack · \(max(channelCount, 1)) \(roomText)"
     }
 
+    private var header: some View {
+        VStack(spacing: MacadeSpacing.xSmall) {
+            Text("MACADE")
+                .font(.system(size: 14, weight: .heavy, design: .monospaced))
+                .tracking(5)
+                .foregroundStyle(MacadeColor.neonCyan)
+
+            Text("Loading Fightcade Lobby")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(MacadeColor.inkMuted)
+        }
+    }
+
+    private var fullScreenBackground: some View {
+        ZStack {
+            MacadeBackground()
+
+            RadialGradient(
+                colors: [MacadeColor.neonCyan.opacity(0.22), .clear],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 520
+            )
+
+            RadialGradient(
+                colors: [MacadeColor.neonPink.opacity(0.16), .clear],
+                center: .bottomTrailing,
+                startRadius: 40,
+                endRadius: 620
+            )
+        }
+        .ignoresSafeArea()
+    }
+
     private var orbitalLoader: some View {
         ZStack {
             Circle()
                 .stroke(MacadeColor.panelStrong, lineWidth: 12)
-                .frame(width: 118, height: 118)
+                .frame(width: 136, height: 136)
 
             Circle()
                 .trim(from: 0.05, to: 0.62)
                 .stroke(loaderGradient, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                .frame(width: 118, height: 118)
+                .frame(width: 136, height: 136)
                 .rotationEffect(.degrees(isAnimating ? 360 : 0))
 
             Circle()
                 .trim(from: 0.12, to: 0.36)
                 .stroke(MacadeColor.warning.opacity(0.86), style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .frame(width: 84, height: 84)
+                .frame(width: 96, height: 96)
                 .rotationEffect(.degrees(isAnimating ? -360 : 0))
 
             Image(systemName: "rectangle.3.group.bubble.left.fill")
-                .font(.system(size: 30, weight: .black))
+                .font(.system(size: 34, weight: .black))
                 .foregroundStyle(MacadeColor.neonCyan)
                 .shadow(color: MacadeColor.neonCyan.opacity(0.65), radius: 18)
         }
@@ -78,26 +109,6 @@ struct LobbyRestoreLoadingView: View {
             }
         }
         .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: isAnimating)
-    }
-
-    private var cardBackground: some ShapeStyle {
-        LinearGradient(
-            colors: [
-                MacadeColor.chrome.opacity(0.96),
-                MacadeColor.deepPlum.opacity(0.86),
-                MacadeColor.arcadeBlue.opacity(0.74)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var cardStroke: some ShapeStyle {
-        LinearGradient(
-            colors: [MacadeColor.neonCyan.opacity(0.86), MacadeColor.neonPink.opacity(0.52), MacadeColor.warning.opacity(0.42)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
     }
 
     private var loaderGradient: AngularGradient {

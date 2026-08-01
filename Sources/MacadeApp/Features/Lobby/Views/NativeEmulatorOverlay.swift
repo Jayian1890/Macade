@@ -7,7 +7,6 @@ struct NativeEmulatorOverlay: View {
         GeometryReader { proxy in
             ZStack {
                 scoreLayer(size: proxy.size)
-                detailLayer(size: proxy.size)
                 spectatorLayer(size: proxy.size)
                 chatLayer(size: proxy.size)
             }
@@ -17,53 +16,46 @@ struct NativeEmulatorOverlay: View {
     }
 
     private func scoreLayer(size: CGSize) -> some View {
-        let boxWidth = min(max(size.width / 2 - 32, 128), 220)
-        let topY: CGFloat = 24
+        let rowHeight: CGFloat = 24
+        let horizontalPadding: CGFloat = 10
+        let contentWidth = max(0, size.width - horizontalPadding * 2)
+        let centerWidth = min(max(contentWidth * 0.22, 104), 164)
+        let sideWidth = max(0, (contentWidth - centerWidth) / 2)
+        let leftPlayer = player(at: 0)
+        let rightPlayer = player(at: 1)
 
-        return ZStack {
-            OverlayPlayerBox(
-                prefix: "P1",
-                player: player(at: 0),
+        return HStack(spacing: 0) {
+            playerScoreSide(
+                player: leftPlayer,
                 isLocalPlayer: !state.isSpectator && state.player == 0,
-                width: boxWidth
+                nameFirst: true
             )
-            .position(x: size.width * 0.25, y: topY)
+                .frame(width: sideWidth, alignment: .trailing)
 
-            OverlayPlayerBox(
-                prefix: "P2",
-                player: player(at: 1),
-                isLocalPlayer: !state.isSpectator && state.player == 1,
-                width: boxWidth
-            )
-            .position(x: size.width * 0.75, y: topY)
-
-            Text(centerText)
-                .font(.system(size: 11, weight: .black, design: .monospaced))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 10)
-                .frame(height: 18)
-                .background(.black.opacity(0.76), in: Capsule())
-                .position(x: size.width / 2, y: topY + 14)
-        }
-    }
-
-    private func detailLayer(size: CGSize) -> some View {
-        VStack(spacing: 6) {
-            Text(detailText)
-                .font(.system(size: 10, weight: .black, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.84))
-
-            if state.systemFrames > 0, !state.systemMessage.isEmpty {
-                Text(state.systemMessage)
-                    .font(.system(size: 11, weight: .black, design: .monospaced))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .frame(height: 20)
-                    .background(.black.opacity(0.78), in: Capsule())
+            HStack(spacing: 8) {
+                scoreSeparator
+                Text(centerText)
+                    .foregroundStyle(MacadeColor.inkMuted)
+                    .frame(maxWidth: .infinity)
+                scoreSeparator
             }
+            .frame(width: centerWidth)
+
+            playerScoreSide(
+                player: rightPlayer,
+                isLocalPlayer: !state.isSpectator && state.player == 1,
+                nameFirst: false
+            )
+                .frame(width: sideWidth, alignment: .leading)
         }
+        .font(.system(size: 12, weight: .black, design: .monospaced))
+        .foregroundStyle(.white)
         .lineLimit(1)
-        .position(x: size.width / 2, y: 62)
+        .minimumScaleFactor(0.72)
+        .padding(.horizontal, horizontalPadding)
+        .frame(width: size.width, height: rowHeight)
+        .background(.black.opacity(0.8), in: Rectangle())
+        .position(x: size.width / 2, y: rowHeight / 2)
     }
 
     @ViewBuilder
@@ -102,19 +94,66 @@ struct NativeEmulatorOverlay: View {
     }
 
     private var centerText: String {
-        state.ranked > 1 ? "FT\(state.ranked)" : "VS"
+        if state.isSpectator {
+            return "spectating"
+        }
+
+        return state.ranked > 1 ? "FT\(state.ranked)" : "VS"
     }
 
-    private var detailText: String {
-        if state.isSpectator {
-            return "Spectating"
-        }
+    private var scoreSeparator: some View {
+        Text("|")
+            .foregroundStyle(MacadeColor.stroke)
+    }
 
-        if state.ping > 0 {
-            return "Ping \(state.ping)ms | Delay \(state.delay)"
+    @ViewBuilder
+    private func playerScoreSide(
+        player: FightcadeEmbeddedOverlayState.Player,
+        isLocalPlayer: Bool,
+        nameFirst: Bool
+    ) -> some View {
+        HStack(spacing: 8) {
+            if nameFirst {
+                playerIdentity(player, isLocalPlayer: isLocalPlayer, alignment: .trailing)
+                scoreSeparator
+                scoreText(player.score)
+            } else {
+                scoreText(player.score)
+                scoreSeparator
+                playerIdentity(player, isLocalPlayer: isLocalPlayer, alignment: .leading)
+            }
         }
+    }
 
-        return "Delay \(state.delay)"
+    private func playerIdentity(
+        _ player: FightcadeEmbeddedOverlayState.Player,
+        isLocalPlayer: Bool,
+        alignment: Alignment
+    ) -> some View {
+        HStack(spacing: 5) {
+            if let rank = rankLabel(for: player.rank) {
+                rankBadge(rank, color: rankAccent(for: player.rank))
+            }
+
+            Text(playerDisplayName(player, isLocalPlayer: isLocalPlayer))
+                .foregroundStyle(rankAccent(for: player.rank))
+        }
+        .frame(maxWidth: .infinity, alignment: alignment)
+    }
+
+    private func rankBadge(_ rank: String, color: Color) -> some View {
+        Text(rank)
+            .font(.system(size: 9, weight: .black, design: .monospaced))
+            .foregroundStyle(color)
+            .frame(minWidth: 15)
+            .frame(height: 15)
+            .background(color.opacity(0.14), in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+    }
+
+    private func scoreText(_ score: Int) -> some View {
+        Text("\(score)")
+            .foregroundStyle(MacadeColor.neonCyan)
+            .frame(minWidth: 16)
     }
 
     private var spectatorDisplayCount: Int {
@@ -151,32 +190,55 @@ struct NativeEmulatorOverlay: View {
         return state.players[index]
     }
 
+    private func playerDisplayName(_ player: FightcadeEmbeddedOverlayState.Player, isLocalPlayer: Bool) -> String {
+        "\(player.displayName)\(isLocalPlayer ? " *" : "")"
+    }
+
+    private func rankLabel(for rank: Int) -> String? {
+        guard rank > 0 else {
+            return nil
+        }
+
+        switch rank {
+        case 1:
+            return "E"
+        case 2:
+            return "D"
+        case 3:
+            return "C"
+        case 4:
+            return "B"
+        case 5:
+            return "A"
+        case 6:
+            return "S"
+        default:
+            return "\(rank)"
+        }
+    }
+
+    private func rankAccent(for rank: Int) -> Color {
+        switch rank {
+        case 1:
+            return MacadeColor.rankE
+        case 2:
+            return MacadeColor.rankD
+        case 3:
+            return MacadeColor.rankC
+        case 4:
+            return MacadeColor.rankB
+        case 5:
+            return MacadeColor.rankA
+        case let value where value >= 6:
+            return MacadeColor.rankS
+        default:
+            return .white
+        }
+    }
+
     private struct OverlayChatRow: Identifiable {
         let id = UUID()
         let text: String
         let isInput: Bool
-    }
-}
-
-private struct OverlayPlayerBox: View {
-    let prefix: String
-    let player: FightcadeEmbeddedOverlayState.Player
-    let isLocalPlayer: Bool
-    let width: CGFloat
-
-    var body: some View {
-        VStack(spacing: 1) {
-            Text("\(prefix) \(player.displayName)\(isLocalPlayer ? " *" : "")")
-                .font(.system(size: 12, weight: .black, design: .monospaced))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-
-            Text("\(player.score)")
-                .font(.system(size: 13, weight: .black, design: .monospaced))
-                .foregroundStyle(MacadeColor.neonCyan)
-        }
-        .padding(.horizontal, 8)
-        .frame(width: width, height: 40)
-        .background(.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 8))
     }
 }
