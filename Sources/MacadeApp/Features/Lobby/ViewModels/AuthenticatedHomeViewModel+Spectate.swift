@@ -82,7 +82,9 @@ extension AuthenticatedHomeViewModel {
                     quarkID: stream.quarkID,
                     port: stream.port
                 ))
-                requestPlayerListFocus(username: user.name, channelName: channel.name, selectChannel: true)
+                selectedChannelID = channel.id
+                requestPlayerListFocus(username: user.name, channelName: channel.name)
+                showGameplay()
                 appendSystemMessage("Watching \(user.name)'s match for \(gameID)", channelName: channel.name)
             } catch let error as FightcadeLaunchError {
                 errorMessage = error.localizedDescription

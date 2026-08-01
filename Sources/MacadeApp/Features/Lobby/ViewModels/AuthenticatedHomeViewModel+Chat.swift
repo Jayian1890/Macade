@@ -166,11 +166,20 @@ struct PlayerListFocusRequest: Equatable {
 }
 
 extension AuthenticatedHomeViewModel {
+    func canSendChat(to channel: FightcadeChannel) -> Bool {
+        joinedChannelIDs.contains(channel.id)
+            && !chatDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     func sendChat() {
         guard let channel = selectedChannel else {
             return
         }
 
+        sendChat(to: channel)
+    }
+
+    func sendChat(to channel: FightcadeChannel) {
         let message = String(chatDraft.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500))
         guard !message.isEmpty else {
             return
@@ -273,6 +282,7 @@ extension AuthenticatedHomeViewModel {
         if selectChannel {
             selectedChannelID = channelName
             isShowingChannelBrowser = false
+            isShowingGameplay = false
         }
 
         playerListFocusRequest = PlayerListFocusRequest(channelName: channelName, username: username)

@@ -44,16 +44,25 @@ struct LobbySidebarView: View {
                 icon: "magnifyingglass",
                 title: "Browse",
                 value: "\(viewModel.channels.count)",
-                isSelected: viewModel.isShowingChannelBrowser && viewModel.browser.mode == .all
+                isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .all
             ) {
                 viewModel.showChannelBrowser()
+            }
+
+            SidebarButton(
+                icon: "gamecontroller.fill",
+                title: "Gameplay",
+                value: gameplayValue,
+                isSelected: viewModel.isShowingGameplay
+            ) {
+                viewModel.showGameplay()
             }
 
             SidebarButton(
                 icon: "rosette",
                 title: "Ranked",
                 value: rankedCount,
-                isSelected: viewModel.isShowingChannelBrowser && viewModel.browser.mode == .ranked
+                isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .ranked
             ) {
                 viewModel.showRankedChannels()
             }
@@ -62,7 +71,7 @@ struct LobbySidebarView: View {
                 icon: "star.fill",
                 title: "Favorites",
                 value: "\(viewModel.favoriteChannels.count)",
-                isSelected: viewModel.isShowingChannelBrowser && viewModel.browser.mode == .favorites
+                isSelected: !viewModel.isShowingGameplay && viewModel.isShowingChannelBrowser && viewModel.browser.mode == .favorites
             ) {
                 viewModel.showFavoriteChannels()
             }
@@ -92,7 +101,7 @@ struct LobbySidebarView: View {
                     ForEach(viewModel.joinedChannels) { channel in
                         SidebarChannelButton(
                             channel: channel,
-                            isSelected: !viewModel.isShowingChannelBrowser && viewModel.selectedChannelID == channel.id,
+                            isSelected: !viewModel.isShowingGameplay && !viewModel.isShowingChannelBrowser && viewModel.selectedChannelID == channel.id,
                             isLeaving: viewModel.isLeavingChannel,
                             leaveAction: {
                                 viewModel.leave(channel)
@@ -188,6 +197,14 @@ struct LobbySidebarView: View {
 
     private var rankedCount: String {
         "\(viewModel.channels.filter(\.isRanked).count)"
+    }
+
+    private var gameplayValue: String? {
+        guard let session = viewModel.activeEmulationSession else {
+            return nil
+        }
+
+        return session.isActive ? "live" : "done"
     }
 
     private var currentUser: FightcadeChannelUser? {

@@ -36,6 +36,7 @@ final class AuthenticatedHomeViewModel {
     var isShowingChannelChat = false
     var isSendingChallenge = false
     var isShowingChannelBrowser = true
+    var isShowingGameplay = false
     var isLobbyDiagnosticsEnabled: Bool {
         didSet {
             diagnosticsSettings.isEnabled = isLobbyDiagnosticsEnabled
@@ -170,9 +171,7 @@ final class AuthenticatedHomeViewModel {
     var browserChannels: [FightcadeChannel] { browser.results.isEmpty ? filteredChannels : browser.results }
 
     var canSendChat: Bool {
-        selectedChannel != nil
-            && selectedChannel.map { joinedChannelIDs.contains($0.id) } == true
-            && !chatDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        selectedChannel.map { canSendChat(to: $0) } == true
     }
 
     func loadDashboard() async {
@@ -225,12 +224,14 @@ final class AuthenticatedHomeViewModel {
     func select(_ channel: FightcadeChannel) {
         selectedChannelID = channel.id
         isShowingChannelBrowser = false
+        isShowingGameplay = false
         join(channel)
     }
 
     func openJoinedChannel(_ channel: FightcadeChannel) {
         selectedChannelID = channel.id
         isShowingChannelBrowser = false
+        isShowingGameplay = false
     }
 
     func leave(_ channel: FightcadeChannel) {
@@ -259,6 +260,7 @@ final class AuthenticatedHomeViewModel {
         browser.query = ""
         browser.page = 1
         isShowingChannelBrowser = true
+        isShowingGameplay = false
         scheduleBrowserSearch()
     }
 
@@ -267,6 +269,7 @@ final class AuthenticatedHomeViewModel {
         browser.query = ""
         browser.page = 1
         isShowingChannelBrowser = true
+        isShowingGameplay = false
         scheduleBrowserSearch()
     }
 
@@ -275,7 +278,17 @@ final class AuthenticatedHomeViewModel {
         browser.query = ""
         browser.page = 1
         isShowingChannelBrowser = true
+        isShowingGameplay = false
         scheduleBrowserSearch()
+    }
+
+    func showGameplay() {
+        guard activeEmulationSession != nil else {
+            return
+        }
+
+        isShowingChannelBrowser = false
+        isShowingGameplay = true
     }
 
     func disconnect() {
@@ -359,8 +372,10 @@ final class AuthenticatedHomeViewModel {
                 if let nextChannel = joinedChannels.first {
                     selectedChannelID = nextChannel.id
                     isShowingChannelBrowser = false
+                    isShowingGameplay = false
                 } else {
                     isShowingChannelBrowser = true
+                    isShowingGameplay = false
                 }
             }
         case .usersUpdated(let channelName, let users):

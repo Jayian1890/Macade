@@ -24,6 +24,7 @@ extension AuthenticatedHomeViewModel {
                     activeEmulationSession = try await launcher.openEmbedded(
                         .test(channelID: channel.id, emulator: emulator, gameID: gameID)
                     )
+                    showGameplay()
                     appendSystemMessage("Launched \(emulator) for \(gameID)", channelName: channel.name)
                 case .training:
                     activeMatchOpponentUsername = nil
@@ -32,6 +33,7 @@ extension AuthenticatedHomeViewModel {
                     activeEmulationSession = try await launcher.openEmbedded(
                         .training(channelID: channel.id, emulator: emulator, gameID: gameID)
                     )
+                    showGameplay()
                     appendSystemMessage("Launched training for \(gameID)", channelName: channel.name)
                 }
             } catch let error as FightcadeLaunchError {
@@ -69,6 +71,7 @@ extension AuthenticatedHomeViewModel {
                 activeEmulationSession = try await launcher.openEmbedded(
                     .match(channelID: channel.id, match: match)
                 )
+                showGameplay()
                 appendSystemMessage("Launched match for \(gameID)", channelName: channel.name)
             } catch let error as FightcadeLaunchError {
                 errorMessage = error.localizedDescription

@@ -76,6 +76,7 @@ extension AuthenticatedHomeViewModel {
     func openChallengeChannel(_ challenge: FightcadeChallenge) {
         selectedChannelID = challenge.channelName
         isShowingChannelBrowser = false
+        isShowingGameplay = false
     }
 
     var activeIncomingChallenge: FightcadeChallenge? {

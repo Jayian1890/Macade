@@ -44,8 +44,8 @@ struct ChatInput: View {
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 13, weight: .black, design: .rounded))
-                .foregroundStyle(viewModel.canSendChat && !isTranslatingDraft ? MacadeColor.warning : MacadeColor.inkMuted)
-                .disabled(!viewModel.canSendChat || isTranslatingDraft)
+                .foregroundStyle(canSendChat && !isTranslatingDraft ? MacadeColor.warning : MacadeColor.inkMuted)
+                .disabled(!canSendChat || isTranslatingDraft)
                 .help(translationStatus ?? "Send")
             }
             .padding(.horizontal, MacadeSpacing.medium)
@@ -65,6 +65,10 @@ struct ChatInput: View {
 
     private var mentionSuggestions: [FightcadeChannelUser] {
         viewModel.chatMentionSuggestions(in: channel)
+    }
+
+    private var canSendChat: Bool {
+        viewModel.canSendChat(to: channel)
     }
 
     private var detectedTranslationTargetChoices: [(id: String, name: String)] {
@@ -170,7 +174,7 @@ struct ChatInput: View {
         let body = String(viewModel.chatDraft.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500))
         guard !body.isEmpty else { return }
         guard let target = selectedInputTargetIdentifier else {
-            viewModel.sendChat()
+            viewModel.sendChat(to: channel)
             refocusChat()
             return
         }
@@ -242,7 +246,7 @@ struct ChatInput: View {
 
     private func sendBody(_ body: String) {
         viewModel.chatDraft = body
-        viewModel.sendChat()
+        viewModel.sendChat(to: channel)
     }
 
     private func restoreTokens(in text: String, placeholders: [String: String]) -> String {

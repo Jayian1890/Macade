@@ -111,6 +111,7 @@
 		BF00000B00000000000000C8 /* AuthenticatedHomeViewModel+Friends.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000C8 /* AuthenticatedHomeViewModel+Friends.swift */; };
 		BF00000B00000000000000C9 /* AuthenticatedHomeViewModel+GameLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000C9 /* AuthenticatedHomeViewModel+GameLaunch.swift */; };
 		BF00000B00000000000000CA /* FriendsSidebarSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000CA /* FriendsSidebarSection.swift */; };
+		BF00000B00000000000000CB /* GameplayDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000CB /* GameplayDetailView.swift */; };
 		BF00000B00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */; };
 		BF00000B00000000000000A9 /* ChannelBrowserControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000A9 /* ChannelBrowserControls.swift */; };
 		BF00000B00000000000000AA /* ChannelBrowserCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AA /* ChannelBrowserCards.swift */; };
@@ -234,6 +235,7 @@
 		BF00000C00000000000000C8 /* AuthenticatedHomeViewModel+Friends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Friends.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000C9 /* AuthenticatedHomeViewModel+GameLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+GameLaunch.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000CA /* FriendsSidebarSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsSidebarSection.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000CB /* GameplayDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameplayDetailView.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Browser.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000A9 /* ChannelBrowserControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserControls.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000AA /* ChannelBrowserCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserCards.swift; sourceTree = "<group>"; };
@@ -513,6 +515,7 @@
 				BF00000C000000000000002E /* ChallengeBanner.swift */,
 				BF00000C000000000000002F /* ChatMessageRow.swift */,
 				BF00000C00000000000000CA /* FriendsSidebarSection.swift */,
+				BF00000C00000000000000CB /* GameplayDetailView.swift */,
 				BF00000C000000000000003F /* EmbeddedChatInputController.swift */,
 				BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */,
 				BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */,
@@ -691,6 +694,7 @@
 				BF00000B0000000000000028 /* FightcadeLobbyDiagnostics.swift in Sources */,
 				BF00000B000000000000000A /* LobbySidebarView.swift in Sources */,
 				BF00000B00000000000000CA /* FriendsSidebarSection.swift in Sources */,
+				BF00000B00000000000000CB /* GameplayDetailView.swift in Sources */,
 				BF00000B000000000000000C /* ChannelDetailView.swift in Sources */,
 				BF00000B00000000000000C2 /* ChatInputView.swift in Sources */,
 				BF00000B00000000000000C3 /* LobbyRestoreLoadingView.swift in Sources */,

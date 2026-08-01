@@ -12,23 +12,7 @@ struct ChannelDetailView: View {
                 ChannelErrorBanner(viewModel: viewModel)
 
                 HStack(spacing: 0) {
-                    if let session = viewModel.selectedEmulationSession {
-                        EmbeddedEmulatorPanel(
-                            session: session,
-                            isChannelChatVisible: viewModel.isShowingChannelChat,
-                            channelChatOverlay: AnyView(ChannelChatView(
-                                channel: channel,
-                                viewModel: viewModel,
-                                showsPreview: false,
-                                backgroundOpacity: 0.5
-                            )),
-                            onToggleChannelChat: viewModel.toggleChannelChat,
-                            onMatchEnded: viewModel.finishActiveMatchSession,
-                            onStop: viewModel.stopActiveEmulationSession
-                        )
-                    } else {
-                        ChannelChatView(channel: channel, viewModel: viewModel)
-                    }
+                    ChannelChatView(channel: channel, viewModel: viewModel)
 
                     PlayerListView(channel: channel, users: viewModel.selectedChannelUsers, viewModel: viewModel)
                 }
@@ -47,7 +31,7 @@ struct ChannelDetailView: View {
     }
 }
 
-private struct ChannelChatView: View {
+struct ChannelChatView: View {
     let channel: FightcadeChannel
     @Bindable var viewModel: AuthenticatedHomeViewModel
     let showsPreview: Bool
@@ -68,8 +52,8 @@ private struct ChannelChatView: View {
     }
 
     var body: some View {
-        let messages = viewModel.selectedChannelMessages
-        let users = viewModel.selectedChannelUsers
+        let messages = channelMessages
+        let users = channelUsers
         let usersByName = users.reduce(into: [String: FightcadeChannelUser]()) { result, user in
             result[normalizedUsername(user.name)] = user
         }
@@ -127,7 +111,7 @@ private struct ChannelChatView: View {
                 .onAppear {
                     scrollToInitialPosition(proxy)
                 }
-                .onChange(of: viewModel.selectedChannelMessages.last?.id) { _, _ in
+                .onChange(of: messages.last?.id) { _, _ in
                     scrollAfterMessagesChanged(proxy)
                 }
                 .onChange(of: channel.id) { _, _ in
@@ -166,8 +150,16 @@ private struct ChannelChatView: View {
     }
 
     private var shouldShowOnlyMOTD: Bool {
-        let messages = viewModel.selectedChannelMessages
+        let messages = channelMessages
         return messages.count == 1 && messages.first?.kind == .motd
+    }
+
+    private var channelMessages: [FightcadeChatMessage] {
+        (viewModel.chatMessagesByChannel[channel.name] ?? []).filter { !$0.isJoinLeaveSystemMessage }
+    }
+
+    private var channelUsers: [FightcadeChannelUser] {
+        viewModel.usersByChannel[channel.name] ?? []
     }
 
     private func normalizedUsername(_ value: String) -> String {

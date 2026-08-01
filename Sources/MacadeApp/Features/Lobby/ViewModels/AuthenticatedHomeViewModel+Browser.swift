@@ -97,6 +97,7 @@ extension AuthenticatedHomeViewModel {
     func joinFromBrowser(_ channel: FightcadeChannel) {
         selectedChannelID = channel.id
         isShowingChannelBrowser = false
+        isShowingGameplay = false
         isShowingChannelChat = false
         join(channel)
     }

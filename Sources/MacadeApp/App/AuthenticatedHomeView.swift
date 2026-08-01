@@ -31,7 +31,9 @@ struct AuthenticatedHomeView: View {
                             SidebarResizeHandle(width: $lobbySidebarWidth, range: 148...280)
                         }
 
-                    if viewModel.isShowingChannelBrowser {
+                    if viewModel.isShowingGameplay {
+                        GameplayDetailView(viewModel: viewModel)
+                    } else if viewModel.isShowingChannelBrowser {
                         ChannelBrowserView(viewModel: viewModel)
                     } else {
                         ChannelDetailView(viewModel: viewModel)
