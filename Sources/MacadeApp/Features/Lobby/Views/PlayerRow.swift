@@ -41,6 +41,10 @@ struct PlayerRow: View {
             }
         }
         .contextMenu {
+            friendMenuButton
+
+            Divider()
+
             Button("Watch Match") {
                 viewModel.spectate(user, in: channel)
             }
@@ -58,6 +62,20 @@ struct PlayerRow: View {
                 }
             }
             .disabled(!row.isChallengeable)
+        }
+    }
+
+    @ViewBuilder
+    private var friendMenuButton: some View {
+        if viewModel.isFriend(user.name) {
+            Button("Remove Friend") {
+                viewModel.removeFriend(user)
+            }
+        } else {
+            Button("Add Friend") {
+                viewModel.addFriend(user)
+            }
+            .disabled(row.isCurrentUser)
         }
     }
 

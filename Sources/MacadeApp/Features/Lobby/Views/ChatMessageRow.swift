@@ -3,6 +3,10 @@ import SwiftUI
 struct ChatMessageRow: View {
     let message: FightcadeChatMessage
     let channel: FightcadeChannel
+    let chatUser: FightcadeChannelUser?
+    let canChallengeFromChat: Bool
+    let isChallengingFromChat: Bool
+    let mentionCandidates: [String]
     @Bindable var viewModel: AuthenticatedHomeViewModel
     @State private var isHoveringName = false
 
@@ -130,7 +134,7 @@ struct ChatMessageRow: View {
 
     @ViewBuilder
     private var challengeControl: some View {
-        if viewModel.isChallenging(message.username, in: channel) {
+        if isChallengingFromChat {
             Image(systemName: "paperplane.fill")
                 .font(.system(size: 10, weight: .black))
                 .foregroundStyle(MacadeColor.neonCyan)
@@ -152,6 +156,10 @@ struct ChatMessageRow: View {
 
     @ViewBuilder
     private var challengeMenu: some View {
+        friendMenuButton
+
+        Divider()
+
         Menu("Challenge") {
             Button("Unranked") {
                 challengeFromChat(ranked: 0)
@@ -166,16 +174,20 @@ struct ChatMessageRow: View {
         .disabled(!canChallengeFromChat)
     }
 
-    private var canChallengeFromChat: Bool {
-        message.kind == .user && viewModel.canChallenge(message.username, in: channel)
-    }
-
-    private var chatUser: FightcadeChannelUser? {
-        viewModel.user(named: message.username, in: channel)
-    }
-
-    private var mentionCandidates: [String] {
-        viewModel.selectedChannelUsers.map(\.name) + currentUserAliases
+    @ViewBuilder
+    private var friendMenuButton: some View {
+        if message.kind == .user || message.kind == .local {
+            if viewModel.isFriend(message.username) {
+                Button("Remove Friend") {
+                    viewModel.removeFriend(named: message.username)
+                }
+            } else {
+                Button("Add Friend") {
+                    viewModel.addFriend(named: message.username)
+                }
+                .disabled(message.kind == .local)
+            }
+        }
     }
 
     private var currentUserAliases: [String] {

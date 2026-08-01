@@ -29,6 +29,8 @@ final class AuthenticatedHomeViewModel {
     var activeEmulationSession: FightcadeEmbeddedSession?
     var activeMatchOpponentUsername: String?
     var activeMatchOpponentChannelName: String?
+    var friends: [FightcadeFriend] = []
+    var friendDraft = ""
     var browser = FightcadeChannelBrowserState()
     var upcomingEvents: [FightcadeEvent] = []
     var isShowingChannelChat = false
@@ -56,10 +58,12 @@ final class AuthenticatedHomeViewModel {
     let launcher: any FightcadeLaunching
     let joinedChannelStore: any JoinedChannelPersisting
     let channelCache: any FightcadeChannelCaching
+    let friendStore: any FightcadeFriendPersisting
     private let diagnosticsSettings: FightcadeLobbyDiagnosticsSettings
     private var eventTask: Task<Void, Never>?
     private var joiningChannelIDs = Set<FightcadeChannel.ID>()
     private var restoringJoinedChannelIDs = Set<FightcadeChannel.ID>()
+    var hasLoadedFriends = false
     init(
         session: AuthSession,
         lobbyService: any FightcadeLobbyServicing = FightcadeLobbyService(),
@@ -68,6 +72,7 @@ final class AuthenticatedHomeViewModel {
         launcher: any FightcadeLaunching = FightcadeLauncher(),
         joinedChannelStore: any JoinedChannelPersisting = UserDefaultsJoinedChannelStore(),
         channelCache: any FightcadeChannelCaching = FileFightcadeChannelCache(),
+        friendStore: any FightcadeFriendPersisting = FileFightcadeFriendStore(),
         diagnosticsSettings: FightcadeLobbyDiagnosticsSettings = FightcadeLobbyDiagnosticsSettings()
     ) {
         self.session = session
@@ -77,6 +82,7 @@ final class AuthenticatedHomeViewModel {
         self.launcher = launcher
         self.joinedChannelStore = joinedChannelStore
         self.channelCache = channelCache
+        self.friendStore = friendStore
         self.diagnosticsSettings = diagnosticsSettings
         self.isLobbyDiagnosticsEnabled = diagnosticsSettings.isEnabled
         self.includeLobbyDiagnosticChatBodies = diagnosticsSettings.includesChatBodies
@@ -181,6 +187,7 @@ final class AuthenticatedHomeViewModel {
             restoringJoinedChannelCount = savedJoinedChannelCount
             isRestoringJoinedChannels = true
         }
+        await loadFriendsIfNeeded()
         startListeningForEvents()
         await loadCachedChannelsIfAvailable(replacingCurrentDashboard: false)
         defer { isLoading = false }
@@ -417,83 +424,4 @@ final class AuthenticatedHomeViewModel {
         return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
     }
 
-    func launchGame(for channel: FightcadeChannel, mode: GameLaunchMode) {
-        guard let emulator = channel.launchEmulator,
-              let gameID = channel.launchGameID else {
-            errorMessage = FightcadeLaunchError.missingGame.localizedDescription
-            return
-        }
-
-        Task { @MainActor in
-            isLaunchingGame = true
-            defer { isLaunchingGame = false }
-
-            do {
-                switch mode {
-                case .checkROM:
-                    try await launcher.open(.checkROM(emulator: emulator, gameID: gameID))
-                    appendSystemMessage("ROM found for \(gameID)", channelName: channel.name)
-                case .test:
-                    activeMatchOpponentUsername = nil
-                    activeMatchOpponentChannelName = nil
-                    activeEmulationSession?.stop()
-                    activeEmulationSession = try await launcher.openEmbedded(
-                        .test(channelID: channel.id, emulator: emulator, gameID: gameID)
-                    )
-                    appendSystemMessage("Launched \(emulator) for \(gameID)", channelName: channel.name)
-                case .training:
-                    activeMatchOpponentUsername = nil
-                    activeMatchOpponentChannelName = nil
-                    activeEmulationSession?.stop()
-                    activeEmulationSession = try await launcher.openEmbedded(
-                        .training(channelID: channel.id, emulator: emulator, gameID: gameID)
-                    )
-                    appendSystemMessage("Launched training for \(gameID)", channelName: channel.name)
-                }
-            } catch let error as FightcadeLaunchError {
-                errorMessage = error.localizedDescription
-            } catch {
-                errorMessage = "Could not launch game."
-            }
-        }
-    }
-
-    private func launchMatch(_ start: FightcadeMatchStart) {
-        guard let channel = channels.first(where: { $0.name == start.channelName }),
-              let emulator = channel.launchEmulator,
-              let gameID = start.gameID?.nonEmpty ?? channel.launchGameID else {
-            errorMessage = FightcadeLaunchError.missingGame.localizedDescription
-            return
-        }
-
-        Task { @MainActor in
-            isLaunchingGame = true
-            defer { isLaunchingGame = false }
-
-            do {
-                let match = FightcadeMatchLaunch(
-                    emulator: emulator,
-                    gameID: gameID,
-                    quarkID: start.quarkID,
-                    playerID: start.playerID,
-                    port: start.port,
-                    delay: start.delay,
-                    ranked: start.ranked,
-                    token: start.token
-                )
-                activeEmulationSession?.stop()
-                activeEmulationSession = try await launcher.openEmbedded(
-                    .match(
-                        channelID: channel.id,
-                        match: match
-                    )
-                )
-                appendSystemMessage("Launched match for \(gameID)", channelName: channel.name)
-            } catch let error as FightcadeLaunchError {
-                errorMessage = error.localizedDescription
-            } catch {
-                errorMessage = "Could not launch game."
-            }
-        }
-    }
 }

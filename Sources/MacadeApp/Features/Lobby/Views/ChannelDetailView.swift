@@ -68,6 +68,13 @@ private struct ChannelChatView: View {
     }
 
     var body: some View {
+        let messages = viewModel.selectedChannelMessages
+        let users = viewModel.selectedChannelUsers
+        let usersByName = users.reduce(into: [String: FightcadeChannelUser]()) { result, user in
+            result[normalizedUsername(user.name)] = user
+        }
+        let mentionCandidates = users.map(\.name) + [viewModel.session.displayName, viewModel.session.username]
+
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -96,8 +103,17 @@ private struct ChannelChatView: View {
                             }
                         }
 
-                        ForEach(viewModel.selectedChannelMessages) { message in
-                            ChatMessageRow(message: message, channel: channel, viewModel: viewModel)
+                        ForEach(messages) { message in
+                            let chatUser = usersByName[normalizedUsername(message.username)]
+                            ChatMessageRow(
+                                message: message,
+                                channel: channel,
+                                chatUser: chatUser,
+                                canChallengeFromChat: message.kind == .user && chatUser.map { viewModel.canChallenge($0, in: channel) } == true,
+                                isChallengingFromChat: viewModel.isChallenging(message.username, in: channel),
+                                mentionCandidates: mentionCandidates,
+                                viewModel: viewModel
+                            )
                                 .id(message.id)
                         }
 
@@ -152,6 +168,10 @@ private struct ChannelChatView: View {
     private var shouldShowOnlyMOTD: Bool {
         let messages = viewModel.selectedChannelMessages
         return messages.count == 1 && messages.first?.kind == .motd
+    }
+
+    private func normalizedUsername(_ value: String) -> String {
+        value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
     }
 
     private var chatBackground: some View {

@@ -9,6 +9,7 @@ struct LobbySidebarView: View {
             sidebarHeader
             filters
             ChallengeSidebarSection(viewModel: viewModel)
+            FriendsSidebarSection(viewModel: viewModel)
             joinedSection
             Spacer(minLength: MacadeSpacing.medium)
             statusFooter
