@@ -203,7 +203,7 @@ final class AuthenticatedHomeViewModel {
         do {
             let loadedDashboard = try await lobbyService.connect(for: session)
             applyDashboard(loadedDashboard, restoringJoinedChannels: true)
-            saveChannelsToCache(loadedDashboard.channels)
+            saveChannelsToCache(dashboard?.channels ?? loadedDashboard.channels)
             loadBrowserFilterOptions()
             loadUpcomingEvents()
         } catch let error as FightcadeLobbyError {

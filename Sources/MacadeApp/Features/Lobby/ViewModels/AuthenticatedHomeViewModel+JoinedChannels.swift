@@ -31,7 +31,7 @@ extension AuthenticatedHomeViewModel {
         if restoringJoinedChannels {
             restoreJoinedChannels(from: loadedDashboard, joiningServerChannels: joiningRestoredChannels)
         }
-        selectFirstChannelIfNeeded(from: loadedDashboard.channels)
+        selectFirstChannelIfNeeded(from: dashboard?.channels ?? loadedDashboard.channels)
     }
 
     func saveChannelsToCache(_ channels: [FightcadeChannel]) {
@@ -44,7 +44,9 @@ extension AuthenticatedHomeViewModel {
 
     func restoreJoinedChannels(from dashboard: FightcadeDashboard, joiningServerChannels: Bool) {
         let savedIDs = joinedChannelStore.joinedChannelIDs(for: session)
-        guard !savedIDs.isEmpty else {
+        let knownChannels = dashboard.channels + dashboard.browserSections.flatMap(\.channels)
+        let favoriteChannels = restoredFavoriteChannels(from: dashboard)
+        guard !savedIDs.isEmpty || !favoriteChannels.isEmpty else {
             if joiningServerChannels {
                 isRestoringJoinedChannels = false
                 restoringJoinedChannelCount = 0
@@ -52,8 +54,17 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
-        let channelsByID = Dictionary(uniqueKeysWithValues: dashboard.channels.map { ($0.id, $0) })
-        let channels = savedIDs.compactMap { channelsByID[$0] }
+        var restoredIDs = Set<FightcadeChannel.ID>()
+        var channels = savedIDs.compactMap { savedID -> FightcadeChannel? in
+            guard let channel = channel(matching: savedID, in: knownChannels) ?? fallbackSavedChannel(for: savedID),
+                  restoredIDs.insert(channel.id).inserted else {
+                return nil
+            }
+            return channel
+        }
+        channels.append(contentsOf: favoriteChannels.filter { channel in
+            channel.isFavorite && restoredIDs.insert(channel.id).inserted
+        })
         guard !channels.isEmpty else {
             if joiningServerChannels {
                 isRestoringJoinedChannels = false
@@ -63,6 +74,7 @@ extension AuthenticatedHomeViewModel {
         }
 
         joinedChannelIDs.formUnion(channels.map(\.id))
+        rememberRestoredChannels(channels)
         selectedChannelID = channels.first?.id
         isShowingChannelBrowser = false
 
@@ -89,5 +101,62 @@ extension AuthenticatedHomeViewModel {
         }
 
         selectedChannelID = channels.first?.id
+    }
+
+    private func channel(matching id: FightcadeChannel.ID, in channels: [FightcadeChannel]) -> FightcadeChannel? {
+        if let channel = channels.first(where: { $0.id == id }) {
+            return channel
+        }
+
+        let key = id.normalizedFightcadeFavoriteKey
+        return channels.first { $0.favoriteMatchKeys.contains(key) }
+    }
+
+    private func fallbackSavedChannel(for id: FightcadeChannel.ID) -> FightcadeChannel? {
+        let name = id.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        return FightcadeChannel(
+            id: name,
+            name: name,
+            title: name,
+            gameID: nil,
+            system: nil,
+            emulator: nil,
+            playerCount: nil,
+            spectatorCount: nil,
+            isRanked: false,
+            isFavorite: false,
+            supportsTraining: false
+        )
+    }
+
+    private func restoredFavoriteChannels(from dashboard: FightcadeDashboard) -> [FightcadeChannel] {
+        let sectionFavorites = dashboard.browserSections
+            .filter { $0.title.localizedCaseInsensitiveContains("favorite") }
+            .flatMap(\.channels)
+            .map { $0.withFavorite(true) }
+
+        var seen = Set<FightcadeChannel.ID>()
+        return (dashboard.channels.filter(\.isFavorite) + sectionFavorites).filter { channel in
+            seen.insert(channel.id).inserted
+        }
+    }
+
+    private func rememberRestoredChannels(_ restoredChannels: [FightcadeChannel]) {
+        guard let dashboard else { return }
+
+        var knownIDs = Set(dashboard.channels.map(\.id))
+        let missingChannels = restoredChannels.filter { knownIDs.insert($0.id).inserted }
+        guard !missingChannels.isEmpty else { return }
+
+        let channels = dashboard.channels + missingChannels
+        self.dashboard = FightcadeDashboard(
+            connectedUsername: dashboard.connectedUsername,
+            welcomeMessage: dashboard.welcomeMessage,
+            channels: channels,
+            browserSections: dashboard.browserSections,
+            loadedAt: dashboard.loadedAt
+        )
+        saveChannelsToCache(channels)
     }
 }

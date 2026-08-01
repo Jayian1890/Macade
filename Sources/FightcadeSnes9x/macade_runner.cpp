@@ -275,7 +275,7 @@ bool environmentCallback(unsigned command, void *data)
         return false;
     case RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE:
         if (data != nullptr) {
-            *static_cast<int *>(data) = 1;
+            *static_cast<int *>(data) = suppressVideo ? 0 : 3;
             return true;
         }
         return false;
