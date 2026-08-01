@@ -2,9 +2,11 @@ import Foundation
 
 struct FightcadeRuntime {
     private let fileManager: FileManager
+    private let applicationSupportURL: URL?
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, applicationSupportURL: URL? = nil) {
         self.fileManager = fileManager
+        self.applicationSupportURL = applicationSupportURL
     }
 
     func root() throws -> URL {
@@ -95,7 +97,7 @@ struct FightcadeRuntime {
     }
 
     private func applicationSupportROMRoot() throws -> URL {
-        guard let supportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+        guard let supportURL = applicationSupportURL ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw FightcadeLaunchError.missingRuntime([])
         }
 
@@ -109,6 +111,7 @@ struct FightcadeRuntime {
         let normalizedEmulator = emulator.lowercased()
         var stems = [try safePathComponent(gameID)]
         let prefixes = ["\(normalizedEmulator)_", "snes_", "flycast_", "nulldc_"]
+        let extensions = romFileExtensions(emulator: normalizedEmulator)
 
         for prefix in prefixes where gameID.lowercased().hasPrefix(prefix) {
             let stripped = String(gameID.dropFirst(prefix.count))
@@ -119,13 +122,36 @@ struct FightcadeRuntime {
 
         var fileNames: [String] = []
         for stem in stems {
-            let name = stem.lowercased().hasSuffix(".zip") ? stem : "\(stem).zip"
-            if !fileNames.contains(name) {
-                fileNames.append(name)
+            if hasKnownROMExtension(stem, extensions: extensions) {
+                if !fileNames.contains(stem) {
+                    fileNames.append(stem)
+                }
+                continue
+            }
+
+            for ext in extensions {
+                let name = "\(stem).\(ext)"
+                if !fileNames.contains(name) {
+                    fileNames.append(name)
+                }
             }
         }
 
         return fileNames
+    }
+
+    private func romFileExtensions(emulator: String) -> [String] {
+        switch emulator {
+        case "snes9x":
+            ["zip", "sfc", "smc"]
+        default:
+            ["zip"]
+        }
+    }
+
+    private func hasKnownROMExtension(_ fileName: String, extensions: [String]) -> Bool {
+        let lowercased = fileName.lowercased()
+        return extensions.contains { lowercased.hasSuffix(".\($0)") }
     }
 
     private func safeROMPathComponents(_ value: String) throws -> [String] {

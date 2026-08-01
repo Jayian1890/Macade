@@ -124,9 +124,15 @@ struct FightcadeLauncher: FightcadeLaunching {
     func openEmbedded(_ launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedSession {
         let runtimeRoot = try runtime.root()
         let manifest = runtimeManifest(in: runtimeRoot)
-        guard manifest.supportsQuark(emulator: launch.emulator) else {
+        if launch.requiresQuark {
+            guard manifest.supportsQuark(emulator: launch.emulator) else {
+                throw FightcadeLaunchError.unsupportedNativeRoute(
+                    "embedded native \(launch.emulator) \(launch.mode.rawValue.lowercased()). The runtime emulator must implement Fightcade quark/GGPO support."
+                )
+            }
+        } else if !manifest.supportsEmbedded(emulator: launch.emulator) {
             throw FightcadeLaunchError.unsupportedNativeRoute(
-                "embedded native \(launch.emulator) \(launch.mode.rawValue.lowercased()). The runtime emulator must implement Fightcade quark/GGPO support."
+                "embedded native \(launch.emulator) local launch. The runtime emulator must implement Macade embedded video/input support."
             )
         }
         let expectedROM: URL? = switch launch.mode {
@@ -136,7 +142,7 @@ struct FightcadeLauncher: FightcadeLaunching {
             nil
         }
 
-        let resources = try makeEmbeddedResources()
+        let resources = try makeEmbeddedResources(emulator: launch.emulator)
         let session = FightcadeEmbeddedSession(
             id: resources.id,
             channelID: launch.channelID,
@@ -321,7 +327,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         return formatter.string(from: Date())
     }
 
-    private func makeEmbeddedResources() throws -> FightcadeEmbeddedResources {
+    private func makeEmbeddedResources(emulator: String) throws -> FightcadeEmbeddedResources {
         guard let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw FightcadeLaunchError.embeddedBridgeFailed("Could not locate Application Support.")
         }
@@ -339,7 +345,7 @@ struct FightcadeLauncher: FightcadeLaunching {
 
         let videoStream = try FightcadeEmbeddedVideoStream(fileURL: directory.appendingPathComponent("video.mcade"))
         let inputClient = try FightcadeEmbeddedInputClient(socketPath: inputSocketURL.path)
-        let launchLog = try makeLaunchLog(emulator: "fbneo-embedded")
+        let launchLog = try makeLaunchLog(emulator: "\(emulator)-embedded")
         return FightcadeEmbeddedResources(
             id: id,
             videoStream: videoStream,
@@ -451,20 +457,6 @@ private struct FightcadeEmbeddedResources {
     let inputClient: FightcadeEmbeddedInputClient
     let launchLog: FightcadeLaunchLog
     let logURL: URL
-}
-
-private struct FightcadeRuntimeManifest: Decodable {
-    static let empty = FightcadeRuntimeManifest(emulators: [:])
-
-    let emulators: [String: Emulator]
-
-    func supportsQuark(emulator: String) -> Bool {
-        emulators[emulator.lowercased()]?.supportsQuark == true
-    }
-
-    struct Emulator: Decodable {
-        let supportsQuark: Bool
-    }
 }
 
 enum FightcadeLaunchError: LocalizedError, Equatable {

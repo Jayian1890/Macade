@@ -27,6 +27,9 @@ Sources/FightcadeFBNeo/fbneosdl*
 Sources/FightcadeFBNeo/gamelist.txt
 Sources/FightcadeFBNeo/src/dep/generated/
 
+# Vendored Snes9x build outputs.
+Sources/FightcadeSnes9x/build/
+
 # Ghidra exports are useful research artifacts; local Ghidra projects/logs are not.
 ghidra-out/*
 !ghidra-out/export/

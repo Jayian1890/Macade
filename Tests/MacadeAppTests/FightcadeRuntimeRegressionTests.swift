@@ -2,6 +2,69 @@ import XCTest
 @testable import MacadeApp
 
 final class FightcadeRuntimeRegressionTests: XCTestCase {
+    func testSnes9xROMCandidatesCoverFightcadePrefixesAndLooseROMs() throws {
+        let supportURL = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: supportURL) }
+        let runtime = FightcadeRuntime(applicationSupportURL: supportURL)
+
+        let candidates = try runtime.romCandidateURLs(emulator: "snes9x", gameID: "snes_16mj")
+
+        XCTAssertEqual(candidates.map(\.lastPathComponent), [
+            "snes_16mj.zip",
+            "snes_16mj.sfc",
+            "snes_16mj.smc",
+            "16mj.zip",
+            "16mj.sfc",
+            "16mj.smc"
+        ])
+        XCTAssertTrue(candidates.allSatisfy { $0.path.contains("/Macade/FightcadeRuntime/roms/snes9x/") })
+    }
+
+    func testSnes9xExistingROMAcceptsStrippedDownloadedZip() throws {
+        let supportURL = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: supportURL) }
+        let runtime = FightcadeRuntime(applicationSupportURL: supportURL)
+        let romURL = try runtime.romFileURL(emulator: "snes9x", fileName: "16mj.zip")
+        try Data([0x01]).write(to: romURL)
+
+        let found = try runtime.existingROMURL(emulator: "snes9x", gameID: "snes_16mj")
+
+        XCTAssertEqual(found, romURL)
+    }
+
+    func testRuntimeManifestSeparatesEmbeddedAndQuarkSupport() throws {
+        let data = Data(#"{"emulators":{"fbneo":{"supportsQuark":true},"snes9x":{"supportsQuark":false,"supportsEmbedded":true}}}"#.utf8)
+        let manifest = try JSONDecoder().decode(FightcadeRuntimeManifest.self, from: data)
+
+        XCTAssertTrue(manifest.supportsQuark(emulator: "fbneo"))
+        XCTAssertTrue(manifest.supportsEmbedded(emulator: "fbneo"))
+        XCTAssertFalse(manifest.supportsQuark(emulator: "snes9x"))
+        XCTAssertTrue(manifest.supportsEmbedded(emulator: "snes9x"))
+    }
+
+    func testEmbeddedLaunchRequiresQuarkOnlyForNetworkRoutesOrQuarkArguments() {
+        XCTAssertFalse(FightcadeEmbeddedLaunch.test(channelID: "snes", emulator: "snes9x", gameID: "snes_16mj").requiresQuark)
+        XCTAssertFalse(FightcadeEmbeddedLaunch.training(channelID: "snes", emulator: "snes9x", gameID: "snes_16mj").requiresQuark)
+        XCTAssertTrue(FightcadeEmbeddedLaunch.direct(channelID: "snes", launch: FightcadeDirectLaunch(
+            emulator: "snes9x",
+            gameID: "snes_16mj",
+            localPort: 6000,
+            host: "203.0.113.20",
+            remotePort: 6001,
+            playerID: 0,
+            delay: 2,
+            ranked: 0
+        )).requiresQuark)
+        XCTAssertTrue(FightcadeEmbeddedLaunch.fightcadeTraining(channelID: "snes", launch: FightcadeTrainingLaunch(
+            emulator: "snes9x",
+            gameID: "snes_16mj",
+            quarkID: "1234567890-42",
+            playerID: 1,
+            port: 7000,
+            delay: 2
+        )).requiresQuark)
+    }
+
     func testPairPlayQuarkCommandsCoverBothPlayerSides() {
         let playerOne = makeMatch(playerID: 0, delay: 1, ranked: 0)
         let playerTwo = makeMatch(playerID: 1, delay: 3, ranked: 1)
@@ -254,6 +317,12 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
         }
         cursor += 4
         return value
+    }
+
+    private func temporaryDirectory() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("MacadeTests")
+            .appendingPathComponent(UUID().uuidString)
     }
 }
 
