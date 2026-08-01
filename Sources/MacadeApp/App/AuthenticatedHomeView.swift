@@ -33,7 +33,14 @@ struct AuthenticatedHomeView: View {
                 }
             }
             .background(.black.opacity(0.22))
+
+            if viewModel.isRestoringJoinedChannels {
+                LobbyRestoreLoadingView(channelCount: viewModel.restoringJoinedChannelCount)
+                    .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                    .zIndex(5)
+            }
         }
+        .animation(.easeInOut(duration: 0.28), value: viewModel.isRestoringJoinedChannels)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             await viewModel.loadDashboard()

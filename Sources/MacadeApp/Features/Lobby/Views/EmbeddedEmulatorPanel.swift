@@ -10,8 +10,6 @@ struct EmbeddedEmulatorPanel: View {
     let onStop: () -> Void
 
     @State private var polledOverlayState: FightcadeEmbeddedOverlayState?
-    @State private var videoSourceSize: FightcadeEmbeddedVideoSourceSize?
-    @State private var settings = FightcadeFBNeoSettings.defaults
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,35 +37,13 @@ struct EmbeddedEmulatorPanel: View {
             }
         }
         .background(.black)
-        .onAppear(perform: reloadSettings)
-        .onReceive(NotificationCenter.default.publisher(for: .fightcadeFBNeoSettingsDidChange)) { _ in
-            reloadSettings()
-        }
         .task(id: session.id) {
             await pollOverlayState()
         }
     }
 
     private func aspectFrame(in size: CGSize) -> CGSize {
-        let aspect = CGFloat(max(session.videoAspectRatio, 0.1))
-        guard size.width > 0, size.height > 0 else { return size }
-        if settings.embeddedVideoScale > 0,
-           let videoSourceSize,
-           videoSourceSize.width > 0,
-           videoSourceSize.height > 0 {
-            let target = CGSize(
-                width: CGFloat(videoSourceSize.width * settings.embeddedVideoScale),
-                height: CGFloat(videoSourceSize.height * settings.embeddedVideoScale)
-            )
-            let fit = min(size.width / target.width, size.height / target.height, 1)
-            return CGSize(width: target.width * fit, height: target.height * fit)
-        }
-
-        if size.width / size.height > aspect {
-            return CGSize(width: size.height * aspect, height: size.height)
-        }
-
-        return CGSize(width: size.width, height: size.width / aspect)
+        size
     }
 
     private var sessionBar: some View {
@@ -152,15 +128,8 @@ struct EmbeddedEmulatorPanel: View {
             if let state = session.videoStream.overlaySnapshot(), state != polledOverlayState {
                 polledOverlayState = state
             }
-            if let size = session.videoStream.sourceSizeSnapshot(), size != videoSourceSize {
-                videoSourceSize = size
-            }
             try? await Task.sleep(for: .milliseconds(150))
         }
-    }
-
-    private func reloadSettings() {
-        settings = (try? FightcadeFBNeoSettingsStore().load()) ?? .defaults
     }
 }
 

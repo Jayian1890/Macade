@@ -11,6 +11,8 @@ final class AuthenticatedHomeViewModel {
     var chatDraft = ""
     var isLoading = false
     var isJoining = false
+    var isRestoringJoinedChannels = false
+    var restoringJoinedChannelCount = 0
     var isLeavingChannel = false
     var isSendingChat = false
     var isLaunchingGame = false
@@ -57,6 +59,7 @@ final class AuthenticatedHomeViewModel {
     private let diagnosticsSettings: FightcadeLobbyDiagnosticsSettings
     private var eventTask: Task<Void, Never>?
     private var joiningChannelIDs = Set<FightcadeChannel.ID>()
+    private var restoringJoinedChannelIDs = Set<FightcadeChannel.ID>()
     init(
         session: AuthSession,
         lobbyService: any FightcadeLobbyServicing = FightcadeLobbyService(),
@@ -166,22 +169,6 @@ final class AuthenticatedHomeViewModel {
             && !chatDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    var statusText: String {
-        if isLoading {
-            return "Syncing"
-        }
-
-        if !joinedChannelIDs.isEmpty {
-            return "Joined · \(joinedChannelIDs.count)"
-        }
-
-        if let dashboard {
-            return "Connected · \(dashboard.channels.count) channels"
-        }
-
-        return "Connected"
-    }
-
     func loadDashboard() async {
         guard !isLoading else {
             return
@@ -285,20 +272,26 @@ final class AuthenticatedHomeViewModel {
         Task { await lobbyService.disconnect() }
     }
 
-    func join(_ channel: FightcadeChannel, forcingServerJoin: Bool = false) {
+    func join(_ channel: FightcadeChannel, forcingServerJoin: Bool = false, restoringSavedChannel: Bool = false) {
         guard (forcingServerJoin || !joinedChannelIDs.contains(channel.id)),
               !joiningChannelIDs.contains(channel.id) else {
             return
         }
 
         joiningChannelIDs.insert(channel.id)
+        if restoringSavedChannel {
+            restoringJoinedChannelIDs.insert(channel.id)
+            isRestoringJoinedChannels = true
+        }
         isJoining = true
         errorMessage = nil
 
         Task {
             defer {
                 joiningChannelIDs.remove(channel.id)
+                restoringJoinedChannelIDs.remove(channel.id)
                 isJoining = !joiningChannelIDs.isEmpty
+                isRestoringJoinedChannels = !restoringJoinedChannelIDs.isEmpty
             }
 
             do {

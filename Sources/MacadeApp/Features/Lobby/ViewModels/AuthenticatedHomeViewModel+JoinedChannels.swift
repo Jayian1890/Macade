@@ -62,8 +62,10 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
+        restoringJoinedChannelCount = channels.count
+        isRestoringJoinedChannels = true
         for channel in channels {
-            join(channel, forcingServerJoin: true)
+            join(channel, forcingServerJoin: true, restoringSavedChannel: true)
         }
     }
 

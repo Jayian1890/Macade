@@ -27,6 +27,14 @@ static char gChatSubmit[160] = { 0 };
 static bool gChatInputActive = false;
 
 static void EnsureVideo();
+extern int MacadeEmbeddedVideoScale;
+
+static int ClampVideoScale(int scale)
+{
+	if (scale < 0) return 0;
+	if (scale > 5) return 5;
+	return scale;
+}
 
 enum {
 	kOverlaySequence = 60,
@@ -224,8 +232,11 @@ void MacadeEmbeddedPumpInput()
 
 		int pressed = 0;
 		int scancode = 0;
+		int videoScale = 0;
 		if (sscanf(buffer, "key %d %d", &pressed, &scancode) == 2 && scancode >= 0 && scancode < (int)sizeof(gKeys)) {
 			gKeys[scancode] = pressed ? 1 : 0;
+		} else if (sscanf(buffer, "videoScale %d", &videoScale) == 1) {
+			MacadeEmbeddedVideoScale = ClampVideoScale(videoScale);
 		} else if (strcmp(buffer, "chatBegin") == 0) {
 			gChatInputActive = true;
 			gChatInput[0] = 0;

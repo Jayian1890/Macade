@@ -7,6 +7,8 @@ int nIniVersion = 0;
 static char* szSDLconfigPath = NULL;
 #endif
 
+extern int MacadeEmbeddedVideoScale;
+
 static void CreateConfigName(char* szConfig)
 {
 #if defined(BUILD_SDL2) && !defined(SDL_WINDOWS)	
@@ -62,6 +64,7 @@ int ConfigAppLoad()
 		VAR(nIniVersion);
 #ifndef BUILD_PI
 		VAR(nVidSelect);                           // video mode select
+		VAR(MacadeEmbeddedVideoScale);
 		VAR(bVidFullStretch);
 		VAR(nAutoFireRate);
 #endif
@@ -154,6 +157,7 @@ int ConfigAppSave()
 #ifndef BUILD_PI
 	fprintf(f, "\n// video mode 0 = standard SDL 1= (very expiermental) opengl\n");
 	VAR(nVidSelect);              // video mode select
+	VAR(MacadeEmbeddedVideoScale);
 	fprintf(f, "\n// If non-zero, allow stretching of the image to any size\n");
 	VAR(bVidFullStretch);
 	fprintf(f, "\n// Auto-Fire Rate, non-linear - use the GUI to change this setting!\n");

@@ -37,6 +37,10 @@ final class FightcadeEmbeddedInputClient: @unchecked Sendable {
         send("chatCancel")
     }
 
+    func setVideoScale(_ scale: Int) {
+        send("videoScale \(max(0, min(5, scale)))")
+    }
+
     func close() {
         lock.withLock {
             if socketDescriptor >= 0 {

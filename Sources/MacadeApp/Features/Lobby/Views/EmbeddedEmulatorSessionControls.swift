@@ -90,10 +90,14 @@ struct EmbeddedEmulatorSessionControls: View {
         var next = settings
         update(&next)
         next = next.normalized()
+        let previousVideoScale = settings.embeddedVideoScale
 
         do {
             try settingsStore.save(next)
             settings = next
+            if next.embeddedVideoScale != previousVideoScale {
+                session.inputClient.setVideoScale(next.embeddedVideoScale)
+            }
             settingsStatus = nil
             NotificationCenter.default.post(name: .fightcadeFBNeoSettingsDidChange, object: nil)
         } catch {

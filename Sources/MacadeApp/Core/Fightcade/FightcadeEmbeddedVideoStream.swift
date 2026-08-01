@@ -77,7 +77,7 @@ struct FightcadeEmbeddedVideoSourceSize: Equatable, Sendable {
 }
 
 final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
-    static let byteCount = 64 * 1024 * 1024
+    static let byteCount = 128 * 1024 * 1024
 
     let fileURL: URL
     let byteCount: Int

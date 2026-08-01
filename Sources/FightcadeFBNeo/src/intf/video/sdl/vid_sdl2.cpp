@@ -1,6 +1,7 @@
 // blitter effects via SDL2
 #include "burner.h"
 #include "macade_embedded.h"
+#include "macade_embedded_scale.h"
 #include "vid_support.h"
 #include "vid_softfx.h"
 #include <SDL.h>
@@ -428,7 +429,7 @@ static int Frame(bool bRedraw)                                          // bRedr
 			pVidTransCallback();
 		}
 		if (MacadeEmbeddedEnabled()) {
-			MacadeEmbeddedPublishFrame(pVidImage, nVidImageWidth, nVidImageHeight, nVidImagePitch, nVidImageBPP, nVidImageDepth == 16 ? 1 : 0);
+			MacadeEmbeddedPublishScaledFrame(pVidImage, nVidImageWidth, nVidImageHeight, nVidImagePitch, nVidImageBPP, nVidImageDepth == 16 ? 1 : 0);
 		}
 	}
 	return 0;
