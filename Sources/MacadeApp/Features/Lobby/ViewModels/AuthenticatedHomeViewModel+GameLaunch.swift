@@ -57,6 +57,7 @@ extension AuthenticatedHomeViewModel {
             defer { isLaunchingGame = false }
 
             do {
+                stopChannelTVSession(stoppingSession: true)
                 let match = FightcadeMatchLaunch(
                     emulator: emulator,
                     gameID: gameID,

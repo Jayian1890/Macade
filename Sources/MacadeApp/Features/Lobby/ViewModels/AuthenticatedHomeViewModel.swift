@@ -34,6 +34,11 @@ final class AuthenticatedHomeViewModel {
     var browser = FightcadeChannelBrowserState()
     var upcomingEvents: [FightcadeEvent] = []
     var isShowingChannelChat = false
+    var isShowingChannelTV = false
+    var channelTVStatusText: String?
+    var channelTVTask: Task<Void, Never>?
+    var channelTVCurrentStreamID: String?
+    var channelTVBlockedStreamIDs = Set<String>()
     var isSendingChallenge = false
     var isShowingChannelBrowser = true
     var isShowingGameplay = false
@@ -226,6 +231,7 @@ final class AuthenticatedHomeViewModel {
     }
 
     func select(_ channel: FightcadeChannel) {
+        stopChannelTVSession(stoppingSession: true)
         selectedChannelID = channel.id
         isShowingChannelBrowser = false
         isShowingGameplay = false
@@ -233,6 +239,7 @@ final class AuthenticatedHomeViewModel {
     }
 
     func openJoinedChannel(_ channel: FightcadeChannel) {
+        stopChannelTVSession(stoppingSession: true)
         selectedChannelID = channel.id
         isShowingChannelBrowser = false
         isShowingGameplay = false
@@ -260,6 +267,7 @@ final class AuthenticatedHomeViewModel {
     }
 
     func showChannelBrowser() {
+        stopChannelTVSession(stoppingSession: true)
         browser.mode = .all
         browser.query = ""
         browser.page = 1
@@ -269,6 +277,7 @@ final class AuthenticatedHomeViewModel {
     }
 
     func showRankedChannels() {
+        stopChannelTVSession(stoppingSession: true)
         browser.mode = .ranked
         browser.query = ""
         browser.page = 1
@@ -278,6 +287,7 @@ final class AuthenticatedHomeViewModel {
     }
 
     func showFavoriteChannels() {
+        stopChannelTVSession(stoppingSession: true)
         browser.mode = .favorites
         browser.query = ""
         browser.page = 1
@@ -287,6 +297,7 @@ final class AuthenticatedHomeViewModel {
     }
 
     func showPopularChannels() {
+        stopChannelTVSession(stoppingSession: true)
         browser.resetFilters()
         browser.results = popularChannels
         browser.hasMorePages = false
@@ -305,6 +316,7 @@ final class AuthenticatedHomeViewModel {
     }
 
     func disconnect() {
+        stopChannelTVSession(stoppingSession: false)
         activeEmulationSession?.stop()
         activeEmulationSession = nil
         FightcadeProcessRegistry.shared.terminateAll(reason: "authenticated session disconnect", graceSeconds: 1.0)
