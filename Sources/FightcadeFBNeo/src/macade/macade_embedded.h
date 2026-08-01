@@ -11,6 +11,7 @@ void MacadeEmbeddedSetOverlayGameInfo(const char* player1, const char* player2, 
 void MacadeEmbeddedSetOverlayScores(int score1, int score2);
 void MacadeEmbeddedSetOverlaySpectators(int spectators);
 void MacadeEmbeddedSetOverlayStats(int ping, int delay);
+void MacadeEmbeddedSetOverlayMatchEnded();
 void MacadeEmbeddedAddOverlayChatLine(const char* name, const char* text);
 int MacadeEmbeddedConsumeChatSubmit(char* text, int size);
 

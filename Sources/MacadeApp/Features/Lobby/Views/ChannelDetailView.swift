@@ -16,15 +16,16 @@ struct ChannelDetailView: View {
                         EmbeddedEmulatorPanel(
                             session: session,
                             isChannelChatVisible: viewModel.isShowingChannelChat,
+                            channelChatOverlay: AnyView(ChannelChatView(
+                                channel: channel,
+                                viewModel: viewModel,
+                                showsPreview: false,
+                                backgroundOpacity: 0.5
+                            )),
                             onToggleChannelChat: viewModel.toggleChannelChat,
+                            onMatchEnded: viewModel.finishActiveMatchSession,
                             onStop: viewModel.stopActiveEmulationSession
                         )
-
-                        if viewModel.isShowingChannelChat {
-                            ChannelChatView(channel: channel, viewModel: viewModel)
-                                .frame(width: 360)
-                                .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
                     } else {
                         ChannelChatView(channel: channel, viewModel: viewModel)
                     }
@@ -49,8 +50,22 @@ struct ChannelDetailView: View {
 private struct ChannelChatView: View {
     let channel: FightcadeChannel
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    let showsPreview: Bool
+    let backgroundOpacity: Double
     private let topID = "channel-chat-top"
     private let bottomID = "channel-chat-bottom"
+
+    init(
+        channel: FightcadeChannel,
+        viewModel: AuthenticatedHomeViewModel,
+        showsPreview: Bool = true,
+        backgroundOpacity: Double = 1
+    ) {
+        self.channel = channel
+        self.viewModel = viewModel
+        self.showsPreview = showsPreview
+        self.backgroundOpacity = backgroundOpacity
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -61,7 +76,7 @@ private struct ChannelChatView: View {
                             .frame(height: 1)
                             .id(topID)
 
-                        if let previewURL = channel.previewURL {
+                        if showsPreview, let previewURL = channel.previewURL {
                             AsyncImage(url: previewURL) { image in
                                 image
                                     .resizable()
@@ -141,9 +156,13 @@ private struct ChannelChatView: View {
 
     private var chatBackground: some View {
         ZStack {
-            MacadeColor.midnight.opacity(0.42)
+            MacadeColor.midnight.opacity(0.42 * backgroundOpacity)
             LinearGradient(
-                colors: [MacadeColor.deepPlum.opacity(0.18), .clear, .black.opacity(0.25)],
+                colors: [
+                    MacadeColor.deepPlum.opacity(0.18 * backgroundOpacity),
+                    .clear,
+                    .black.opacity(0.25 * backgroundOpacity)
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )

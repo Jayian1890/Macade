@@ -1,4 +1,5 @@
 #include "burner.h"
+#include "macade_embedded.h"
 #include "sdl_quark_detector.h"
 
 #define DETECTOR_FRAMES 30
@@ -289,7 +290,10 @@ void DetectorUpdate()
          QuarkSendChatCmd(temp, 'W');
       }
    }
-   if (game_detector.frame_end && (frame_time - game_detector.frame_end) > END_FRAMES) QuarkEnd();
+   if (game_detector.frame_end && (frame_time - game_detector.frame_end) > END_FRAMES) {
+      MacadeEmbeddedSetOverlayMatchEnded();
+      QuarkEnd();
+   }
 }
 
 void DetectorSetGameInfo(int spectator, int ranked)

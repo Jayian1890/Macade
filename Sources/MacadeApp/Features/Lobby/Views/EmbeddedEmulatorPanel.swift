@@ -6,7 +6,9 @@ import MetalKit
 struct EmbeddedEmulatorPanel: View {
     let session: FightcadeEmbeddedSession
     let isChannelChatVisible: Bool
+    let channelChatOverlay: AnyView?
     let onToggleChannelChat: () -> Void
+    let onMatchEnded: () -> Void
     let onStop: () -> Void
 
     @State private var polledOverlayState: FightcadeEmbeddedOverlayState?
@@ -32,6 +34,13 @@ struct EmbeddedEmulatorPanel: View {
                         }
                     }
                     .frame(width: frame.width, height: frame.height)
+
+                    if let channelChatOverlay, isChannelChatVisible {
+                        channelChatOverlay
+                            .frame(width: frame.width, height: frame.height)
+                            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                            .transition(.opacity)
+                    }
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
@@ -125,7 +134,15 @@ struct EmbeddedEmulatorPanel: View {
 
     private func pollOverlayState() async {
         while !Task.isCancelled, session.isActive {
-            if let state = session.videoStream.overlaySnapshot(), state != polledOverlayState {
+            if let state = session.videoStream.overlaySnapshot() {
+                if state.isMatchEnded, session.mode == .match {
+                    onMatchEnded()
+                    return
+                }
+                guard state != polledOverlayState else {
+                    try? await Task.sleep(for: .milliseconds(150))
+                    continue
+                }
                 polledOverlayState = state
             }
             try? await Task.sleep(for: .milliseconds(150))

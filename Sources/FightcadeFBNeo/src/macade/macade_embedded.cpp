@@ -66,6 +66,7 @@ enum {
 	kOverlayPlayerRank = 144,
 	kOverlayPlayerScore = 148,
 	kOverlayConnectionPhase = 3420,
+	kOverlayMatchEnded = 3424,
 };
 
 static void Store32(int offset, uint32_t value)
@@ -328,6 +329,7 @@ void MacadeEmbeddedSetOverlayGameInfo(const char* player1, const char* player2, 
 	Store32(kOverlaySpectator, spectator ? 1 : 0);
 	Store32(kOverlayRanked, ranked > 0 ? (uint32_t)ranked : 0);
 	Store32(kOverlayPlayer, player > 0 ? 1 : 0);
+	Store32(kOverlayMatchEnded, 0);
 	StorePlayer(0, player1);
 	StorePlayer(1, player2);
 	BumpOverlay();
@@ -353,6 +355,15 @@ void MacadeEmbeddedSetOverlayStats(int ping, int delay)
 	EnsureVideo();
 	Store32(kOverlayPing, ping > 0 ? (uint32_t)ping : 0);
 	Store32(kOverlayDelay, delay > 0 ? (uint32_t)delay : 0);
+	BumpOverlay();
+}
+
+void MacadeEmbeddedSetOverlayMatchEnded()
+{
+	EnsureVideo();
+	Store32(kOverlayMatchEnded, 1);
+	StoreString(kOverlaySystemMessage, kOverlaySystemMessageLength, "Match Complete");
+	Store32(kOverlaySystemFrames, 300);
 	BumpOverlay();
 }
 

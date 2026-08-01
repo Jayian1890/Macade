@@ -48,6 +48,7 @@ struct FightcadeEmbeddedOverlayState: Equatable, Sendable {
     let chatInput: String
     let chatLines: [ChatLine]
     let players: [Player]
+    let isMatchEnded: Bool
 
     struct ChatLine: Equatable, Sendable, Identifiable {
         var id: String { "\(name):\(text)" }
@@ -300,7 +301,8 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
             systemMessage: loadString(Header.overlaySystemMessage, length: Header.overlaySystemMessageLength),
             chatInput: loadString(Header.overlayChatInput, length: Header.overlayChatInputLength),
             chatLines: chatLines,
-            players: players
+            players: players,
+            isMatchEnded: loadUInt32(Header.overlayMatchEnded) != 0
         )
     }
 
@@ -385,5 +387,6 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
         static let overlayPlayerRank = 144
         static let overlayPlayerScore = 148
         static let overlayConnectionPhase = overlay + 3356
+        static let overlayMatchEnded = overlay + 3360
     }
 }

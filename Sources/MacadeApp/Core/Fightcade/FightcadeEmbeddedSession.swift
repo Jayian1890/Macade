@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import IOKit.pwr_mgt
 import Observation
 
 @MainActor
@@ -34,6 +35,7 @@ final class FightcadeEmbeddedSession {
     private var process: Process?
     private var proxyTask: Task<Void, Never>?
     private var forceKillTask: Task<Void, Never>?
+    private var sleepAssertion: FightcadeEmbeddedSleepAssertion?
     var status: Status = .launching
     var overlayState: FightcadeEmbeddedOverlayState?
     var videoAspectRatio = 4.0 / 3.0
@@ -87,12 +89,15 @@ final class FightcadeEmbeddedSession {
     func attach(process: Process, proxyTask: Task<Void, Never>? = nil) {
         self.process = process
         self.proxyTask = proxyTask
+        sleepAssertion = FightcadeEmbeddedSleepAssertion(reason: "Macade is running \(emulator.uppercased()) for \(gameID)")
         status = .running(processID: process.processIdentifier)
     }
 
     func markTerminated(status terminationStatus: Int32) {
         status = .terminated(status: terminationStatus)
         process = nil
+        sleepAssertion?.release()
+        sleepAssertion = nil
         forceKillTask?.cancel()
         forceKillTask = nil
         proxyTask?.cancel()
@@ -104,6 +109,8 @@ final class FightcadeEmbeddedSession {
     func markFailed(_ message: String) {
         status = .failed(message)
         process = nil
+        sleepAssertion?.release()
+        sleepAssertion = nil
         forceKillTask?.cancel()
         forceKillTask = nil
         proxyTask?.cancel()
@@ -114,6 +121,8 @@ final class FightcadeEmbeddedSession {
 
     func stop() {
         guard let process, process.isRunning else {
+            sleepAssertion?.release()
+            sleepAssertion = nil
             forceKillTask?.cancel()
             forceKillTask = nil
             proxyTask?.cancel()
@@ -136,6 +145,43 @@ final class FightcadeEmbeddedSession {
                   self?.process?.isRunning == true else { return }
             kill(processID, SIGKILL)
         }
+    }
+}
+
+private final class FightcadeEmbeddedSleepAssertion {
+    private var systemAssertionID: IOPMAssertionID = 0
+    private var displayAssertionID: IOPMAssertionID = 0
+
+    init(reason: String) {
+        acquire(kIOPMAssertionTypePreventUserIdleSystemSleep as CFString, id: &systemAssertionID, reason: reason)
+        acquire(kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString, id: &displayAssertionID, reason: reason)
+    }
+
+    deinit {
+        release()
+    }
+
+    func release() {
+        release(id: &systemAssertionID)
+        release(id: &displayAssertionID)
+    }
+
+    private func acquire(_ type: CFString, id: inout IOPMAssertionID, reason: String) {
+        let result = IOPMAssertionCreateWithName(
+            type,
+            IOPMAssertionLevel(kIOPMAssertionLevelOn),
+            reason as CFString,
+            &id
+        )
+        if result != kIOReturnSuccess {
+            id = 0
+        }
+    }
+
+    private func release(id: inout IOPMAssertionID) {
+        guard id != 0 else { return }
+        IOPMAssertionRelease(id)
+        id = 0
     }
 }
 
