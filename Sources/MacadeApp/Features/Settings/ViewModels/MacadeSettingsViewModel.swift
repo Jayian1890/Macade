@@ -50,6 +50,7 @@ final class MacadeSettingsViewModel {
     var includeLobbyDiagnosticChatBodies = false
     var chatTranslationEnabled = false
     var chatTranslationTargetLanguageIdentifier = ""
+    var controllerPreferences = MacadeControllerPreferences.defaults
     var statusMessage: String?
     var isLoaded = false
 
@@ -61,6 +62,7 @@ final class MacadeSettingsViewModel {
     private var savedIncludeLobbyDiagnosticChatBodies = false
     private var savedChatTranslationEnabled = false
     private var savedChatTranslationTargetLanguageIdentifier = ""
+    private var savedControllerPreferences = MacadeControllerPreferences.defaults
 
     init(
         selectedSection: Section = .general,
@@ -79,6 +81,7 @@ final class MacadeSettingsViewModel {
             || includeLobbyDiagnosticChatBodies != savedIncludeLobbyDiagnosticChatBodies
             || chatTranslationEnabled != savedChatTranslationEnabled
             || chatTranslationTargetLanguageIdentifier != savedChatTranslationTargetLanguageIdentifier
+            || controllerPreferences.normalized() != savedControllerPreferences.normalized()
     }
 
     var chatTranslationLanguageChoices: [(id: String, name: String)] {
@@ -124,6 +127,7 @@ final class MacadeSettingsViewModel {
         let translationPreferences = preferencesStore.chatTranslationPreferences
         chatTranslationEnabled = translationPreferences.isEnabled
         chatTranslationTargetLanguageIdentifier = translationPreferences.targetLanguageIdentifier ?? ""
+        controllerPreferences = preferencesStore.controllerPreferences
         markSaved()
         isLoaded = true
     }
@@ -139,6 +143,8 @@ final class MacadeSettingsViewModel {
                 isEnabled: chatTranslationEnabled,
                 targetLanguageIdentifier: chatTranslationTargetLanguageIdentifier.nonEmpty
             )
+            controllerPreferences = controllerPreferences.normalized()
+            preferencesStore.controllerPreferences = controllerPreferences
             includeLobbyDiagnosticChatBodies = preferencesStore.includeLobbyDiagnosticChatBodies
             markSaved()
             statusMessage = "Settings saved."
@@ -154,6 +160,7 @@ final class MacadeSettingsViewModel {
         includeLobbyDiagnosticChatBodies = savedIncludeLobbyDiagnosticChatBodies
         chatTranslationEnabled = savedChatTranslationEnabled
         chatTranslationTargetLanguageIdentifier = savedChatTranslationTargetLanguageIdentifier
+        controllerPreferences = savedControllerPreferences
         statusMessage = nil
     }
 
@@ -167,6 +174,28 @@ final class MacadeSettingsViewModel {
         statusMessage = "Controller mappings cleared. Save to apply."
     }
 
+    func setControllerBinding(_ binding: MacadeKeyBinding, for action: ControllerAction) {
+        for existingAction in ControllerAction.allCases where existingAction != action {
+            if controllerPreferences.bindings[existingAction.id]?.keyCode == binding.keyCode {
+                controllerPreferences.bindings[existingAction.id] = nil
+            }
+        }
+        controllerPreferences.bindings[action.id] = binding
+        controllerPreferences = controllerPreferences.normalized()
+        statusMessage = "Set \(action.title) to \(binding.displayName). Save to apply."
+    }
+
+    func resetControllerBinding(for action: ControllerAction) {
+        controllerPreferences.bindings[action.id] = action.defaultBinding
+        controllerPreferences = controllerPreferences.normalized()
+        statusMessage = "Reset \(action.title). Save to apply."
+    }
+
+    func resetControllerBindings() {
+        controllerPreferences = .defaults
+        statusMessage = "Controller bindings reset. Save to apply."
+    }
+
     private func markSaved() {
         savedFBNeoSettings = fbneoSettings.normalized()
         savedForceWiredConnectionStatus = forceWiredConnectionStatus
@@ -174,5 +203,6 @@ final class MacadeSettingsViewModel {
         savedIncludeLobbyDiagnosticChatBodies = includeLobbyDiagnosticChatBodies
         savedChatTranslationEnabled = chatTranslationEnabled
         savedChatTranslationTargetLanguageIdentifier = chatTranslationTargetLanguageIdentifier
+        savedControllerPreferences = controllerPreferences.normalized()
     }
 }

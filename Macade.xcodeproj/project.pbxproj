@@ -120,6 +120,8 @@
 		BF00000B00000000000000AD /* MacadeSettingsPreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AD /* MacadeSettingsPreferencesStore.swift */; };
 		BF00000B00000000000000AE /* MacadeSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AE /* MacadeSettingsViewModel.swift */; };
 		BF00000B00000000000000AF /* MacadeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000AF /* MacadeSettingsView.swift */; };
+		BF00000B00000000000000D0 /* ControllerSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D0 /* ControllerSettingsSection.swift */; };
+		BF00000B00000000000000D1 /* MacadeControllerPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D1 /* MacadeControllerPreferences.swift */; };
 		BF00000B00000000000000B0 /* FightcadeLaunchRoutes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */; };
 		BF00000B00000000000000B4 /* MacadeUpdateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B4 /* MacadeUpdateModels.swift */; };
 		BF00000B00000000000000B5 /* GitHubReleaseUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B5 /* GitHubReleaseUpdater.swift */; };
@@ -244,6 +246,8 @@
 		BF00000C00000000000000AD /* MacadeSettingsPreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsPreferencesStore.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000AE /* MacadeSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsViewModel.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000AF /* MacadeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsView.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000D0 /* ControllerSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControllerSettingsSection.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000D1 /* MacadeControllerPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeControllerPreferences.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLaunchRoutes.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000B4 /* MacadeUpdateModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeUpdateModels.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000B5 /* GitHubReleaseUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubReleaseUpdater.swift; sourceTree = "<group>"; };
@@ -427,6 +431,7 @@
 				BF00000C00000000000000A5 /* FightcadeProxyDiagnostics.swift */,
 				BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */,
 				BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */,
+				BF00000C00000000000000D1 /* MacadeControllerPreferences.swift */,
 			);
 			path = Fightcade;
 			sourceTree = "<group>";
@@ -559,6 +564,7 @@
 			isa = PBXGroup;
 			children = (
 				BF00000C00000000000000AF /* MacadeSettingsView.swift */,
+				BF00000C00000000000000D0 /* ControllerSettingsSection.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -710,6 +716,7 @@
 				BF00000B00000000000000AD /* MacadeSettingsPreferencesStore.swift in Sources */,
 				BF00000B00000000000000AE /* MacadeSettingsViewModel.swift in Sources */,
 				BF00000B00000000000000AF /* MacadeSettingsView.swift in Sources */,
+				BF00000B00000000000000D0 /* ControllerSettingsSection.swift in Sources */,
 				BF00000B00000000000000B4 /* MacadeUpdateModels.swift in Sources */,
 				BF00000B00000000000000B5 /* GitHubReleaseUpdater.swift in Sources */,
 				BF00000B00000000000000B6 /* MacadeUpdateController.swift in Sources */,
@@ -768,6 +775,7 @@
 				BF00000B00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift in Sources */,
 				BF00000B00000000000000A5 /* FightcadeProxyDiagnostics.swift in Sources */,
 				BF00000B000000000000001F /* FightcadeFBNeoConfig.swift in Sources */,
+				BF00000B00000000000000D1 /* MacadeControllerPreferences.swift in Sources */,
 				BF00000B0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift in Sources */,
 				BF00000B00000000000000C0 /* ChatTranslationRequestBuilder.swift in Sources */,
 				BF00000B0000000000000021 /* ChannelHeaderView.swift in Sources */,

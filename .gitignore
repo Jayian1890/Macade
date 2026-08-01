@@ -4,6 +4,15 @@ graphify-out/
 __pycache__/
 *.pyc
 
+# Reverse-engineering, decompile, research, and local ASM artifacts.
+docs/ggponet/
+docs/ggpofba-ng/
+Sources/FightcadeFBNeo/src/dep/ggponet-native/CONVERSION_STATUS.csv
+Sources/FightcadeFBNeo/src/dep/ggponet-native/decompiled/
+*.asm
+*.s
+*.S
+
 # Xcode and SwiftPM generated state
 .swiftpm/
 .build/

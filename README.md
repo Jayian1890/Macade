@@ -56,7 +56,7 @@ Release assets should be named with `Macade` and use `.zip`, `.dmg`, or `.pkg` s
 
 ## Project Status
 
-Macade is early public software. The app is actively evolving, especially around native netplay parity, embedded runtime behavior, and polished release packaging. Expect rapid updates.
+Macade is early public software. The app is actively evolving, especially around native netplay/runtime verification, embedded runtime behavior, and polished release packaging. Expect rapid updates.
 
 ## Relationship to Fightcade
 

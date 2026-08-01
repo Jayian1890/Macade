@@ -27,6 +27,11 @@ struct MacadeSettingsPreferencesStore {
         nonmutating set { ChatTranslationPreferencesStore(userDefaults: userDefaults).save(newValue) }
     }
 
+    var controllerPreferences: MacadeControllerPreferences {
+        get { MacadeControllerPreferencesStore(userDefaults: userDefaults).load() }
+        nonmutating set { MacadeControllerPreferencesStore(userDefaults: userDefaults).save(newValue) }
+    }
+
     var lobbyDiagnosticsLogPath: String {
         diagnosticsSettings.relativeLogPath
     }

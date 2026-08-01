@@ -10,8 +10,21 @@ final class EmbeddedInputEventRouter {
     private var localMonitor: Any?
     private var globalMonitor: Any?
     private var diagnosticCount = 0
+    private var controllerPreferences = MacadeControllerPreferencesStore().load()
+    private var preferencesObserver: NSObjectProtocol?
 
-    private init() {}
+    private init() {
+        preferencesObserver = NotificationCenter.default.addObserver(
+            forName: .macadeControllerPreferencesDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.controllerPreferences = MacadeControllerPreferencesStore().load()
+                self?.appendDiagnostic("controller preferences reloaded\n")
+            }
+        }
+    }
 
     func bind(session: FightcadeEmbeddedSession?) {
         self.session = session
@@ -108,7 +121,7 @@ final class EmbeddedInputEventRouter {
     }
 
     private func send(event: NSEvent, isPressed: Bool, session: FightcadeEmbeddedSession) {
-        guard let scancode = SDLScancodeMapper.scancode(for: event) else {
+        guard let scancode = controllerPreferences.targetScancode(for: event.keyCode) ?? SDLScancodeMapper.scancode(for: event) else {
             appendDiagnostic("unmapped keyCode=\(event.keyCode) chars=\(event.charactersIgnoringModifiers ?? "")\n")
             return
         }

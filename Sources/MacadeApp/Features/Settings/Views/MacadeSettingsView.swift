@@ -276,31 +276,6 @@ private struct EmulatorSettingsSection: View {
     }
 }
 
-private struct ControllerSettingsSection: View {
-    @Bindable var viewModel: MacadeSettingsViewModel
-
-    var body: some View {
-        SettingsSection(title: "Controllers", subtitle: "Add controller mappings only if a gamepad is not detected correctly.") {
-            Text("Paste controller database lines from a trusted mapping source. Macade sends them to FBNeo when a game starts.")
-                .font(MacadeTypography.caption)
-                .foregroundStyle(MacadeColor.inkMuted)
-
-            TextEditor(text: $viewModel.fbneoSettings.controllerMappings)
-                .font(.system(size: 12, weight: .regular, design: .monospaced))
-                .foregroundStyle(MacadeColor.ink)
-                .frame(minHeight: 180)
-                .scrollContentBackground(.hidden)
-                .background(MacadeColor.panel.opacity(0.55), in: RoundedRectangle(cornerRadius: 10))
-
-            Button("Clear Controller Mappings") {
-                viewModel.clearControllerMappings()
-            }
-            .foregroundStyle(MacadeColor.warning)
-            .disabled(viewModel.fbneoSettings.controllerMappings.isEmpty)
-        }
-    }
-}
-
 private struct DiagnosticsSettingsSection: View {
     @Bindable var viewModel: MacadeSettingsViewModel
 
@@ -345,7 +320,7 @@ private struct AdvancedSettingsSection: View {
     }
 }
 
-private struct SettingsSection<Content: View>: View {
+struct SettingsSection<Content: View>: View {
     let title: String
     let subtitle: String
     @ViewBuilder let content: Content
@@ -374,7 +349,7 @@ private struct SettingsSection<Content: View>: View {
     }
 }
 
-private struct SettingsInfoRow: View {
+struct SettingsInfoRow: View {
     let title: String
     let detail: String
 
