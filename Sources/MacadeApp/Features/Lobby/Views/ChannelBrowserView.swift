@@ -54,6 +54,8 @@ struct ChannelBrowserView: View {
                     filterPopover
                 }
 
+                sortMenu
+
                 Button {
                     viewModel.browser.layoutMode = viewModel.browser.layoutMode == .grid ? .list : .grid
                 } label: {
@@ -70,6 +72,49 @@ struct ChannelBrowserView: View {
         }
         .frame(minHeight: 92)
         .background(.ultraThinMaterial)
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            Section("Activity") {
+                sortButton(.playersDescending)
+                sortButton(.playersAscending)
+                sortButton(.spectatorsDescending)
+                sortButton(.spectatorsAscending)
+            }
+            Section("Game") {
+                sortButton(.titleAscending)
+                sortButton(.titleDescending)
+                sortButton(.systemAscending)
+                sortButton(.systemDescending)
+            }
+            Section("Priority") {
+                sortButton(.rankedFirst)
+                sortButton(.favoritesFirst)
+                sortButton(.joinedFirst)
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: viewModel.browser.sort.symbolName)
+                Text(viewModel.browser.sort.shortTitle)
+            }
+            .font(.system(size: 12, weight: .black, design: .rounded))
+            .foregroundStyle(MacadeColor.inkMuted.opacity(0.72))
+            .padding(.horizontal, 9)
+            .frame(height: 28)
+            .background(MacadeColor.panel.opacity(0.56), in: Capsule())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .help("Sort by \(viewModel.browser.sort.title)")
+    }
+
+    private func sortButton(_ sort: FightcadeChannelBrowserSort) -> some View {
+        Button {
+            viewModel.browser.sort = sort
+        } label: {
+            Label(sort.title, systemImage: viewModel.browser.sort == sort ? "checkmark.circle.fill" : sort.symbolName)
+        }
     }
 
     private var queryBinding: Binding<String> {

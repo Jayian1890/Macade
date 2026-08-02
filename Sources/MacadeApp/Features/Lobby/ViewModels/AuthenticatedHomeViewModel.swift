@@ -123,14 +123,15 @@ final class AuthenticatedHomeViewModel {
 
         let query = browser.query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
-            return systemFiltered.sortedByUserCountDescending()
+            return browser.sort.sorted(systemFiltered, joinedChannelIDs: joinedChannelIDs)
         }
 
-        return systemFiltered.filter { channel in
+        let queryFiltered = systemFiltered.filter { channel in
             channel.name.localizedCaseInsensitiveContains(query)
                 || channel.title.localizedCaseInsensitiveContains(query)
                 || channel.subtitle.localizedCaseInsensitiveContains(query)
-        }.sortedByUserCountDescending()
+        }
+        return browser.sort.sorted(queryFiltered, joinedChannelIDs: joinedChannelIDs)
     }
 
     var selectedChannel: FightcadeChannel? {
@@ -173,7 +174,7 @@ final class AuthenticatedHomeViewModel {
 
     var favoriteChannels: [FightcadeChannel] { Array(channels.filter(\.isFavorite).sortedByUserCountDescending().prefix(12)) }
 
-    var browserChannels: [FightcadeChannel] { browser.results.isEmpty ? filteredChannels : browser.results.sortedByUserCountDescending() }
+    var browserChannels: [FightcadeChannel] { browser.results.isEmpty ? filteredChannels : browser.sort.sorted(browser.results, joinedChannelIDs: joinedChannelIDs) }
 
     var browserLandingSections: [FightcadeWelcomeSection] {
         dashboard?.browserSections.filter { !$0.isEmpty } ?? []
