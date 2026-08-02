@@ -208,13 +208,7 @@ private actor RecordingLobbyService: FightcadeLobbyServicing {
 
     func refreshChannels() async throws {}
 
-    func searchChannels(_ request: FightcadeChannelSearchRequest) async throws -> FightcadeChannelSearchResult {
-        FightcadeChannelSearchResult(channels: [], page: request.page, hasMorePages: false)
-    }
-
-    func loadChannelFilterOptions() async throws -> FightcadeChannelFilterOptions {
-        FightcadeChannelFilterOptions()
-    }
+    func searchChannels(matching query: String) async throws -> [FightcadeChannel] { [] }
 
     func loadUpcomingEvents(limit: Int) async throws -> [FightcadeEvent] { [] }
 

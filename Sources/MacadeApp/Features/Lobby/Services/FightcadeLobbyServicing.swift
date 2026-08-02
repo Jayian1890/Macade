@@ -4,8 +4,7 @@ protocol FightcadeLobbyServicing: Sendable {
     func eventStream() async -> AsyncStream<FightcadeLobbyEvent>
     func connect(for session: AuthSession) async throws -> FightcadeDashboard
     func refreshChannels() async throws
-    func searchChannels(_ request: FightcadeChannelSearchRequest) async throws -> FightcadeChannelSearchResult
-    func loadChannelFilterOptions() async throws -> FightcadeChannelFilterOptions
+    func searchChannels(matching query: String) async throws -> [FightcadeChannel]
     func loadUpcomingEvents(limit: Int) async throws -> [FightcadeEvent]
     func setFavorite(_ isFavorite: Bool, for channel: FightcadeChannel) async throws
     func join(channel: FightcadeChannel) async throws

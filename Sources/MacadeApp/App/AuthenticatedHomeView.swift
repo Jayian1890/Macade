@@ -19,31 +19,25 @@ struct AuthenticatedHomeView: View {
         ZStack {
             MacadeBackground()
 
-            if viewModel.isRestoringJoinedChannels {
-                LobbyRestoreLoadingView(channelCount: viewModel.restoringJoinedChannelCount)
-                    .transition(.opacity)
-                    .zIndex(5)
-            } else {
-                HStack(spacing: 0) {
-                    LobbySidebarView(viewModel: viewModel, onSignOut: signOut)
-                        .frame(width: lobbySidebarWidth)
-                        .overlay(alignment: .trailing) {
-                            SidebarResizeHandle(width: $lobbySidebarWidth, range: 148...280)
-                        }
-
-                    if viewModel.isShowingChannelTV {
-                        ChannelTVView(viewModel: viewModel)
-                    } else if viewModel.isShowingGameplay {
-                        GameplayDetailView(viewModel: viewModel)
-                    } else if viewModel.isShowingChannelBrowser {
-                        ChannelBrowserView(viewModel: viewModel)
-                    } else {
-                        ChannelDetailView(viewModel: viewModel)
+            HStack(spacing: 0) {
+                LobbySidebarView(viewModel: viewModel, onSignOut: signOut)
+                    .frame(width: lobbySidebarWidth)
+                    .overlay(alignment: .trailing) {
+                        SidebarResizeHandle(width: $lobbySidebarWidth, range: 148...280)
                     }
+
+                if viewModel.isShowingChannelTV {
+                    ChannelTVView(viewModel: viewModel)
+                } else if viewModel.isShowingGameplay {
+                    GameplayDetailView(viewModel: viewModel)
+                } else if viewModel.isShowingChannelBrowser {
+                    ChannelBrowserView(viewModel: viewModel)
+                } else {
+                    ChannelDetailView(viewModel: viewModel)
                 }
-                .background(.black.opacity(0.22))
-                .transition(.opacity)
             }
+            .background(.black.opacity(0.22))
+            .transition(.opacity)
         }
         .animation(.easeInOut(duration: 0.28), value: viewModel.isRestoringJoinedChannels)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

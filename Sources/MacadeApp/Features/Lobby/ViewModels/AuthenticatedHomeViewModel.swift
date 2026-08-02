@@ -67,6 +67,7 @@ final class AuthenticatedHomeViewModel {
     let friendStore: any FightcadeFriendPersisting
     private let diagnosticsSettings: FightcadeLobbyDiagnosticsSettings
     private var eventTask: Task<Void, Never>?
+    var channelRefreshTask: Task<Void, Never>?
     private var joiningChannelIDs = Set<FightcadeChannel.ID>()
     private var restoringJoinedChannelIDs = Set<FightcadeChannel.ID>()
     var hasLoadedFriends = false
@@ -123,7 +124,7 @@ final class AuthenticatedHomeViewModel {
 
         let query = browser.query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
-            return browser.sort.sorted(systemFiltered, joinedChannelIDs: joinedChannelIDs)
+            return systemFiltered.sortedByUserCountDescending()
         }
 
         let queryFiltered = systemFiltered.filter { channel in
@@ -131,7 +132,7 @@ final class AuthenticatedHomeViewModel {
                 || channel.title.localizedCaseInsensitiveContains(query)
                 || channel.subtitle.localizedCaseInsensitiveContains(query)
         }
-        return browser.sort.sorted(queryFiltered, joinedChannelIDs: joinedChannelIDs)
+        return queryFiltered.sortedByUserCountDescending()
     }
 
     var selectedChannel: FightcadeChannel? {
@@ -163,22 +164,7 @@ final class AuthenticatedHomeViewModel {
         return usersByChannel[channelName] ?? []
     }
 
-    var popularChannels: [FightcadeChannel] { Array(channels.sortedByUserCountDescending().prefix(12)) }
-
-    var hiddenGemChannels: [FightcadeChannel] {
-        Array(channels
-            .filter { channel in !popularChannels.contains(where: { $0.id == channel.id }) }
-            .sorted { lhs, rhs in (lhs.playerCount ?? 0) < (rhs.playerCount ?? 0) }
-            .prefix(12))
-    }
-
-    var favoriteChannels: [FightcadeChannel] { Array(channels.filter(\.isFavorite).sortedByUserCountDescending().prefix(12)) }
-
-    var browserChannels: [FightcadeChannel] { browser.results.isEmpty ? filteredChannels : browser.sort.sorted(browser.results, joinedChannelIDs: joinedChannelIDs) }
-
-    var browserLandingSections: [FightcadeWelcomeSection] {
-        dashboard?.browserSections.filter { !$0.isEmpty } ?? []
-    }
+    var browserChannels: [FightcadeChannel] { filteredChannels }
 
     var canSendChat: Bool {
         selectedChannel.map { canSendChat(to: $0) } == true
@@ -197,16 +183,26 @@ final class AuthenticatedHomeViewModel {
             isRestoringJoinedChannels = true
         }
         await loadFriendsIfNeeded()
-        startListeningForEvents()
+        await startListeningForEvents()
         await loadCachedChannelsIfAvailable(replacingCurrentDashboard: false)
         defer { isLoading = false }
 
         do {
             let loadedDashboard = try await lobbyService.connect(for: session)
-            applyDashboard(loadedDashboard, restoringJoinedChannels: true)
-            saveChannelsToCache(dashboard?.channels ?? loadedDashboard.channels)
-            loadBrowserFilterOptions()
+            let mergedChannels = channels.mergingLiveChannels(loadedDashboard.channels)
+            applyDashboard(
+                FightcadeDashboard(
+                    connectedUsername: loadedDashboard.connectedUsername,
+                    welcomeMessage: loadedDashboard.welcomeMessage,
+                    channels: mergedChannels,
+                    browserSections: loadedDashboard.browserSections,
+                    loadedAt: loadedDashboard.loadedAt
+                ),
+                restoringJoinedChannels: true
+            )
+            saveChannelsToCache(mergedChannels)
             loadUpcomingEvents()
+            startChannelRefreshLoop()
         } catch let error as FightcadeLobbyError {
             isRestoringJoinedChannels = false
             restoringJoinedChannelCount = 0
@@ -271,38 +267,25 @@ final class AuthenticatedHomeViewModel {
         stopChannelTVSession(stoppingSession: true)
         browser.mode = .all
         browser.query = ""
-        browser.page = 1
+        browser.selectedSystem = nil
         isShowingChannelBrowser = true
         isShowingGameplay = false
-        scheduleBrowserSearch()
     }
 
     func showRankedChannels() {
         stopChannelTVSession(stoppingSession: true)
         browser.mode = .ranked
         browser.query = ""
-        browser.page = 1
+        browser.selectedSystem = nil
         isShowingChannelBrowser = true
         isShowingGameplay = false
-        scheduleBrowserSearch()
     }
 
     func showFavoriteChannels() {
         stopChannelTVSession(stoppingSession: true)
         browser.mode = .favorites
         browser.query = ""
-        browser.page = 1
-        isShowingChannelBrowser = true
-        isShowingGameplay = false
-        scheduleBrowserSearch()
-    }
-
-    func showPopularChannels() {
-        stopChannelTVSession(stoppingSession: true)
-        browser.resetFilters()
-        browser.results = popularChannels
-        browser.hasMorePages = false
-        browser.lastSearchFailed = false
+        browser.selectedSystem = nil
         isShowingChannelBrowser = true
         isShowingGameplay = false
     }
@@ -324,6 +307,8 @@ final class AuthenticatedHomeViewModel {
         saveJoinedChannels()
         eventTask?.cancel()
         eventTask = nil
+        channelRefreshTask?.cancel()
+        channelRefreshTask = nil
         Task { await lobbyService.disconnect() }
     }
 
@@ -378,15 +363,14 @@ final class AuthenticatedHomeViewModel {
         saveChannelsToCache(channels)
     }
 
-    private func startListeningForEvents() {
+    private func startListeningForEvents() async {
         guard eventTask == nil else {
             return
         }
 
+        let stream = await lobbyService.eventStream()
         eventTask = Task { [weak self] in
             guard let self else { return }
-            let stream = await lobbyService.eventStream()
-
             for await event in stream {
                 handle(event)
             }
@@ -396,11 +380,7 @@ final class AuthenticatedHomeViewModel {
     private func handle(_ event: FightcadeLobbyEvent) {
         switch event {
         case .channelsUpdated(let channels):
-            let refreshedIDs = Set(channels.map(\.id))
-            let rememberedJoinedChannels = self.channels.filter { channel in
-                joinedChannelIDs.contains(channel.id) && !refreshedIDs.contains(channel.id)
-            }
-            let mergedChannels = channels + rememberedJoinedChannels
+            let mergedChannels = mergeUpdatedChannels(channels)
             applyDashboard(FightcadeDashboard(
                 connectedUsername: dashboard?.connectedUsername ?? session.displayName,
                 welcomeMessage: dashboard?.welcomeMessage,
@@ -434,13 +414,16 @@ final class AuthenticatedHomeViewModel {
             }
         case .usersUpdated(let channelName, let users):
             usersByChannel[channelName] = users.sorted(by: sortUsers)
+            updateChannelPlayerCount(channelName: channelName, count: users.count)
         case .userJoined(let channelName, let user):
             var users = usersByChannel[channelName] ?? []
             users.removeAll { $0.id == user.id }
             users.append(user)
             usersByChannel[channelName] = users.sorted(by: sortUsers)
+            updateChannelPlayerCount(channelName: channelName, count: users.count)
         case .userLeft(let channelName, let username):
             usersByChannel[channelName]?.removeAll { $0.id == username }
+            updateChannelPlayerCount(channelName: channelName, count: usersByChannel[channelName]?.count ?? 0)
         case .userStatusUpdated(let update):
             applyUserStatusUpdate(update)
         case .liveStreamUpdated(let update):

@@ -71,11 +71,7 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
                 ["req": "welcome"],
                 webSocket: socket
             )
-
-            let channelsPayload = try await sendRequest(
-                ["req": "channels", "all": true],
-                webSocket: socket
-            )
+            let activeChannels = try await loadActiveChannels(webSocket: socket)
 
             let browserSections = welcomePayload.map(parser.browserSections) ?? []
             let favoriteKeys = favoriteChannelKeys.union(browserSections.favoriteMatchKeys)
@@ -84,7 +80,7 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
             let dashboard = FightcadeDashboard(
                 connectedUsername: authSession.displayName,
                 welcomeMessage: welcomePayload.flatMap(parser.welcomeMessage),
-                channels: parser.channels(in: channelsPayload).markingFavorites(matching: favoriteKeys),
+                channels: activeChannels.markingFavorites(matching: favoriteKeys),
                 browserSections: browserSections.markingFavorites(matching: favoriteKeys)
             )
 
@@ -109,8 +105,8 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
             throw FightcadeLobbyError.loginExpired
         }
 
-        let payload = try await sendRequest(["req": "channels", "all": true], webSocket: webSocket)
-        emit(.channelsUpdated(parser.channels(in: payload).markingFavorites(matching: favoriteChannelKeys)))
+        let channels = try await loadActiveChannels(webSocket: webSocket)
+        emit(.channelsUpdated(channels.markingFavorites(matching: favoriteChannelKeys)))
     }
 
     func join(channel: FightcadeChannel) async throws {
@@ -221,6 +217,11 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
         try? await closeExistingConnection()
     }
 
+    func loadActiveChannels(webSocket: URLSessionWebSocketTask) async throws -> [FightcadeChannel] {
+        let payload = try await sendRequest(activeChannelsPayload(), webSocket: webSocket)
+        return parser.channels(in: payload)
+    }
+
     private func sendChallengeRequest(_ request: String, challenge: FightcadeChallenge) async throws {
         var payload: [String: Any] = [
             "req": request,
@@ -268,11 +269,84 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
 
 }
 
+private func activeChannelsPayload() -> [String: Any] {
+    [
+        "req": "channels",
+        "all": true
+    ]
+}
+
 extension Array where Element == FightcadeChannel {
     func markingFavorites(matching favoriteKeys: Set<String>) -> [FightcadeChannel] {
         map { channel in
             channel.favoriteMatchKeys.isDisjoint(with: favoriteKeys) ? channel : channel.withFavorite(true)
         }
+    }
+
+    func mergingLiveChannels(_ liveChannels: [FightcadeChannel]) -> [FightcadeChannel] {
+        var channelsByID = Dictionary(uniqueKeysWithValues: map { ($0.id, $0.clearingLiveCounts()) })
+        for liveChannel in liveChannels {
+            channelsByID[liveChannel.id] = channelsByID[liveChannel.id]?.mergingLiveFields(from: liveChannel) ?? liveChannel
+        }
+        return Array(channelsByID.values).sortedByUserCountDescending()
+    }
+
+    func mergingKnownChannels(_ knownChannels: [FightcadeChannel]) -> [FightcadeChannel] {
+        var channelsByID = Dictionary(uniqueKeysWithValues: map { ($0.id, $0) })
+        for knownChannel in knownChannels {
+            channelsByID[knownChannel.id] = channelsByID[knownChannel.id]?.mergingKnownFields(from: knownChannel) ?? knownChannel
+        }
+        return Array(channelsByID.values).sortedByUserCountDescending()
+    }
+}
+
+private extension FightcadeChannel {
+    func clearingLiveCounts() -> FightcadeChannel {
+        FightcadeChannel(
+            id: id,
+            name: name,
+            title: title,
+            gameID: gameID,
+            system: system,
+            emulator: emulator,
+            playerCount: 0,
+            spectatorCount: nil,
+            isRanked: isRanked,
+            isFavorite: isFavorite,
+            supportsTraining: supportsTraining
+        )
+    }
+
+    func mergingLiveFields(from channel: FightcadeChannel) -> FightcadeChannel {
+        FightcadeChannel(
+            id: id,
+            name: name,
+            title: title,
+            gameID: gameID ?? channel.gameID,
+            system: system ?? channel.system,
+            emulator: emulator ?? channel.emulator,
+            playerCount: channel.playerCount ?? playerCount,
+            spectatorCount: channel.spectatorCount ?? spectatorCount,
+            isRanked: isRanked || channel.isRanked,
+            isFavorite: isFavorite || channel.isFavorite,
+            supportsTraining: supportsTraining || channel.supportsTraining
+        )
+    }
+
+    func mergingKnownFields(from channel: FightcadeChannel) -> FightcadeChannel {
+        FightcadeChannel(
+            id: id,
+            name: name,
+            title: channel.title.isEmpty ? title : channel.title,
+            gameID: gameID ?? channel.gameID,
+            system: system ?? channel.system,
+            emulator: emulator ?? channel.emulator,
+            playerCount: channel.playerCount ?? playerCount,
+            spectatorCount: channel.spectatorCount ?? spectatorCount,
+            isRanked: isRanked || channel.isRanked,
+            isFavorite: isFavorite || channel.isFavorite,
+            supportsTraining: supportsTraining || channel.supportsTraining
+        )
     }
 }
 

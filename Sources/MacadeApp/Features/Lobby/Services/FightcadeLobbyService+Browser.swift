@@ -1,27 +1,16 @@
 import Foundation
 
 extension FightcadeLobbyService {
-    func searchChannels(_ request: FightcadeChannelSearchRequest) async throws -> FightcadeChannelSearchResult {
+    func searchChannels(matching query: String) async throws -> [FightcadeChannel] {
         guard let webSocket else {
             throw FightcadeLobbyError.loginExpired
         }
+
+        let request = FightcadeChannelSearchRequest(query: query)
+        guard request.hasQuery else { return [] }
 
         let payload = try await sendRequest(request.payload(), webSocket: webSocket)
-        let channels = parser.channels(in: payload).markingFavorites(matching: favoriteChannelKeys)
-        return FightcadeChannelSearchResult(
-            channels: channels,
-            page: request.page,
-            hasMorePages: request.paginated && hasMoreChannels(in: payload, returnedChannelCount: channels.count)
-        )
-    }
-
-    func loadChannelFilterOptions() async throws -> FightcadeChannelFilterOptions {
-        guard let webSocket else {
-            throw FightcadeLobbyError.loginExpired
-        }
-
-        let payload = try await sendRequest(["req": "filteroptions"], webSocket: webSocket)
-        return FightcadeChannelFilterOptions(payload: payload)
+        return parser.channels(in: payload).markingFavorites(matching: favoriteChannelKeys)
     }
 
     func loadUpcomingEvents(limit: Int) async throws -> [FightcadeEvent] {
@@ -66,26 +55,32 @@ extension FightcadeLobbyService {
     }
 }
 
-private func hasMoreChannels(in payload: [String: Any], returnedChannelCount: Int) -> Bool {
-    guard returnedChannelCount > 0,
-          let totalChannels = intValue(in: payload, keys: ["totalChannels", "total_channels", "total"]) else {
-        return false
-    }
-
-    let page = max((intValue(in: payload, keys: ["page"]) ?? 1) - 1, 0)
-    let pageSize = intValue(in: payload, keys: ["count", "limit"]) ?? returnedChannelCount
-    let offset = intValue(in: payload, keys: ["offset"]) ?? page * pageSize
-    return offset + returnedChannelCount < totalChannels
+private enum FightcadeLobbySearchLimit {
+    static let resultLimit = 50
 }
 
-private func intValue(in payload: [String: Any], keys: [String]) -> Int? {
-    for key in keys {
-        if let value = payload[key] as? Int { return value }
-        if let number = payload[key] as? NSNumber { return number.intValue }
-        if let string = payload[key] as? String, let value = Int(string) { return value }
+private struct FightcadeChannelSearchRequest {
+    let query: String
+
+    var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    return nil
+    var hasQuery: Bool {
+        !trimmedQuery.isEmpty
+    }
+
+    func payload() -> [String: Any] {
+        [
+            "req": "channels",
+            "paginated": true,
+            "page": 1,
+            "count": FightcadeLobbySearchLimit.resultLimit,
+            "limit": FightcadeLobbySearchLimit.resultLimit,
+            "offset": 0,
+            "filter": trimmedQuery
+        ]
+    }
 }
 
 private extension FightcadeEvent {
@@ -110,73 +105,6 @@ private extension FightcadeEvent {
                 region: dictionary["region"] as? String,
                 stream: (dictionary["stream"] as? String).flatMap(URL.init(string:))
             )
-        }
-    }
-}
-
-private extension FightcadeChannelFilterOptions {
-    init(payload: [String: Any]) {
-        self.init(
-            systems: Self.optionValues(in: payload, keys: ["systems", "system", "platforms", "platform"]),
-            genres: Self.optionValues(in: payload, keys: ["genres", "genre"]),
-            years: Self.optionValues(in: payload, keys: ["years", "year"])
-        )
-    }
-
-    static func optionValues(in payload: [String: Any], keys: [String]) -> [String] {
-        var values = Set<String>()
-        collectOptionValues(from: payload, matching: Set(keys.map { $0.lowercased() }), into: &values)
-        return values.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-    }
-
-    static func collectOptionValues(from value: Any, matching keys: Set<String>, into values: inout Set<String>) {
-        if let dictionary = value as? [String: Any] {
-            for (key, child) in dictionary {
-                if keys.contains(key.lowercased()) {
-                    collectLeafValues(from: child, into: &values)
-                } else {
-                    collectOptionValues(from: child, matching: keys, into: &values)
-                }
-            }
-            return
-        }
-
-        if let array = value as? [Any] {
-            for item in array {
-                collectOptionValues(from: item, matching: keys, into: &values)
-            }
-        }
-    }
-
-    static func collectLeafValues(from value: Any, into values: inout Set<String>) {
-        if let string = value as? String, !string.isEmpty {
-            values.insert(string)
-            return
-        }
-
-        if let number = value as? NSNumber {
-            values.insert(number.stringValue)
-            return
-        }
-
-        if let dictionary = value as? [String: Any] {
-            for key in ["name", "label", "value", "id"] {
-                if let string = dictionary[key] as? String, !string.isEmpty {
-                    values.insert(string)
-                    return
-                }
-            }
-
-            for child in dictionary.values {
-                collectLeafValues(from: child, into: &values)
-            }
-            return
-        }
-
-        if let array = value as? [Any] {
-            for item in array {
-                collectLeafValues(from: item, into: &values)
-            }
         }
     }
 }

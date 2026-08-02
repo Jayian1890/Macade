@@ -1,29 +1,74 @@
 import Foundation
 
 extension AuthenticatedHomeViewModel {
-    var selectedBrowserChannel: FightcadeChannel? {
-        guard let id = browser.selectedPreviewChannelID else {
-            return browserChannels.first
+    var browserCategories: [FightcadeBrowserCategory] {
+        let all = FightcadeBrowserCategory(
+            kind: .all,
+            title: "All",
+            gameCount: channels.count,
+            playerCount: channels.reduce(0) { $0 + ($1.playerCount ?? 0) }
+        )
+        let rankedChannels = channels.filter(\.isRanked)
+        let ranked = FightcadeBrowserCategory(
+            kind: .ranked,
+            title: "Ranked",
+            gameCount: rankedChannels.count,
+            playerCount: rankedChannels.reduce(0) { $0 + ($1.playerCount ?? 0) }
+        )
+        let favoriteChannels = channels.filter(\.isFavorite)
+        let favorites = FightcadeBrowserCategory(
+            kind: .favorites,
+            title: "Favorites",
+            gameCount: favoriteChannels.count,
+            playerCount: favoriteChannels.reduce(0) { $0 + ($1.playerCount ?? 0) }
+        )
+        let systems = Dictionary(grouping: channels) { channel in
+            channel.system?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty ?? "Unknown"
+        }
+        let systemCategories = systems.map { system, channels in
+            FightcadeBrowserCategory(
+                kind: .system(system),
+                title: system,
+                gameCount: channels.count,
+                playerCount: channels.reduce(0) { $0 + ($1.playerCount ?? 0) }
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.playerCount != rhs.playerCount { return lhs.playerCount > rhs.playerCount }
+            if lhs.gameCount != rhs.gameCount { return lhs.gameCount > rhs.gameCount }
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
         }
 
-        return browserChannels.first { $0.id == id } ?? browserChannels.first
+        return [all, ranked, favorites] + systemCategories
     }
 
-    func loadBrowserFilterOptions() {
-        guard !browser.isLoadingFilterOptions else {
-            return
+    func applyBrowserCategory(_ category: FightcadeBrowserCategory) {
+        switch category.kind {
+        case .all:
+            browser.mode = .all
+            browser.selectedSystem = nil
+        case .ranked:
+            browser.mode = .ranked
+            browser.selectedSystem = nil
+        case .favorites:
+            browser.mode = .favorites
+            browser.selectedSystem = nil
+        case .system(let system):
+            browser.mode = .all
+            browser.selectedSystem = system
         }
+    }
 
-        browser.isLoadingFilterOptions = true
-        Task {
-            defer { browser.isLoadingFilterOptions = false }
-
-            do {
-                let options = try await lobbyService.loadChannelFilterOptions()
-                browser.filterOptions = options.withFallbackSystems(derivedSystems)
-            } catch {
-                browser.filterOptions = browser.filterOptions.withFallbackSystems(derivedSystems)
-            }
+    func isBrowserCategorySelected(_ category: FightcadeBrowserCategory) -> Bool {
+        switch category.kind {
+        case .all:
+            browser.mode == .all && browser.selectedSystem == nil
+        case .ranked:
+            browser.mode == .ranked && browser.selectedSystem == nil
+        case .favorites:
+            browser.mode == .favorites && browser.selectedSystem == nil
+        case .system(let system):
+            browser.mode == .all && browser.selectedSystem == system
         }
     }
 
@@ -37,57 +82,33 @@ extension AuthenticatedHomeViewModel {
         }
     }
 
-    func scheduleBrowserSearch() {
-        browser.searchTask?.cancel()
-        browser.searchTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(350))
-            guard !Task.isCancelled else { return }
-            await self?.loadBrowserResults(resetPage: true)
-        }
-    }
-
-    func loadBrowserResults(resetPage: Bool) async {
-        if resetPage {
-            browser.page = 1
-            browser.hasMorePages = false
-        }
-
-        let request = browser.searchRequest
-        guard request.hasServerCriteria else {
-            browser.results = []
-            browser.lastSearchFailed = false
+    func searchBrowserRemotely() {
+        let query = browser.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, !browser.isSearchingRemotely else {
             return
         }
 
-        browser.isLoadingResults = true
-        browser.lastSearchFailed = false
-        defer { browser.isLoadingResults = false }
+        browser.isSearchingRemotely = true
+        errorMessage = nil
+        Task {
+            defer { browser.isSearchingRemotely = false }
 
-        do {
-            let result = try await lobbyService.searchChannels(request)
-            if request.page == 1 {
-                browser.results = result.channels
-            } else {
-                browser.results.append(contentsOf: result.channels.filter { channel in
-                    !browser.results.contains(where: { $0.id == channel.id })
-                })
-            }
-            browser.hasMorePages = result.hasMorePages
-        } catch {
-            browser.lastSearchFailed = true
-            if browser.results.isEmpty {
-                browser.results = filteredChannels
+            do {
+                let foundChannels = try await lobbyService.searchChannels(matching: query)
+                let mergedChannels = channels.mergingKnownChannels(foundChannels)
+                applyDashboard(FightcadeDashboard(
+                    connectedUsername: dashboard?.connectedUsername ?? session.displayName,
+                    welcomeMessage: dashboard?.welcomeMessage,
+                    channels: mergedChannels,
+                    browserSections: dashboard?.browserSections ?? []
+                ), restoringJoinedChannels: false)
+                saveChannelsToCache(mergedChannels)
+            } catch let error as FightcadeLobbyError {
+                errorMessage = error.localizedDescription
+            } catch {
+                errorMessage = "Could not search Fightcade."
             }
         }
-    }
-
-    func loadNextBrowserPage() {
-        guard browser.hasMorePages, !browser.isLoadingResults else {
-            return
-        }
-
-        browser.page += 1
-        Task { await loadBrowserResults(resetPage: false) }
     }
 
     func selectBrowserPreview(_ channel: FightcadeChannel) {
@@ -123,16 +144,8 @@ extension AuthenticatedHomeViewModel {
         joinedChannelIDs.contains(canonicalBrowserChannel(for: channel).id)
     }
 
-    func applyBrowserSystem(_ system: String?) {
-        browser.selectedSystem = system
-        browser.page = 1
-        scheduleBrowserSearch()
-    }
-
     func clearBrowserFilters() {
         browser.resetFilters()
-        browser.results = []
-        browser.lastSearchFailed = false
     }
 
     func toggleFavorite(_ channel: FightcadeChannel) {
@@ -142,9 +155,6 @@ extension AuthenticatedHomeViewModel {
             do {
                 try await lobbyService.setFavorite(newValue, for: channel)
                 replaceChannel(channel.withFavorite(newValue))
-                if browser.mode == .favorites || browser.results.contains(where: { $0.id == channel.id }) {
-                    await loadBrowserResults(resetPage: true)
-                }
             } catch let error as FightcadeLobbyError {
                 errorMessage = error.localizedDescription
             } catch {
@@ -157,9 +167,32 @@ extension AuthenticatedHomeViewModel {
         isShowingChannelChat.toggle()
     }
 
-    private var derivedSystems: [String] {
-        Array(Set(channels.compactMap(\.system).filter { !$0.isEmpty }))
-            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    func startChannelRefreshLoop() {
+        channelRefreshTask?.cancel()
+        channelRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled else { return }
+
+                do {
+                    try await self?.lobbyService.refreshChannels()
+                } catch {
+                    continue
+                }
+            }
+        }
+    }
+
+    func mergeUpdatedChannels(_ updatedChannels: [FightcadeChannel]) -> [FightcadeChannel] {
+        channels.mergingLiveChannels(updatedChannels)
+    }
+
+    func updateChannelPlayerCount(channelName: String, count: Int) {
+        guard let channel = channels.first(where: { $0.id == channelName || $0.name == channelName }) else {
+            return
+        }
+
+        replaceChannel(channel.withPlayerCount(count))
     }
 
     private func replaceChannel(_ channel: FightcadeChannel) {
@@ -177,10 +210,6 @@ extension AuthenticatedHomeViewModel {
             browserSections: dashboard.browserSections.replacingChannel(channel),
             loadedAt: dashboard.loadedAt
         ), restoringJoinedChannels: false)
-
-        if let index = browser.results.firstIndex(where: { $0.matchesBrowserChannel(channel) }) {
-            browser.results[index] = channel
-        }
     }
 
     private func canonicalBrowserChannel(for channel: FightcadeChannel) -> FightcadeChannel {
@@ -194,6 +223,24 @@ extension AuthenticatedHomeViewModel {
         }
 
         return channels.first { $0.matchesBrowserChannel(channel) } ?? channel
+    }
+}
+
+extension FightcadeChannel {
+    func withPlayerCount(_ playerCount: Int?) -> FightcadeChannel {
+        FightcadeChannel(
+            id: id,
+            name: name,
+            title: title,
+            gameID: gameID,
+            system: system,
+            emulator: emulator,
+            playerCount: playerCount,
+            spectatorCount: spectatorCount,
+            isRanked: isRanked,
+            isFavorite: isFavorite,
+            supportsTraining: supportsTraining
+        )
     }
 }
 
@@ -216,15 +263,5 @@ private extension Array where Element == FightcadeWelcomeSection {
                 events: section.events
             )
         }
-    }
-}
-
-private extension FightcadeChannelFilterOptions {
-    func withFallbackSystems(_ fallbackSystems: [String]) -> FightcadeChannelFilterOptions {
-        FightcadeChannelFilterOptions(
-            systems: systems.isEmpty ? fallbackSystems : systems,
-            genres: genres,
-            years: years
-        )
     }
 }
