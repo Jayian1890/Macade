@@ -12,6 +12,11 @@ struct MacadeSettingsPreferencesStore {
         nonmutating set { userDefaults.set(newValue, forKey: FightcadeConnectionStatusOverride.forceWiredDefaultsKey) }
     }
 
+    var automaticPortMappingEnabled: Bool {
+        get { FightcadeNetplayPreferences(userDefaults: userDefaults).automaticPortMappingEnabled }
+        nonmutating set { FightcadeNetplayPreferences(userDefaults: userDefaults).automaticPortMappingEnabled = newValue }
+    }
+
     var lobbyDiagnosticsEnabled: Bool {
         get { diagnosticsSettings.isEnabled }
         nonmutating set { diagnosticsSettings.isEnabled = newValue }

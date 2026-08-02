@@ -183,6 +183,11 @@ private struct ConnectionSettingsSection: View {
             Text("Use this only when Fightcade incorrectly detects Wi-Fi. This applies to the next lobby status update or reconnect.")
                 .font(MacadeTypography.caption)
                 .foregroundStyle(MacadeColor.inkMuted)
+
+            Toggle("Try automatic router port mapping", isOn: $viewModel.automaticPortMappingEnabled)
+            Text("When enabled, Macade asks compatible routers for temporary UDP mappings with PCP, NAT-PMP, then UPnP before starting a Fightcade match.")
+                .font(MacadeTypography.caption)
+                .foregroundStyle(MacadeColor.inkMuted)
         }
     }
 }

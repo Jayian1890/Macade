@@ -2,6 +2,7 @@
 
 #include "client_backend_internal.hpp"
 #include "logging.hpp"
+#include "macade_proxy_config.hpp"
 
 #include <algorithm>
 #include <arpa/inet.h>
@@ -288,7 +289,7 @@ void send_connect_command(ClientBackend *client)
 {
    std::vector<unsigned char> payload;
    append_string(&payload, client->match_id);
-   append_be32(&payload, static_cast<uint32_t>(client->peer.udp.udp.local_port));
+   append_be32(&payload, static_cast<uint32_t>(macade_proxy_register_port(client->peer.udp.udp.local_port)));
    send_command(client, 0xb, payload);
 }
 
@@ -311,7 +312,14 @@ void process_events(ClientBackend *client)
          callback.code = GGPOCLIENT_EVENTCODE_CONNECTED;
          emit_client_event(client, &callback);
       } else if (event.type == 8) {
-         peer_session_connect(&client->peer, event.p1.data(), event.remote_port, event.player_side == 0);
+         MacadeProxyConfig proxy = macade_proxy_config();
+         std::string remote_host = proxy.enabled ? proxy.host : event.p1;
+         const int remote_port = proxy.enabled ? proxy.port : event.remote_port;
+         if (proxy.enabled) {
+            quark_log("Using Macade GGPO proxy endpoint %s:%d for served match peer UDP.\n", remote_host.c_str(),
+                      remote_port);
+         }
+         peer_session_connect(&client->peer, remote_host.data(), remote_port, event.player_side == 0);
          client->spectator_source = event.player_side == 0;
          client->replay_source = event.player_side == 0;
          send_string_command(client, 0xc, client->match_id);

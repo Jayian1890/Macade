@@ -89,42 +89,41 @@ struct FightcadeHolePunchMessage: Equatable, Sendable {
         }
 
         let parts = text.split(separator: " ").map(String.init)
-        guard parts.count >= 2 else {
+        guard parts.count == 2 || parts.count == 3,
+              parts[0].hasPrefix("0."),
+              parts[1] == "_" || parts[1].hasPrefix("0."),
+              parts.count == 2 || parts[2] == "ok" else {
             return nil
         }
 
-        let remoteToken = parts[0].hasPrefix("0.") ? parts[0] : nil
         return FightcadeHolePunchMessage(
             localToken: parts[0],
-            remoteToken: remoteToken,
-            remoteKnowsLocalToken: parts.count == 3
+            remoteToken: parts[0],
+            remoteKnowsLocalToken: parts.count == 3 && parts[1].hasPrefix("0.")
         )
     }
-}
 
-struct FightcadePortFallbacks {
-    static func normalNATCandidates(around port: Int, radius: Int = 512) -> [Int] {
-        guard radius > 0 else { return [] }
-        return (1...radius).flatMap { offset in
-            [wrappedPort(port + offset), wrappedPort(port - offset)]
-        }
-    }
-
-    private static func wrappedPort(_ port: Int) -> Int {
-        if port < 1 { return 65535 + port }
-        if port > 65535 { return port - 65535 }
-        return port
+    static func isWireMessage(_ data: Data) -> Bool {
+        parse(data) != nil
     }
 }
 
 struct FightcadeHolePunchResult: Equatable, Sendable {
     let punched: Bool
     let peer: FightcadeNetplayEndpoint
+    let keepalivePayload: Data?
+
+    init(punched: Bool, peer: FightcadeNetplayEndpoint, keepalivePayload: Data? = nil) {
+        self.punched = punched
+        self.peer = peer
+        self.keepalivePayload = keepalivePayload
+    }
 }
 
 struct FightcadeEstablishedNetplaySession: Sendable {
     let peer: FightcadeNetplayEndpoint
     let transport: any FightcadeUDPTransporting
+    let keepalivePayload: Data?
 
     func close() {
         transport.close()
@@ -155,6 +154,7 @@ struct FightcadeUDPHolePuncher: Sendable {
         var remoteToken: String?
         var remoteKnowsLocalToken = false
         var target = peer
+        var lastPayload: Data?
 
         for _ in 0..<attempts {
             if remoteToken != nil && remoteKnowsLocalToken {
@@ -179,11 +179,12 @@ struct FightcadeUDPHolePuncher: Sendable {
                 remoteToken: remoteToken,
                 remoteKnowsLocalToken: remoteKnowsLocalToken
             ).payload
-            try await transport.send(Data(payload.utf8), to: target)
+            lastPayload = Data(payload.utf8)
+            try await transport.send(lastPayload ?? Data(), to: target)
             await sleeper(sleep)
         }
 
-        return FightcadeHolePunchResult(punched: remoteToken != nil, peer: target)
+        return FightcadeHolePunchResult(punched: remoteToken != nil, peer: target, keepalivePayload: lastPayload)
     }
 }
 
@@ -307,191 +308,4 @@ final class FightcadeBSDUDPTransport: FightcadeUDPTransporting, @unchecked Senda
         let host = String(decoding: buffer.prefix { $0 != 0 }.map(UInt8.init(bitPattern:)), as: UTF8.self)
         return FightcadeNetplayEndpoint(host: host, port: Int(UInt16(bigEndian: addr.sin_port)))
     }
-}
-
-struct FightcadeMasterClient: Sendable {
-    private let transportFactory: any FightcadeUDPTransportFactory
-    private let holePuncher: FightcadeUDPHolePuncher
-    private let fallbackRadius: Int
-
-    init(
-        transportFactory: any FightcadeUDPTransportFactory = FightcadeBSDUDPTransportFactory(),
-        holePuncher: FightcadeUDPHolePuncher = FightcadeUDPHolePuncher(),
-        fallbackRadius: Int = 512
-    ) {
-        self.transportFactory = transportFactory
-        self.holePuncher = holePuncher
-        self.fallbackRadius = fallbackRadius
-    }
-
-    func establish(plan: FightcadeQuarkSessionPlan) async throws -> FightcadeHolePunchResult {
-        let session = try await establishProxySession(plan: plan)
-        defer { session.close() }
-        return FightcadeHolePunchResult(punched: true, peer: session.peer)
-    }
-
-    func establishProxySession(plan: FightcadeQuarkSessionPlan) async throws -> FightcadeEstablishedNetplaySession {
-        let transport = try makeInitialTransport(plan: plan)
-        var shouldCloseOriginalTransport = true
-        defer {
-            if shouldCloseOriginalTransport {
-                transport.close()
-            }
-        }
-
-        try await transport.send(Data(plan.registrationPayload.utf8), to: plan.master)
-        let (okData, _) = try await transport.receive(maximumBytes: plan.expectedOKPayload.utf8.count, timeout: 10)
-        guard String(data: okData, encoding: .utf8) == plan.expectedOKPayload else {
-            try await transport.send(Data(plan.usePortsPayload.utf8), to: plan.master)
-            throw FightcadeMasterClientError.unexpectedMasterResponse
-        }
-
-        try await transport.send(Data(plan.acknowledgePayload.utf8), to: plan.master)
-        let (peerData, fallback) = try await transport.receive(maximumBytes: 6, timeout: 25)
-        let target = FightcadeMasterAddressParser.targetAddress(data: peerData, fallback: fallback)
-        let result = try await establishPeerPunch(transport: transport, target: target, plan: plan)
-        if !result.punched {
-            try await transport.send(Data(plan.usePortsPayload.utf8), to: plan.master)
-            result.transport.close()
-            throw FightcadeMasterClientError.udpPunchFailed
-        }
-
-        if !result.usesOriginalTransport {
-            transport.close()
-            shouldCloseOriginalTransport = false
-        }
-
-        shouldCloseOriginalTransport = false
-        return FightcadeEstablishedNetplaySession(peer: result.peer, transport: result.transport)
-    }
-
-    private func makeInitialTransport(plan: FightcadeQuarkSessionPlan) throws -> any FightcadeUDPTransporting {
-        do {
-            return try transportFactory.makeTransport(bindPort: plan.localBindPort)
-        } catch {
-            return try transportFactory.makeTransport(bindPort: nil)
-        }
-    }
-
-    private func establishPeerPunch(
-        transport: any FightcadeUDPTransporting,
-        target: FightcadeNetplayEndpoint,
-        plan: FightcadeQuarkSessionPlan
-    ) async throws -> FightcadeLiveHolePunchResult {
-        var result = try await holePuncher.punch(transport: transport, peer: target, attempts: 8)
-        if result.punched {
-            return FightcadeLiveHolePunchResult(result: result, transport: transport, usesOriginalTransport: true)
-        }
-        let basePort = result.peer.port
-
-        result = try await punchFallbackCandidates(transport: transport, current: result, basePort: basePort, includesBasePort: false)
-        if result.punched {
-            return FightcadeLiveHolePunchResult(result: result, transport: transport, usesOriginalTransport: true)
-        }
-
-        if let fallback = try await punchBoundFallback(port: plan.restrictedNATFallbackPort, current: result, basePort: basePort) {
-            return fallback
-        }
-
-        if let fallback = try await punchBoundFallback(port: plan.fixedFallbackPort, current: result, basePort: basePort) {
-            return fallback
-        }
-
-        return FightcadeLiveHolePunchResult(result: result, transport: transport, usesOriginalTransport: true)
-    }
-
-    private func punchFallbackCandidates(
-        transport: any FightcadeUDPTransporting,
-        current: FightcadeHolePunchResult,
-        basePort: Int,
-        includesBasePort: Bool
-    ) async throws -> FightcadeHolePunchResult {
-        guard fallbackRadius > 0 else { return current }
-        if basePort > 6005 && basePort < 6009 {
-            return try await holePuncher.punch(
-                transport: transport,
-                peer: current.peer,
-                attempts: fallbackRadius * 2,
-                sleep: 0
-            )
-        }
-
-        var result = current
-        if includesBasePort {
-            result = try await holePuncher.punch(
-                transport: transport,
-                peer: FightcadeNetplayEndpoint(host: result.peer.host, port: basePort),
-                attempts: 1,
-                sleep: 0
-            )
-            if result.punched { return result }
-        }
-        for port in FightcadePortFallbacks.normalNATCandidates(around: basePort, radius: fallbackRadius) {
-            result = try await holePuncher.punch(
-                transport: transport,
-                peer: FightcadeNetplayEndpoint(host: result.peer.host, port: port),
-                attempts: 1,
-                sleep: 0
-            )
-            if result.punched { break }
-        }
-        return result
-    }
-
-    private func punchBoundFallback(
-        port: Int,
-        current: FightcadeHolePunchResult,
-        basePort: Int
-    ) async throws -> FightcadeLiveHolePunchResult? {
-        guard let transport = try? transportFactory.makeTransport(bindPort: port) else {
-            return nil
-        }
-        var shouldCloseTransport = true
-        defer {
-            if shouldCloseTransport {
-                transport.close()
-            }
-        }
-
-        var result = try await holePuncher.punch(
-            transport: transport,
-            peer: FightcadeNetplayEndpoint(host: current.peer.host, port: port),
-            attempts: 6
-        )
-        if result.punched {
-            shouldCloseTransport = false
-            return FightcadeLiveHolePunchResult(result: result, transport: transport, usesOriginalTransport: false)
-        }
-
-        result = try await punchFallbackCandidates(transport: transport, current: result, basePort: basePort, includesBasePort: true)
-        if result.punched {
-            shouldCloseTransport = false
-            return FightcadeLiveHolePunchResult(result: result, transport: transport, usesOriginalTransport: false)
-        }
-
-        return nil
-    }
-}
-
-private struct FightcadeLiveHolePunchResult: Sendable {
-    let punched: Bool
-    let peer: FightcadeNetplayEndpoint
-    let transport: any FightcadeUDPTransporting
-    let usesOriginalTransport: Bool
-
-    init(
-        result: FightcadeHolePunchResult,
-        transport: any FightcadeUDPTransporting,
-        usesOriginalTransport: Bool
-    ) {
-        punched = result.punched
-        peer = result.peer
-        self.transport = transport
-        self.usesOriginalTransport = usesOriginalTransport
-    }
-}
-
-enum FightcadeMasterClientError: Error, Equatable {
-    case unexpectedMasterResponse
-    case udpPunchFailed
 }

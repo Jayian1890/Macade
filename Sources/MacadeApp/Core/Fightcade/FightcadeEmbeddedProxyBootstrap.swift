@@ -22,16 +22,15 @@ struct FightcadeEmbeddedProxySetup: Sendable {
         Task {
             diagnostics?.write("proxy task started localPort=\(localProxy.port) master=\(plan.master.host):\(plan.master.port)")
             do {
-                let netplaySession = try await Task.detached {
-                    try await FightcadeMasterClient().establishProxySession(plan: plan)
-                }.value
+                let netplaySession = try await FightcadeMasterClient(diagnostics: diagnostics).establishProxySession(plan: plan)
                 diagnostics?.write("master punch established peer=\(netplaySession.peer.host):\(netplaySession.peer.port)")
                 let proxy = FightcadeUDPProxy(
                     peerTransport: netplaySession.transport,
                     localTransport: localProxy.transport,
                     configuration: FightcadeUDPProxyConfiguration(
                         peer: netplaySession.peer,
-                        localEmulatorPort: plan.emulatorProxyPort
+                        localEmulatorPort: plan.emulatorProxyPort,
+                        keepalivePayload: netplaySession.keepalivePayload
                     ),
                     diagnostics: diagnostics
                 )
@@ -54,10 +53,11 @@ struct FightcadeEmbeddedProxySetup: Sendable {
 struct FightcadeEmbeddedProxyBootstrap: Sendable {
     private static let proxyHost = "127.0.0.1"
 
-    func makeProxy(for match: FightcadeMatchLaunch) throws -> FightcadeEmbeddedProxySetup {
+    func makeProxy(for match: FightcadeMatchLaunch) async throws -> FightcadeEmbeddedProxySetup {
         let diagnostics = FightcadeProxyDiagnostics.make(match: match)
         let localProxy = try makeLocalProxyTransport(diagnostics: diagnostics)
         let plan = FightcadeQuarkSessionPlan(match: match, emulatorProxyPort: localProxy.port)
+        await runPreflight(plan: plan, localProxyPort: localProxy.port, diagnostics: diagnostics)
         diagnostics?.write("proxy environment prepared host=\(Self.proxyHost) port=\(plan.emulatorProxyPort)")
         return FightcadeEmbeddedProxySetup(
             environment: [
@@ -82,6 +82,24 @@ struct FightcadeEmbeddedProxyBootstrap: Sendable {
         }
         diagnostics?.write("all local proxy UDP ports unavailable")
         throw POSIXError(.EADDRINUSE)
+    }
+
+    private func runPreflight(
+        plan: FightcadeQuarkSessionPlan,
+        localProxyPort: Int,
+        diagnostics: FightcadeProxyDiagnostics?
+    ) async {
+        let report = await FightcadeNetplayPreflight().run(plan: plan, localProxyPort: localProxyPort)
+        diagnostics?.write("preflight status=\(report.warnings.isEmpty ? "ok" : "warnings")")
+        report.warnings.forEach { diagnostics?.write("preflight warning=\($0)") }
+        guard FightcadeNetplayPreferences().automaticPortMappingEnabled else {
+            diagnostics?.write("port mapping skipped; setting disabled")
+            return
+        }
+        let ports = [plan.localBindPort, plan.restrictedNATFallbackPort, plan.fixedFallbackPort]
+        for result in await FightcadePortMappingService().mapUDP(ports: ports) {
+            diagnostics?.write("port mapping \(result.protocolName) port=\(result.port) mapped=\(result.mapped) message=\(result.message)")
+        }
     }
 }
 

@@ -71,6 +71,12 @@
 		BF00000B0000000000000028 /* FightcadeLobbyDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */; };
 		BF00000B0000000000000029 /* FightcadeNetplaySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000029 /* FightcadeNetplaySession.swift */; };
 		BF00000B000000000000002A /* FightcadeUDPProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002A /* FightcadeUDPProxy.swift */; };
+		BF00000B00000000000000DE /* FightcadeNetplayFallbacks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DE /* FightcadeNetplayFallbacks.swift */; };
+		BF00000B00000000000000DF /* FightcadeMasterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DF /* FightcadeMasterClient.swift */; };
+		BF00000B00000000000000E0 /* FightcadeLaunchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E0 /* FightcadeLaunchModels.swift */; };
+		BF00000B00000000000000E1 /* FightcadeNetplayPreflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E1 /* FightcadeNetplayPreflight.swift */; };
+		BF00000B00000000000000E2 /* FightcadePortMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E2 /* FightcadePortMapping.swift */; };
+		BF00000B00000000000000E3 /* FightcadeNetplayPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E3 /* FightcadeNetplayPreferences.swift */; };
 		BF00000B000000000000002B /* FightcadeGGPOProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002B /* FightcadeGGPOProtocol.swift */; };
 		BF00000B000000000000002C /* FightcadeGGPOServedHandshake.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002C /* FightcadeGGPOServedHandshake.swift */; };
 		BF00000B000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */; };
@@ -206,6 +212,12 @@
 		BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyDiagnostics.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000029 /* FightcadeNetplaySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplaySession.swift; sourceTree = "<group>"; };
 		BF00000C000000000000002A /* FightcadeUDPProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeUDPProxy.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000DE /* FightcadeNetplayFallbacks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplayFallbacks.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000DF /* FightcadeMasterClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeMasterClient.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000E0 /* FightcadeLaunchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLaunchModels.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000E1 /* FightcadeNetplayPreflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplayPreflight.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000E2 /* FightcadePortMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadePortMapping.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000E3 /* FightcadeNetplayPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplayPreferences.swift; sourceTree = "<group>"; };
 		BF00000C000000000000002B /* FightcadeGGPOProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOProtocol.swift; sourceTree = "<group>"; };
 		BF00000C000000000000002C /* FightcadeGGPOServedHandshake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOServedHandshake.swift; sourceTree = "<group>"; };
 		BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOPeerUDPProtocol.swift; sourceTree = "<group>"; };
@@ -440,11 +452,17 @@
 				BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */,
 				BF00000C00000000000000D5 /* FightcadeRuntimeManifest.swift */,
 				BF00000C0000000000000011 /* FightcadeLauncher.swift */,
+				BF00000C00000000000000E0 /* FightcadeLaunchModels.swift */,
 				BF00000C000000000000001E /* FightcadeLaunchSupport.swift */,
 				BF00000C000000000000002B /* FightcadeGGPOProtocol.swift */,
 				BF00000C000000000000002C /* FightcadeGGPOServedHandshake.swift */,
 				BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */,
 				BF00000C0000000000000029 /* FightcadeNetplaySession.swift */,
+				BF00000C00000000000000DE /* FightcadeNetplayFallbacks.swift */,
+				BF00000C00000000000000DF /* FightcadeMasterClient.swift */,
+				BF00000C00000000000000E1 /* FightcadeNetplayPreflight.swift */,
+				BF00000C00000000000000E2 /* FightcadePortMapping.swift */,
+				BF00000C00000000000000E3 /* FightcadeNetplayPreferences.swift */,
 				BF00000C000000000000002A /* FightcadeUDPProxy.swift */,
 				BF00000C00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift */,
 				BF00000C00000000000000A5 /* FightcadeProxyDiagnostics.swift */,
@@ -716,6 +734,7 @@
 				BF00000B0000000000000027 /* FightcadeUserStatusReporter.swift in Sources */,
 				BF00000B00000000000000B0 /* FightcadeLaunchRoutes.swift in Sources */,
 				BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */,
+				BF00000B00000000000000E0 /* FightcadeLaunchModels.swift in Sources */,
 				BF00000B0000000000000005 /* FightcadeChannel.swift in Sources */,
 				BF00000B0000000000000006 /* FightcadeDashboard.swift in Sources */,
 				BF00000B0000000000000007 /* FightcadeLobbyServicing.swift in Sources */,
@@ -805,6 +824,11 @@
 				BF00000B000000000000002C /* FightcadeGGPOServedHandshake.swift in Sources */,
 				BF00000B000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift in Sources */,
 				BF00000B0000000000000029 /* FightcadeNetplaySession.swift in Sources */,
+				BF00000B00000000000000DE /* FightcadeNetplayFallbacks.swift in Sources */,
+				BF00000B00000000000000DF /* FightcadeMasterClient.swift in Sources */,
+				BF00000B00000000000000E1 /* FightcadeNetplayPreflight.swift in Sources */,
+				BF00000B00000000000000E2 /* FightcadePortMapping.swift in Sources */,
+				BF00000B00000000000000E3 /* FightcadeNetplayPreferences.swift in Sources */,
 				BF00000B000000000000002A /* FightcadeUDPProxy.swift in Sources */,
 				BF00000B00000000000000A4 /* FightcadeEmbeddedProxyBootstrap.swift in Sources */,
 				BF00000B00000000000000A5 /* FightcadeProxyDiagnostics.swift in Sources */,

@@ -61,6 +61,20 @@ final class FightcadeNetplaySessionTests: XCTestCase {
         )
     }
 
+    func testPrioritizedFallbackCandidatesTryObservedAndKnownPortsBeforeWideScan() {
+        let plan = FightcadeQuarkSessionPlan(match: makeMatch(quarkID: "1234567890-6042"))
+
+        let candidates = FightcadePortFallbacks.prioritizedCandidates(
+            observedPort: 6200,
+            basePort: 7004,
+            plan: plan,
+            radius: 1,
+            includeBasePort: true
+        )
+
+        XCTAssertEqual(Array(candidates.prefix(7)), [6200, 7004, 6000, 6004, 46042, 7005, 7003])
+    }
+
     func testHolePuncherSendsTokenExchangeAndUpdatesSymmetricPort() async throws {
         let transport = ScriptedUDPTransport(receives: [
             (Data("0.456 _".utf8), FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200))
@@ -74,7 +88,11 @@ final class FightcadeNetplaySessionTests: XCTestCase {
             sleep: 0
         )
 
-        XCTAssertEqual(result, FightcadeHolePunchResult(punched: true, peer: FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)))
+        XCTAssertEqual(result, FightcadeHolePunchResult(
+            punched: true,
+            peer: FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200),
+            keepalivePayload: Data("0.123 0.456 ok".utf8)
+        ))
         XCTAssertEqual(transport.sent.map(\.0).map { String(data: $0, encoding: .utf8) }, ["0.123 0.456 ok"])
         XCTAssertEqual(transport.sent.map(\.1), [FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)])
     }
@@ -148,21 +166,18 @@ final class FightcadeNetplaySessionTests: XCTestCase {
         }
 
         XCTAssertEqual(factory.bindPorts, [plan.localBindPort, plan.restrictedNATFallbackPort, plan.fixedFallbackPort])
-        XCTAssertEqual(initial.sent.map(\.1).suffix(3), [
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7005),
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7003),
-            plan.master
-        ])
+        XCTAssertEqual(initial.sent.map(\.1).suffix(1), [plan.master])
+        XCTAssertTrue(initial.sent.map(\.1).contains(FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6000)))
+        XCTAssertTrue(initial.sent.map(\.1).contains(FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6004)))
         XCTAssertEqual(String(data: initial.sent.last?.0 ?? Data(), encoding: .utf8), plan.usePortsPayload)
-        XCTAssertEqual(restricted.sent.map(\.1).suffix(3), [
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7004),
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7005),
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7003)
+        XCTAssertEqual(restricted.sent.map(\.1).prefix(2), [
+            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.restrictedNATFallbackPort),
+            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.restrictedNATFallbackPort)
         ])
-        XCTAssertEqual(fixed.sent.map(\.1).suffix(3), [
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7004),
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7005),
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: 7003)
+        XCTAssertTrue(restricted.sent.map(\.1).contains(FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6000)))
+        XCTAssertEqual(fixed.sent.map(\.1).prefix(2), [
+            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort),
+            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort)
         ])
     }
 
@@ -209,6 +224,66 @@ final class FightcadeNetplaySessionTests: XCTestCase {
         XCTAssertEqual(result, FightcadeUDPProxyStepResult())
         XCTAssertTrue(peerTransport.sent.isEmpty)
         XCTAssertTrue(localTransport.sent.isEmpty)
+    }
+
+    func testUDPProxyForwardsBinaryPacketsContainingHolePunchTextBytes() async throws {
+        let peer = FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)
+        let packet = Data([1, 0x20, 0x6f, 0x6b, 0])
+        let peerTransport = ScriptedUDPTransport(receives: [])
+        let localTransport = ScriptedUDPTransport(receives: [
+            (packet, FightcadeNetplayEndpoint(host: "127.0.0.1", port: 41000))
+        ])
+        let proxy = FightcadeUDPProxy(
+            peerTransport: peerTransport,
+            localTransport: localTransport,
+            configuration: FightcadeUDPProxyConfiguration(peer: peer, localEmulatorPort: 7001)
+        )
+
+        let result = try await proxy.step()
+
+        XCTAssertEqual(result.forwardedLocalPackets, 1)
+        XCTAssertEqual(peerTransport.sent.map(\.0), [packet])
+    }
+
+    func testUDPProxyDrainsBurstsAndStopsKeepaliveAfterGGPOTraffic() async throws {
+        let peer = FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)
+        let emulator = FightcadeNetplayEndpoint(host: "127.0.0.1", port: 41000)
+        let peerTransport = ScriptedUDPTransport(receives: [
+            (Data(hex: "02efbeadde"), peer),
+            (Data(hex: "0504030201"), peer)
+        ])
+        let localTransport = ScriptedUDPTransport(receives: [
+            (Data(hex: "017d7d0000"), emulator),
+            (Data(hex: "040c0c47b400"), emulator)
+        ])
+        let proxy = FightcadeUDPProxy(
+            peerTransport: peerTransport,
+            localTransport: localTransport,
+            configuration: FightcadeUDPProxyConfiguration(
+                peer: peer,
+                localEmulatorPort: 7001,
+                keepalivePayload: Data("0.123 0.456 ok".utf8)
+            )
+        )
+
+        let result = try await proxy.step()
+
+        XCTAssertEqual(result, FightcadeUDPProxyStepResult(forwardedLocalPackets: 2, forwardedPeerPackets: 2))
+        XCTAssertEqual(peerTransport.sent.count, 2)
+        XCTAssertEqual(localTransport.sent.count, 2)
+    }
+
+    private func makeMatch(quarkID: String) -> FightcadeMatchLaunch {
+        FightcadeMatchLaunch(
+            emulator: "fbneo",
+            gameID: "sfiii3n",
+            quarkID: quarkID,
+            playerID: 0,
+            port: 7000,
+            delay: 2,
+            ranked: 0,
+            token: nil
+        )
     }
 }
 

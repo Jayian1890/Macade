@@ -40,6 +40,7 @@ final class MacadeSettingsViewModel {
     var selectedSection: Section
     var fbneoSettings = FightcadeFBNeoSettings.defaults
     var forceWiredConnectionStatus = false
+    var automaticPortMappingEnabled = false
     var lobbyDiagnosticsEnabled = false {
         didSet {
             if !lobbyDiagnosticsEnabled {
@@ -58,6 +59,7 @@ final class MacadeSettingsViewModel {
     private let preferencesStore: MacadeSettingsPreferencesStore
     private var savedFBNeoSettings = FightcadeFBNeoSettings.defaults
     private var savedForceWiredConnectionStatus = false
+    private var savedAutomaticPortMappingEnabled = false
     private var savedLobbyDiagnosticsEnabled = false
     private var savedIncludeLobbyDiagnosticChatBodies = false
     private var savedChatTranslationEnabled = false
@@ -77,6 +79,7 @@ final class MacadeSettingsViewModel {
     var hasUnsavedChanges: Bool {
         fbneoSettings.normalized() != savedFBNeoSettings.normalized()
             || forceWiredConnectionStatus != savedForceWiredConnectionStatus
+            || automaticPortMappingEnabled != savedAutomaticPortMappingEnabled
             || lobbyDiagnosticsEnabled != savedLobbyDiagnosticsEnabled
             || includeLobbyDiagnosticChatBodies != savedIncludeLobbyDiagnosticChatBodies
             || chatTranslationEnabled != savedChatTranslationEnabled
@@ -122,6 +125,7 @@ final class MacadeSettingsViewModel {
         }
 
         forceWiredConnectionStatus = preferencesStore.forceWiredConnectionStatus
+        automaticPortMappingEnabled = preferencesStore.automaticPortMappingEnabled
         lobbyDiagnosticsEnabled = preferencesStore.lobbyDiagnosticsEnabled
         includeLobbyDiagnosticChatBodies = preferencesStore.includeLobbyDiagnosticChatBodies
         let translationPreferences = preferencesStore.chatTranslationPreferences
@@ -137,6 +141,7 @@ final class MacadeSettingsViewModel {
             fbneoSettings = fbneoSettings.normalized()
             try fbneoStore.save(fbneoSettings)
             preferencesStore.forceWiredConnectionStatus = forceWiredConnectionStatus
+            preferencesStore.automaticPortMappingEnabled = automaticPortMappingEnabled
             preferencesStore.lobbyDiagnosticsEnabled = lobbyDiagnosticsEnabled
             preferencesStore.includeLobbyDiagnosticChatBodies = lobbyDiagnosticsEnabled && includeLobbyDiagnosticChatBodies
             preferencesStore.chatTranslationPreferences = ChatTranslationPreferences(
@@ -156,6 +161,7 @@ final class MacadeSettingsViewModel {
     func discardChanges() {
         fbneoSettings = savedFBNeoSettings
         forceWiredConnectionStatus = savedForceWiredConnectionStatus
+        automaticPortMappingEnabled = savedAutomaticPortMappingEnabled
         lobbyDiagnosticsEnabled = savedLobbyDiagnosticsEnabled
         includeLobbyDiagnosticChatBodies = savedIncludeLobbyDiagnosticChatBodies
         chatTranslationEnabled = savedChatTranslationEnabled
@@ -199,6 +205,7 @@ final class MacadeSettingsViewModel {
     private func markSaved() {
         savedFBNeoSettings = fbneoSettings.normalized()
         savedForceWiredConnectionStatus = forceWiredConnectionStatus
+        savedAutomaticPortMappingEnabled = automaticPortMappingEnabled
         savedLobbyDiagnosticsEnabled = lobbyDiagnosticsEnabled
         savedIncludeLobbyDiagnosticChatBodies = includeLobbyDiagnosticChatBodies
         savedChatTranslationEnabled = chatTranslationEnabled

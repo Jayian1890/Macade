@@ -9,10 +9,12 @@ final class MacadeSettingsPreferencesStoreTests: XCTestCase {
         let store = MacadeSettingsPreferencesStore(userDefaults: defaults)
 
         store.forceWiredConnectionStatus = true
+        store.automaticPortMappingEnabled = true
         store.lobbyDiagnosticsEnabled = true
         store.includeLobbyDiagnosticChatBodies = true
 
         XCTAssertTrue(store.forceWiredConnectionStatus)
+        XCTAssertTrue(store.automaticPortMappingEnabled)
         XCTAssertTrue(store.lobbyDiagnosticsEnabled)
         XCTAssertTrue(store.includeLobbyDiagnosticChatBodies)
 

@@ -169,6 +169,8 @@ struct FightcadeLauncher: FightcadeLaunching {
             embeddedEnvironment["quark.log.timestamps"] = "1"
             embeddedEnvironment["MACADE_QUARK_LOG_DIR"] = resources.launchLog.url.deletingLastPathComponent().path
         }
+        let proxySetup = try await makeProxySetup(for: launch)
+        embeddedEnvironment.merge(proxySetup?.environment ?? [:]) { _, new in new }
 
         do {
             let process = try launchProcess(
@@ -180,13 +182,22 @@ struct FightcadeLauncher: FightcadeLaunching {
                 additionalEnvironment: embeddedEnvironment,
                 embeddedSession: session
             )
-            session.attach(process: process)
+            session.attach(process: process, proxyTask: proxySetup?.startTask())
             NSApp.activate(ignoringOtherApps: true)
             return session
         } catch {
+            proxySetup?.close()
             session.markFailed(error.localizedDescription)
             throw error
         }
+    }
+
+    private func makeProxySetup(for launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedProxySetup? {
+        guard launch.mode == .match else { return nil }
+        guard let match = launch.match else {
+            throw FightcadeLaunchError.embeddedBridgeFailed("Missing Fightcade match metadata for embedded netplay.")
+        }
+        return try await FightcadeEmbeddedProxyBootstrap().makeProxy(for: match)
     }
 
     private func runtimeManifest(in runtime: URL) -> FightcadeRuntimeManifest {
@@ -457,42 +468,5 @@ struct FightcadeLauncher: FightcadeLaunching {
 
     private func executableExists(_ url: URL) -> Bool {
         fileManager.fileExists(atPath: url.path) && fileManager.isExecutableFile(atPath: url.path)
-    }
-}
-
-private struct FightcadeEmbeddedResources {
-    let id: UUID
-    let videoStream: FightcadeEmbeddedVideoStream
-    let inputClient: FightcadeEmbeddedInputClient
-    let launchLog: FightcadeLaunchLog
-    let logURL: URL
-}
-
-enum FightcadeLaunchError: LocalizedError, Equatable {
-    case missingGame
-    case missingRuntime([String])
-    case missingEmulator(emulator: String, searchedPaths: [String])
-    case missingROM(gameID: String, emulator: String, searchedPaths: [String])
-    case unsupportedNativeRoute(String)
-    case embeddedBridgeFailed(String)
-    case couldNotLaunch(String)
-
-    var errorDescription: String? {
-        switch self {
-        case .missingGame:
-            "This channel is missing Fightcade launch metadata."
-        case .missingRuntime(let paths):
-            "Missing Macade Fightcade runtime. Expected FightcadeRuntime at: \(paths.joined(separator: ", "))"
-        case .missingEmulator(let emulator, _):
-            "Native \(emulator) runtime is not bundled. Restore the bundled FightcadeRuntime resources."
-        case .missingROM(let gameID, let emulator, let searchedPaths):
-            "Missing ROM for \(gameID) on \(emulator). Searched: \(searchedPaths.joined(separator: ", "))"
-        case .unsupportedNativeRoute(let route):
-            "Native launcher does not implement \(route) yet."
-        case .embeddedBridgeFailed(let message):
-            message
-        case .couldNotLaunch(let path):
-            "Could not launch emulator executable at \(path)."
-        }
     }
 }
