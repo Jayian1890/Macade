@@ -13,10 +13,13 @@ namespace {
 
 constexpr int kGGPOStateHeaderSize = 4 * sizeof(int);
 constexpr int kGGPOStateMagic = ('G' << 24) | ('G' << 16) | ('P' << 8) | 'O';
+constexpr int kInputSyncFailureLogThreshold = 60;
+constexpr int kInputSyncFailureLogInterval = 300;
 
 GGPOSession *ggpoSession = nullptr;
 MacadeSnes9xQuarkHost host {};
 std::array<uint32_t, 8> networkInputs {};
+int inputSyncFailureCount = 0;
 
 bool startsWith(const std::string &value, const char *prefix)
 {
@@ -24,9 +27,43 @@ bool startsWith(const std::string &value, const char *prefix)
     return value.size() >= length && value.compare(0, length, prefix) == 0;
 }
 
+void recordInputSyncFailure(const char *reason)
+{
+    ++inputSyncFailureCount;
+    if (inputSyncFailureCount == kInputSyncFailureLogThreshold ||
+        (inputSyncFailureCount > kInputSyncFailureLogThreshold && inputSyncFailureCount % kInputSyncFailureLogInterval == 0)) {
+        std::fprintf(stderr, "Snes9x GGPO input sync failed %d consecutive times: %s\n", inputSyncFailureCount, reason);
+    }
+}
+
+void clearInputSyncFailures()
+{
+    inputSyncFailureCount = 0;
+}
+
+void recordInputSyncSuccess()
+{
+    if (inputSyncFailureCount >= kInputSyncFailureLogThreshold) {
+        std::fprintf(stderr, "Snes9x GGPO input sync recovered after %d failed attempts.\n", inputSyncFailureCount);
+    }
+    inputSyncFailureCount = 0;
+}
+
 bool ggpoBeginGameCallback(char *name)
 {
-    return name != nullptr && host.loadGame != nullptr && host.loadGame(name);
+    if (name == nullptr || name[0] == 0) {
+        std::fprintf(stderr, "Snes9x GGPO begin_game failed: missing game name.\n");
+        return false;
+    }
+    if (host.loadGame == nullptr) {
+        std::fprintf(stderr, "Snes9x GGPO begin_game failed for '%s': no ROM loader configured.\n", name);
+        return false;
+    }
+    if (!host.loadGame(name)) {
+        std::fprintf(stderr, "Snes9x GGPO begin_game failed to load ROM for '%s'.\n", name);
+        return false;
+    }
+    return true;
 }
 
 bool ggpoAdvanceFrameCallback(int)
@@ -47,11 +84,21 @@ bool ggpoAdvanceFrameCallback(int)
 
 bool ggpoSaveGameStateCallback(unsigned char **buffer, int *len, int *checksum, int)
 {
+    if (buffer == nullptr || len == nullptr || checksum == nullptr) {
+        std::fprintf(stderr, "Snes9x GGPO save-state failed: invalid callback storage.\n");
+        return false;
+    }
+
+    *buffer = nullptr;
+    *len = 0;
+    *checksum = 0;
+
     const uint32 payloadSize = S9xFreezeSize();
     *len = static_cast<int>(payloadSize) + kGGPOStateHeaderSize;
-    *checksum = 0;
     *buffer = static_cast<unsigned char *>(std::malloc(*len));
     if (*buffer == nullptr) {
+        *len = 0;
+        std::fprintf(stderr, "Snes9x GGPO save-state failed: could not allocate %d bytes.\n", static_cast<int>(payloadSize) + kGGPOStateHeaderSize);
         return false;
     }
 
@@ -64,6 +111,7 @@ bool ggpoSaveGameStateCallback(unsigned char **buffer, int *len, int *checksum, 
         std::free(*buffer);
         *buffer = nullptr;
         *len = 0;
+        std::fprintf(stderr, "Snes9x GGPO save-state failed: S9xFreezeGameMem rejected %u bytes.\n", payloadSize);
     }
     return false;
 }
@@ -71,18 +119,28 @@ bool ggpoSaveGameStateCallback(unsigned char **buffer, int *len, int *checksum, 
 bool ggpoLoadGameStateCallback(unsigned char *buffer, int len)
 {
     if (buffer == nullptr || len <= 0) {
+        std::fprintf(stderr, "Snes9x GGPO load-state failed: empty state buffer.\n");
         return false;
     }
 
     int payloadLength = len;
     if (len >= kGGPOStateHeaderSize) {
         int *header = reinterpret_cast<int *>(buffer);
-        if (header[0] == kGGPOStateMagic && header[1] > 0 && header[1] <= len) {
+        if (header[0] == kGGPOStateMagic) {
+            if (header[1] <= 0 || header[1] > len) {
+                std::fprintf(stderr, "Snes9x GGPO load-state failed: invalid GGPO header size %d for %d bytes.\n", header[1], len);
+                return false;
+            }
             buffer += header[1];
             payloadLength -= header[1];
         }
     }
-    return S9xUnfreezeGameMem(buffer, static_cast<uint32>(payloadLength)) == SUCCESS;
+
+    const bool loaded = S9xUnfreezeGameMem(buffer, static_cast<uint32>(payloadLength)) == SUCCESS;
+    if (!loaded) {
+        std::fprintf(stderr, "Snes9x GGPO load-state failed: S9xUnfreezeGameMem rejected %d bytes.\n", payloadLength);
+    }
+    return loaded;
 }
 
 bool ggpoLogGameStateCallback(char *, unsigned char *buffer, int len)
@@ -131,24 +189,40 @@ bool MacadeSnes9xQuarkStart(const std::string &connect)
     int player = 0;
     int localPort = 0;
     int remotePort = 0;
+    const char *route = nullptr;
     GGPOSessionCallbacks callbacks = makeCallbacks();
+
+    ggpoSession = nullptr;
+    networkInputs.fill(0);
+    clearInputSyncFailures();
 
     if (startsWith(connect, "quark:served")) {
         if (std::sscanf(connect.c_str(), "quark:served,%127[^,],%127[^,],%d,%d,%d", game, quarkID, &port, &delay, &ranked) < 4) {
+            std::fprintf(stderr, "Failed to parse Snes9x GGPO served command: %s\n", connect.c_str());
             return false;
         }
+        route = "served";
+        std::fprintf(stderr, "Snes9x GGPO route parsed: served game=%s quark=%s port=%d delay=%d ranked=%d\n", game, quarkID, port, delay, ranked);
         ggpoSession = ggpo_client_connect(&callbacks, game, quarkID, port);
     } else if (startsWith(connect, "quark:direct")) {
         if (std::sscanf(connect.c_str(), "quark:direct,%127[^,],%d,%127[^,],%d,%d,%d,%d", game, &localPort, server, &remotePort, &player, &delay, &ranked) < 6) {
+            std::fprintf(stderr, "Failed to parse Snes9x GGPO direct command: %s\n", connect.c_str());
             return false;
         }
+        route = "direct";
+        std::fprintf(stderr, "Snes9x GGPO route parsed: direct game=%s local=%d remote=%s:%d player=%d delay=%d ranked=%d\n", game, localPort, server, remotePort, player, delay, ranked);
         ggpoSession = ggpo_start_session(&callbacks, game, localPort, server, remotePort, player);
     } else if (startsWith(connect, "quark:stream")) {
         if (std::sscanf(connect.c_str(), "quark:stream,%127[^,],%127[^,],%d", game, quarkID, &remotePort) != 3) {
+            std::fprintf(stderr, "Failed to parse Snes9x GGPO stream command: %s\n", connect.c_str());
             return false;
         }
+        route = "stream";
+        std::fprintf(stderr, "Snes9x GGPO route parsed: stream game=%s quark=%s port=%d\n", game, quarkID, remotePort);
         ggpoSession = ggpo_start_streaming(&callbacks, game, quarkID, remotePort);
     } else if (startsWith(connect, "quark:replay,")) {
+        route = "replay";
+        std::fprintf(stderr, "Snes9x GGPO route parsed: replay path=%s\n", connect.c_str() + std::strlen("quark:replay,"));
         ggpoSession = ggpo_start_replay(&callbacks, const_cast<char *>(connect.c_str() + std::strlen("quark:replay,")));
     } else {
         std::fprintf(stderr, "Unsupported Snes9x quark command: %s\n", connect.c_str());
@@ -156,9 +230,11 @@ bool MacadeSnes9xQuarkStart(const std::string &connect)
     }
 
     if (ggpoSession == nullptr) {
+        std::fprintf(stderr, "Snes9x GGPO session creation failed for %s route.\n", route != nullptr ? route : "unknown");
         return false;
     }
     ggpo_set_frame_delay(ggpoSession, delay);
+    std::fprintf(stderr, "Snes9x GGPO session started: route=%s delay=%d\n", route != nullptr ? route : "unknown", delay);
     return true;
 }
 
@@ -168,6 +244,7 @@ void MacadeSnes9xQuarkStop()
         ggpo_close_session(ggpoSession);
         ggpoSession = nullptr;
     }
+    clearInputSyncFailures();
 }
 
 bool MacadeSnes9xQuarkActive()
@@ -178,12 +255,19 @@ bool MacadeSnes9xQuarkActive()
 bool MacadeSnes9xQuarkSynchronizeInput()
 {
     if (ggpoSession == nullptr || host.localJoypadBits == nullptr) {
+        recordInputSyncFailure(ggpoSession == nullptr ? "no active session" : "no local input callback");
         return false;
     }
 
     networkInputs.fill(0);
     networkInputs[0] = host.localJoypadBits();
-    return ggpo_synchronize_input(ggpoSession, networkInputs.data(), sizeof(uint32_t), static_cast<int>(networkInputs.size()));
+    if (!ggpo_synchronize_input(ggpoSession, networkInputs.data(), sizeof(uint32_t), static_cast<int>(networkInputs.size()))) {
+        recordInputSyncFailure("ggpo_synchronize_input returned false");
+        return false;
+    }
+
+    recordInputSyncSuccess();
+    return true;
 }
 
 bool MacadeSnes9xQuarkAdvanceFrame()
