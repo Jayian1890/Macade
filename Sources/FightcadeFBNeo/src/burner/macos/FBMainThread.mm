@@ -133,8 +133,7 @@ typedef enum LogEntryType {
             continue;
         }
 
-        AppDelegate.sharedInstance.audio.volume = [NSUserDefaults.standardUserDefaults
-                                                   integerForKey:@"masterVolume"] / 100.0f;
+        AppDelegate.sharedInstance.audio.volume = nAudVolume / 10000.0f;
 
         // Load DIP switch config
         NSString *dipPath = [AppDelegate.sharedInstance.dipSwitchPath stringByAppendingPathComponent:

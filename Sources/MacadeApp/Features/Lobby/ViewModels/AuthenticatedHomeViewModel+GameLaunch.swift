@@ -1,6 +1,30 @@
 import Foundation
 
 extension AuthenticatedHomeViewModel {
+    func openFightcadeReplay(_ link: FightcadeReplayLink, in channel: FightcadeChannel) {
+        if let activeEmulationSession,
+           activeEmulationSession.mode == .match,
+           activeEmulationSession.isActive {
+            errorMessage = "Stop the active match before opening a replay."
+            return
+        }
+
+        channelTVTask?.cancel()
+        channelTVTask = nil
+        channelTVBlockedStreamIDs.removeAll()
+        channelTVCurrentStreamID = "replay:\(link.id)"
+        selectedChannelID = channel.id
+        isShowingChannelBrowser = false
+        isShowingGameplay = false
+        isShowingChannelTV = true
+        isShowingChannelChat = false
+        channelTVStatusText = "Loading replay \(link.replayID)..."
+
+        channelTVTask = Task { [weak self] in
+            await self?.launchFightcadeReplay(link, in: channel)
+        }
+    }
+
     func launchGame(for channel: FightcadeChannel, mode: GameLaunchMode) {
         guard let emulator = channel.launchEmulator,
               let gameID = channel.launchGameID else {
@@ -80,5 +104,98 @@ extension AuthenticatedHomeViewModel {
                 errorMessage = "Could not launch game."
             }
         }
+    }
+
+    private func launchFightcadeReplay(_ link: FightcadeReplayLink, in channel: FightcadeChannel) async {
+        isLaunchingGame = true
+        defer {
+            isLaunchingGame = false
+            channelTVTask = nil
+        }
+
+        do {
+            if let activeEmulationSession,
+               activeEmulationSession.mode != .match || !activeEmulationSession.isActive {
+                activeEmulationSession.stop()
+                self.activeEmulationSession = nil
+            }
+            activeMatchOpponentUsername = nil
+            activeMatchOpponentChannelName = nil
+            channelTVStatusText = "Downloading replay..."
+
+            let replayURL = try await cachedFightcadeReplayURL(for: link)
+            guard !Task.isCancelled else { return }
+            channelTVStatusText = "Tuning replay \(link.replayID)..."
+            let session = try await launcher.openEmbedded(.replay(
+                channelID: channel.id,
+                launch: FightcadeReplayLaunch(emulator: link.emulator, gameID: link.gameID, replayPath: replayURL.path)
+            ))
+            guard !Task.isCancelled, isShowingChannelTV else {
+                session.stop()
+                return
+            }
+
+            activeEmulationSession = session
+            selectedChannelID = channel.id
+            channelTVStatusText = "Playing replay \(link.replayID)"
+            appendSystemMessage("Fightcade TV opened replay \(link.displayTitle)", channelName: channel.name)
+            await waitForFightcadeReplaySession(session)
+        } catch let error as FightcadeLaunchError {
+            guard !Task.isCancelled else { return }
+            errorMessage = error.localizedDescription
+            channelTVStatusText = error.localizedDescription
+        } catch {
+            guard !Task.isCancelled else { return }
+            errorMessage = "Could not open Fightcade replay."
+            channelTVStatusText = "Could not open Fightcade replay."
+        }
+    }
+
+    private func cachedFightcadeReplayURL(for link: FightcadeReplayLink) async throws -> URL {
+        let directory = try fightcadeReplayCacheDirectory(for: link)
+        let replayURL = directory.appendingPathComponent("\(link.replayID).fcreplay")
+        if let size = try? replayURL.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 0 {
+            return replayURL
+        }
+
+        var request = URLRequest(url: link.url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 45)
+        request.setValue(FightcadeEndpoint.userAgent, forHTTPHeaderField: "User-Agent")
+        let (downloadURL, response) = try await URLSession.shared.download(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? FileManager.default.removeItem(at: replayURL)
+        try FileManager.default.moveItem(at: downloadURL, to: replayURL)
+        return replayURL
+    }
+
+    private func fightcadeReplayCacheDirectory(for link: FightcadeReplayLink) throws -> URL {
+        guard let root = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            throw URLError(.cannotCreateFile)
+        }
+
+        return root
+            .appendingPathComponent("Macade")
+            .appendingPathComponent("FightcadeReplays")
+            .appendingPathComponent(link.emulator)
+            .appendingPathComponent(link.gameID)
+    }
+
+    private func waitForFightcadeReplaySession(_ session: FightcadeEmbeddedSession) async {
+        while !Task.isCancelled,
+              isShowingChannelTV,
+              activeEmulationSession?.id == session.id,
+              session.isActive {
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+
+        guard !Task.isCancelled, isShowingChannelTV else { return }
+        if activeEmulationSession?.id == session.id {
+            activeEmulationSession = nil
+        }
+        channelTVStatusText = "Replay ended."
     }
 }

@@ -86,7 +86,7 @@ extension FightcadeEmbeddedLaunch {
             .fightcadeMatch
         case .direct:
             .fightcadeDirect
-        case .spectate:
+        case .spectate, .replay:
             .fightcadeSpectate
         case .test, .training:
             quarkArgumentCapability

@@ -5,18 +5,32 @@ struct LobbySidebarView: View {
     let onSignOut: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: MacadeSpacing.medium) {
+        VStack(alignment: .leading, spacing: 0) {
             sidebarHeader
-            filters
-            ChallengeSidebarSection(viewModel: viewModel)
-            joinedSection
-            FriendsSidebarSection(viewModel: viewModel)
-            Spacer(minLength: MacadeSpacing.medium)
-            statusFooter
-            accountFooter
+                .padding(.horizontal, MacadeSpacing.small)
+                .padding(.top, MacadeSpacing.medium)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: MacadeSpacing.medium) {
+                    filters
+                    ChallengeSidebarSection(viewModel: viewModel)
+                    joinedSection
+                    FriendsSidebarSection(viewModel: viewModel)
+                }
+                .padding(.horizontal, MacadeSpacing.small)
+                .padding(.vertical, MacadeSpacing.medium)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollIndicators(.hidden)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            VStack(alignment: .leading, spacing: MacadeSpacing.xSmall) {
+                statusFooter
+                accountFooter
+            }
+            .padding(.horizontal, MacadeSpacing.small)
+            .padding(.bottom, MacadeSpacing.medium)
         }
-        .padding(.horizontal, MacadeSpacing.small)
-        .padding(.vertical, MacadeSpacing.medium)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(MacadeColor.sidebar.opacity(0.72))
         .overlay(alignment: .trailing) {
@@ -75,6 +89,17 @@ struct LobbySidebarView: View {
             ) {
                 viewModel.showGameplay()
             }
+
+            SidebarButton(
+                icon: "tv.fill",
+                title: "Fightcade TV",
+                value: viewModel.channelTVSidebarValue,
+                isSelected: viewModel.isShowingChannelTV,
+                isDisabled: !viewModel.canStartFightcadeTV && !viewModel.isShowingChannelTV
+            ) {
+                viewModel.showFightcadeTV()
+            }
+            .help(viewModel.canStartFightcadeTV ? "Start Fightcade TV" : "Join a room before starting Fightcade TV")
         }
     }
 
@@ -101,7 +126,7 @@ struct LobbySidebarView: View {
                     ForEach(viewModel.joinedChannels) { channel in
                         SidebarChannelButton(
                             channel: channel,
-                            isSelected: !viewModel.isShowingGameplay && !viewModel.isShowingChannelBrowser && viewModel.selectedChannelID == channel.id,
+                            isSelected: !viewModel.isShowingGameplay && !viewModel.isShowingChannelBrowser && !viewModel.isShowingChannelTV && viewModel.selectedChannelID == channel.id,
                             isLeaving: viewModel.isLeavingChannel,
                             leaveAction: {
                                 viewModel.leave(channel)
@@ -213,6 +238,7 @@ private struct SidebarButton: View {
     let title: String
     let value: String?
     let isSelected: Bool
+    var isDisabled = false
     let action: () -> Void
 
     var body: some View {
@@ -242,6 +268,7 @@ private struct SidebarButton: View {
             )
         }
         .buttonStyle(.plain)
+        .disabled(isDisabled)
     }
 }
 

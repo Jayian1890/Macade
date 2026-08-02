@@ -257,7 +257,8 @@ static int macOSAudioExit()
 
 static int macOSAudioSetVolume()
 {
-    return 1;
+    AppDelegate.sharedInstance.audio.volume = nAudVolume / 10000.0f;
+    return 0;
 }
 
 static int macOSAudioGetSettings(InterfaceInfo *info)

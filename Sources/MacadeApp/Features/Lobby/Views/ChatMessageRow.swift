@@ -61,6 +61,7 @@ struct ChatMessageRow: View {
                     }
 
                     challengeControl
+                    replayControl
                 }
 
                 mentionText
@@ -155,8 +156,36 @@ struct ChatMessageRow: View {
     }
 
     @ViewBuilder
+    private var replayControl: some View {
+        if let replayLink = message.fightcadeReplayLink {
+            Button {
+                viewModel.openFightcadeReplay(replayLink, in: channel)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "play.tv.fill")
+                        .font(.system(size: 10, weight: .black))
+                    Text("Replay")
+                        .font(.system(size: 10, weight: .black, design: .rounded))
+                }
+                .foregroundStyle(MacadeColor.midnight)
+                .padding(.horizontal, 7)
+                .frame(height: 20)
+                .background(MacadeColor.warning, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .help("Open Fightcade replay in TV")
+        }
+    }
+
+    @ViewBuilder
     private var challengeMenu: some View {
         friendMenuButton
+
+        if let replayLink = message.fightcadeReplayLink {
+            Button("Open Fightcade Replay") {
+                viewModel.openFightcadeReplay(replayLink, in: channel)
+            }
+        }
 
         Divider()
 

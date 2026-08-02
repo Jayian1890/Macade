@@ -61,14 +61,6 @@ struct ChannelHeader: View {
                     .controlSize(.small)
             }
 
-            Button {
-                viewModel.showChannelTV(for: channel)
-            } label: {
-                Label("TV", systemImage: "tv.fill")
-            }
-            .buttonStyle(ChannelHeaderButtonStyle())
-            .disabled(!viewModel.canStartChannelTV(in: channel) || viewModel.isLaunchingGame)
-            .help("Start channel TV")
         }
         .padding(.horizontal, MacadeSpacing.medium)
         .frame(height: 48)

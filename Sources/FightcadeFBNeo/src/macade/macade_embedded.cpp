@@ -28,12 +28,21 @@ static bool gChatInputActive = false;
 
 static void EnsureVideo();
 extern int MacadeEmbeddedVideoScale;
+extern int nAudVolume;
+extern int AudSoundSetVolume();
 
 static int ClampVideoScale(int scale)
 {
 	if (scale < 0) return 0;
 	if (scale > 5) return 5;
 	return scale;
+}
+
+static int ClampVolume(int volume)
+{
+	if (volume < 0) return 0;
+	if (volume > 100) return 100;
+	return volume;
 }
 
 enum {
@@ -234,10 +243,14 @@ void MacadeEmbeddedPumpInput()
 		int pressed = 0;
 		int scancode = 0;
 		int videoScale = 0;
+		int volume = 0;
 		if (sscanf(buffer, "key %d %d", &pressed, &scancode) == 2 && scancode >= 0 && scancode < (int)sizeof(gKeys)) {
 			gKeys[scancode] = pressed ? 1 : 0;
 		} else if (sscanf(buffer, "videoScale %d", &videoScale) == 1) {
 			MacadeEmbeddedVideoScale = ClampVideoScale(videoScale);
+		} else if (sscanf(buffer, "volume %d", &volume) == 1) {
+			nAudVolume = ClampVolume(volume) * 100;
+			AudSoundSetVolume();
 		} else if (strcmp(buffer, "chatBegin") == 0) {
 			gChatInputActive = true;
 			gChatInput[0] = 0;
@@ -280,6 +293,7 @@ extern "C" int MacadeEmbeddedKeyState(int scancode)
 
 void MacadeEmbeddedPublishFrame(const void* pixels, int width, int height, int pitch, int bytesPerPixel, int isRGB565)
 {
+	MacadeEmbeddedPumpInput();
 	EnsureVideo();
 	if (gVideo == NULL || pixels == NULL || width <= 0 || height <= 0 || pitch <= 0) return;
 

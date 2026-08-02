@@ -139,7 +139,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         let expectedROM: URL? = switch launch.mode {
         case .test, .training:
             try ensureROMExists(emulator: launch.emulator, gameID: launch.gameID)
-        case .direct, .match, .spectate:
+        case .direct, .match, .spectate, .replay:
             nil
         }
 

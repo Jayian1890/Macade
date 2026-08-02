@@ -7,11 +7,30 @@ struct EmbeddedEmulatorPanel: View {
     let session: FightcadeEmbeddedSession
     let isChannelChatVisible: Bool
     let channelChatOverlay: AnyView?
+    let videoOverlay: AnyView?
     let onToggleChannelChat: () -> Void
     let onMatchEnded: () -> Void
     let onStop: () -> Void
 
     @State private var polledOverlayState: FightcadeEmbeddedOverlayState?
+
+    init(
+        session: FightcadeEmbeddedSession,
+        isChannelChatVisible: Bool,
+        channelChatOverlay: AnyView?,
+        videoOverlay: AnyView? = nil,
+        onToggleChannelChat: @escaping () -> Void,
+        onMatchEnded: @escaping () -> Void,
+        onStop: @escaping () -> Void
+    ) {
+        self.session = session
+        self.isChannelChatVisible = isChannelChatVisible
+        self.channelChatOverlay = channelChatOverlay
+        self.videoOverlay = videoOverlay
+        self.onToggleChannelChat = onToggleChannelChat
+        self.onMatchEnded = onMatchEnded
+        self.onStop = onStop
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -31,6 +50,10 @@ struct EmbeddedEmulatorPanel: View {
 
                         if let state = netplayLoadingState {
                             NetplayLoadingOverlay(state: state, gameID: session.gameID)
+                        }
+
+                        if let videoOverlay {
+                            videoOverlay
                         }
                     }
                     .frame(width: frame.width, height: frame.height)
@@ -57,7 +80,7 @@ struct EmbeddedEmulatorPanel: View {
 
     private var sessionBar: some View {
         HStack(spacing: MacadeSpacing.small) {
-            Image(systemName: session.mode == .spectate ? "eye.fill" : "gamecontroller.fill")
+            Image(systemName: modeIconName)
                 .font(.system(size: 12, weight: .black))
                 .foregroundStyle(MacadeColor.neonCyan)
                 .help(session.mode.rawValue)
@@ -72,7 +95,7 @@ struct EmbeddedEmulatorPanel: View {
 
             Spacer()
 
-            if session.mode == .match || session.mode == .spectate {
+            if session.mode == .match || session.mode == .spectate || session.mode == .replay {
                 EmbeddedEmulatorSessionControls(session: session)
             }
 
@@ -130,6 +153,17 @@ struct EmbeddedEmulatorPanel: View {
 
     private var chatModeTitle: String {
         isChannelChatVisible ? "GAME" : "CHAT"
+    }
+
+    private var modeIconName: String {
+        switch session.mode {
+        case .spectate:
+            "eye.fill"
+        case .replay:
+            "play.tv.fill"
+        case .test, .training, .direct, .match:
+            "gamecontroller.fill"
+        }
     }
 
     private func pollOverlayState() async {

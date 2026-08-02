@@ -84,6 +84,7 @@
 		BF00000B0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */; };
 		BF00000B0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift */; };
 		BF00000B00000000000000D4 /* AuthenticatedHomeViewModel+ChannelTV.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D4 /* AuthenticatedHomeViewModel+ChannelTV.swift */; };
+		BF00000B00000000000000D6 /* ChannelTVCandidates.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D6 /* ChannelTVCandidates.swift */; };
 		BF00000B0000000000000036 /* FightcadeChannelUser+Display.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */; };
 		BF00000B0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift */; };
 		BF00000B0000000000000038 /* FightcadeEmbeddedInputClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000038 /* FightcadeEmbeddedInputClient.swift */; };
@@ -211,6 +212,7 @@
 		BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+ChallengeWarning.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Spectate.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000D4 /* AuthenticatedHomeViewModel+ChannelTV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+ChannelTV.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000D6 /* ChannelTVCandidates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelTVCandidates.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeChannelUser+Display.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+Streams.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000038 /* FightcadeEmbeddedInputClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeEmbeddedInputClient.swift; sourceTree = "<group>"; };
@@ -503,6 +505,7 @@
 				BF00000C0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift */,
 				BF00000C0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift */,
 				BF00000C00000000000000D4 /* AuthenticatedHomeViewModel+ChannelTV.swift */,
+				BF00000C00000000000000D6 /* ChannelTVCandidates.swift */,
 				BF00000C0000000000000025 /* AuthenticatedHomeViewModel+ROMManagement.swift */,
 				BF00000C0000000000000018 /* AuthenticatedHomeViewModel+ROMDownload.swift */,
 			);
@@ -742,6 +745,7 @@
 				BF00000B0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift in Sources */,
 				BF00000B0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift in Sources */,
 				BF00000B00000000000000D4 /* AuthenticatedHomeViewModel+ChannelTV.swift in Sources */,
+				BF00000B00000000000000D6 /* ChannelTVCandidates.swift in Sources */,
 				BF00000B0000000000000036 /* FightcadeChannelUser+Display.swift in Sources */,
 				BF00000B0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift in Sources */,
 				BF00000B0000000000000038 /* FightcadeEmbeddedInputClient.swift in Sources */,

@@ -83,6 +83,16 @@ struct FightcadeSpectateLaunch: Equatable, Sendable {
     }
 }
 
+struct FightcadeReplayLaunch: Equatable, Sendable {
+    let emulator: String
+    let gameID: String
+    let replayPath: String
+
+    var quarkCommand: String {
+        "quark:replay,\(replayPath)"
+    }
+}
+
 struct FightcadeMatchStart: Equatable, Sendable {
     let channelName: String
     let gameID: String?

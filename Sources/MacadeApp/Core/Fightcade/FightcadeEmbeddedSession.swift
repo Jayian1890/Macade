@@ -12,6 +12,7 @@ final class FightcadeEmbeddedSession {
         case direct = "Direct"
         case match = "Match"
         case spectate = "Spectate"
+        case replay = "Replay"
     }
 
     enum Status: Equatable, Sendable {
@@ -269,6 +270,18 @@ struct FightcadeEmbeddedLaunch: Sendable, Equatable {
             gameID: gameID,
             arguments: [launch.quarkCommand],
             title: "Spectating · \(gameID)",
+            match: nil
+        )
+    }
+
+    static func replay(channelID: FightcadeChannel.ID, launch: FightcadeReplayLaunch) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .replay,
+            emulator: launch.emulator,
+            gameID: launch.gameID,
+            arguments: [launch.quarkCommand],
+            title: "Replay · \(launch.gameID)",
             match: nil
         )
     }

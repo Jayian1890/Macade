@@ -19,6 +19,8 @@ static int nSDLPlayPos;
 static int nSDLFillSeg;
 static int nAudLoopLen;
 
+static int SDLSoundSetVolume();
+
 void audiospec_callback(void* /* data */, Uint8* stream, int len)
 {
 #ifdef BUILD_SDL2
@@ -194,6 +196,7 @@ static int SDLSoundInit()
 	}
 	DspInit();
 	SDLSetCallback(NULL);
+	SDLSoundSetVolume();
 
 	return 0;
 }
@@ -216,7 +219,13 @@ static int SDLSoundStop()
 
 static int SDLSoundSetVolume()
 {
-	return 1;
+	int volume = nAudVolume;
+	if (volume < 0) volume = 0;
+	if (volume > 10000) volume = 10000;
+	SDL_LockAudio();
+	nSDLVolume = (volume * SDL_MIX_MAXVOLUME) / 10000;
+	SDL_UnlockAudio();
+	return 0;
 }
 
 static int SDLGetSettings(InterfaceInfo* /* pInfo */)
