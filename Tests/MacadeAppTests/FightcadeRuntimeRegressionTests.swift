@@ -32,14 +32,55 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
         XCTAssertEqual(found, romURL)
     }
 
+    func testLegacyEmulatorAliasesResolveToNativeRuntimeIDs() throws {
+        XCTAssertEqual(FightcadeEmulatorID.runtimeID(for: "FC1"), "ggpofba")
+        XCTAssertEqual(FightcadeEmulatorID.runtimeID(for: "nulldc"), "flycast")
+
+        let supportURL = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: supportURL) }
+        let runtime = FightcadeRuntime(applicationSupportURL: supportURL)
+
+        XCTAssertTrue(try runtime.romDirectory(emulator: "fc1").path.hasSuffix("/Macade/FightcadeRuntime/roms/ggpofba"))
+        XCTAssertTrue(try runtime.romDirectory(emulator: "nulldc").path.hasSuffix("/Macade/FightcadeRuntime/roms/flycast"))
+    }
+
     func testRuntimeManifestSeparatesEmbeddedAndQuarkSupport() throws {
-        let data = Data(#"{"emulators":{"fbneo":{"supportsQuark":true},"snes9x":{"supportsQuark":false,"supportsEmbedded":true}}}"#.utf8)
+        let data = Data(
+            #"{"emulators":{"fbneo":{"supportsQuark":true},"snes9x":{"supportsQuark":false,"supportsEmbedded":true,"supportsFightcadeMatch":false},"flycast":{"supportsQuark":false,"supportsEmbedded":true,"supportsFightcadeMatch":false,"supportsFightcadeDirect":false,"supportsFightcadeSpectate":false,"supportsFightcadeTraining":false}}}"#.utf8
+        )
         let manifest = try JSONDecoder().decode(FightcadeRuntimeManifest.self, from: data)
 
         XCTAssertTrue(manifest.supportsQuark(emulator: "fbneo"))
         XCTAssertTrue(manifest.supportsEmbedded(emulator: "fbneo"))
         XCTAssertFalse(manifest.supportsQuark(emulator: "snes9x"))
         XCTAssertTrue(manifest.supportsEmbedded(emulator: "snes9x"))
+        XCTAssertFalse(manifest.supports(.fightcadeMatch, emulator: "snes9x"))
+        XCTAssertTrue(manifest.supportsEmbedded(emulator: "flycast"))
+        XCTAssertFalse(manifest.supports(.fightcadeMatch, emulator: "flycast"))
+        XCTAssertFalse(manifest.supports(.fightcadeDirect, emulator: "flycast"))
+        XCTAssertFalse(manifest.supports(.fightcadeTraining, emulator: "flycast"))
+    }
+
+    func testFlycastROMCandidatesCoverDiscAndArcadeContent() throws {
+        let supportURL = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: supportURL) }
+        let runtime = FightcadeRuntime(applicationSupportURL: supportURL)
+
+        let candidates = try runtime.romCandidateURLs(emulator: "flycast", gameID: "flycast_dc_mvsc2")
+            .map(\.lastPathComponent)
+
+        XCTAssertTrue(candidates.contains("flycast_dc_mvsc2.chd"))
+        XCTAssertTrue(candidates.contains("dc_mvsc2.gdi"))
+        XCTAssertTrue(candidates.contains("dc_mvsc2.zip"))
+    }
+
+    func testFlycastLocalLaunchUsesResolvedROMPath() throws {
+        let runtime = FightcadeRuntime()
+        let romURL = URL(fileURLWithPath: "/tmp/mvsc2.chd")
+
+        XCTAssertEqual(runtime.launchArguments(emulator: "flycast", arguments: ["flycast_dc_mvsc2"], expectedROM: romURL), [romURL.path])
+        XCTAssertEqual(runtime.launchArguments(emulator: "flycast", arguments: ["quark:served,mvsc2,q,7000,2,0"], expectedROM: nil), ["quark:served,mvsc2,q,7000,2,0"])
+        XCTAssertEqual(runtime.launchArguments(emulator: "snes9x", arguments: ["snes_smwu"], expectedROM: romURL), ["snes_smwu"])
     }
 
     func testEmbeddedLaunchRequiresQuarkOnlyForNetworkRoutesOrQuarkArguments() {

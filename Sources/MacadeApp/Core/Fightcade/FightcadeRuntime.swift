@@ -66,11 +66,24 @@ struct FightcadeRuntime {
     }
 
     func romDirectory(emulator: String) throws -> URL {
-        let emulatorID = try safePathComponent(emulator.lowercased())
+        let emulatorID = try safePathComponent(FightcadeEmulatorID.runtimeID(for: emulator))
         let directory = try applicationSupportROMRoot()
             .appendingPathComponent(emulatorID)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
+    }
+
+    func launchArguments(emulator: String, arguments: [String], expectedROM: URL?) -> [String] {
+        guard FightcadeEmulatorID.runtimeID(for: emulator) == "flycast",
+              let expectedROM,
+              arguments.count == 1,
+              let argument = arguments.first,
+              !argument.hasPrefix("quark:"),
+              !argument.hasPrefix("macade:") else {
+            return arguments
+        }
+
+        return [expectedROM.path]
     }
 
     func romFileURL(emulator: String, fileName: String) throws -> URL {
@@ -142,6 +155,8 @@ struct FightcadeRuntime {
 
     private func romFileExtensions(emulator: String) -> [String] {
         switch emulator {
+        case "flycast", "nulldc":
+            ["zip", "7z", "chd", "gdi", "cdi", "cue", "bin", "dat", "lst"]
         case "snes9x":
             ["zip", "sfc", "smc"]
         default:

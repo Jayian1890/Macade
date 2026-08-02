@@ -27,6 +27,7 @@ struct FightcadeLauncher: FightcadeLaunching {
 
     func canLaunchLocalGame(emulator: String) -> Bool {
         guard let runtimeRoot = try? runtime.root(),
+              runtimeManifest(in: runtimeRoot).supportsEmbedded(emulator: emulator),
               (try? emulatorExecutable(emulator: emulator, runtime: runtimeRoot)) != nil else {
             return false
         }
@@ -55,7 +56,7 @@ struct FightcadeLauncher: FightcadeLaunching {
             try launch(emulator: emulator, arguments: [FightcadeLocalTrainingLaunch(emulator: emulator, gameID: gameID).command], runtime: runtimeRoot, expectedROM: romURL)
 
         case .fightcadeTraining(let training):
-            guard manifest.supportsQuark(emulator: training.emulator) else {
+            guard manifest.supports(.fightcadeTraining, emulator: training.emulator) else {
                 throw FightcadeLaunchError.unsupportedNativeRoute(
                     "native \(training.emulator) training. The runtime emulator must implement Fightcade quark/GGPO support."
                 )
@@ -69,7 +70,7 @@ struct FightcadeLauncher: FightcadeLaunching {
             )
 
         case .match(let match):
-            guard manifest.supportsQuark(emulator: match.emulator) else {
+            guard manifest.supports(.fightcadeMatch, emulator: match.emulator) else {
                 FightcadeNetplayLaunchDiagnostics(fileManager: fileManager).writeUnsupportedAttempt(
                     match: match,
                     runtime: runtimeRoot,
@@ -89,7 +90,7 @@ struct FightcadeLauncher: FightcadeLaunching {
             )
 
         case .direct(let direct):
-            guard manifest.supportsQuark(emulator: direct.emulator) else {
+            guard manifest.supports(.fightcadeDirect, emulator: direct.emulator) else {
                 throw FightcadeLaunchError.unsupportedNativeRoute(
                     "native \(direct.emulator) direct play. The runtime emulator must implement Fightcade quark/GGPO support."
                 )
@@ -103,7 +104,7 @@ struct FightcadeLauncher: FightcadeLaunching {
             )
 
         case .spectate(let emulator, let gameID, let quarkID, let port):
-            guard manifest.supportsQuark(emulator: emulator) else {
+            guard manifest.supports(.fightcadeSpectate, emulator: emulator) else {
                 throw FightcadeLaunchError.unsupportedNativeRoute(
                     "native \(emulator) spectating. The runtime emulator must implement Fightcade quark/GGPO support."
                 )
@@ -124,8 +125,8 @@ struct FightcadeLauncher: FightcadeLaunching {
     func openEmbedded(_ launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedSession {
         let runtimeRoot = try runtime.root()
         let manifest = runtimeManifest(in: runtimeRoot)
-        if launch.requiresQuark {
-            guard manifest.supportsQuark(emulator: launch.emulator) else {
+        if let capability = launch.requiredRuntimeCapability {
+            guard manifest.supports(capability, emulator: launch.emulator) else {
                 throw FightcadeLaunchError.unsupportedNativeRoute(
                     "embedded native \(launch.emulator) \(launch.mode.rawValue.lowercased()). The runtime emulator must implement Fightcade quark/GGPO support."
                 )
@@ -232,11 +233,12 @@ struct FightcadeLauncher: FightcadeLaunching {
         embeddedSession: FightcadeEmbeddedSession?
     ) throws -> Process {
         let executable = try emulatorExecutable(emulator: emulator, runtime: runtime)
+        let processArguments = self.runtime.launchArguments(emulator: emulator, arguments: arguments, expectedROM: expectedROM)
         let romDirectory = try self.runtime.romDirectory(emulator: emulator)
         let configURL = try configureEmulator(emulator: emulator, runtime: runtime, romDirectory: romDirectory)
         let process = Process()
         process.executableURL = executable
-        process.arguments = arguments
+        process.arguments = processArguments
         process.currentDirectoryURL = runtime
         process.standardOutput = launchLog.fileHandle
         process.standardError = launchLog.fileHandle
@@ -256,7 +258,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         process.environment = environment
         launchLog.write(FightcadeLaunchDiagnostics(fileManager: fileManager).header(
             emulator: emulator,
-            arguments: arguments,
+            arguments: processArguments,
             runtime: runtime,
             executable: executable,
             romDirectory: romDirectory,
@@ -356,7 +358,7 @@ struct FightcadeLauncher: FightcadeLaunching {
     }
 
     private func controllerEnvironment(emulator: String) -> [String: String] {
-        guard emulator.lowercased() == "fbneo",
+        guard FightcadeEmulatorID.runtimeID(for: emulator) == "fbneo",
               let mappings = try? FightcadeFBNeoSettingsStore(fileManager: fileManager).loadControllerMappings(),
               !mappings.isEmpty else {
             return [:]
@@ -366,7 +368,7 @@ struct FightcadeLauncher: FightcadeLaunching {
     }
 
     private func emulatorExecutable(emulator: String, runtime: URL) throws -> URL {
-        let normalized = emulator.lowercased()
+        let normalized = FightcadeEmulatorID.runtimeID(for: emulator)
         let relativePaths: [String]
 
         switch normalized {
@@ -376,6 +378,13 @@ struct FightcadeLauncher: FightcadeLaunching {
                 "emulators/fbneo/fbneo",
                 "emulator/fbneo/macfbneo",
                 "emulator/fbneo/fbneo"
+            ]
+        case "flycast":
+            relativePaths = [
+                "emulators/flycast/Flycast Dojo.app/Contents/MacOS/Flycast Dojo",
+                "emulators/flycast/flycast",
+                "emulator/flycast/Flycast Dojo.app/Contents/MacOS/Flycast Dojo",
+                "emulator/flycast/flycast"
             ]
         default:
             relativePaths = [
