@@ -91,9 +91,72 @@ final class FightcadeFriendTests: XCTestCase {
         XCTAssertEqual(rows["missing"]?.statusText, "Not seen in joined rooms")
     }
 
+    @MainActor
+    func testDashboardRestoreAutojoinsOnlySavedJoinedChannels() async {
+        let savedChannel = makeChannel(id: "sfiii3n", title: "Street Fighter III", isFavorite: false)
+        let favoriteChannel = makeChannel(id: "kof98", title: "The King of Fighters '98", isFavorite: true)
+        let lobbyService = RecordingLobbyService(dashboard: FightcadeDashboard(
+            connectedUsername: "Me",
+            welcomeMessage: nil,
+            channels: [savedChannel, favoriteChannel],
+            browserSections: [FightcadeWelcomeSection(
+                title: "Favorites",
+                channels: [favoriteChannel],
+                categories: [],
+                events: []
+            )]
+        ))
+        let joinedStore = InMemoryJoinedChannelStore(ids: [savedChannel.id])
+        let viewModel = AuthenticatedHomeViewModel(
+            session: AuthSession(username: "me", displayName: "Me", sessionCookie: "cookie"),
+            lobbyService: lobbyService,
+            joinedChannelStore: joinedStore,
+            channelCache: EmptyChannelCache(),
+            friendStore: InMemoryFriendStore()
+        )
+
+        await viewModel.loadDashboard()
+
+        let joinedNames = await lobbyService.waitForJoinedChannelNames(count: 1)
+        XCTAssertEqual(joinedNames, [savedChannel.name])
+        let restoredBackendJoin = await waitFor { viewModel.joinedChannelIDs == Set([savedChannel.id]) }
+        XCTAssertTrue(restoredBackendJoin)
+        XCTAssertEqual(joinedStore.ids, [savedChannel.id])
+        XCTAssertFalse(viewModel.joinedChannelIDs.contains(favoriteChannel.id))
+    }
+
     private func temporaryDirectory() -> URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("MacadeFriendTests-\(UUID().uuidString)", isDirectory: true)
+    }
+
+    private func makeChannel(id: String, title: String, isFavorite: Bool) -> FightcadeChannel {
+        FightcadeChannel(
+            id: id,
+            name: id,
+            title: title,
+            gameID: id,
+            system: "Arcade",
+            emulator: "fbneo",
+            playerCount: nil,
+            spectatorCount: nil,
+            isRanked: true,
+            isFavorite: isFavorite,
+            supportsTraining: true
+        )
+    }
+
+    @MainActor
+    private func waitFor(_ condition: @escaping @MainActor () -> Bool) async -> Bool {
+        for _ in 0..<100 {
+            if condition() {
+                return true
+            }
+
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+
+        return condition()
     }
 
     private func makeUser(
@@ -121,6 +184,118 @@ final class FightcadeFriendTests: XCTestCase {
             stream: stream
         )
     }
+}
+
+private actor RecordingLobbyService: FightcadeLobbyServicing {
+    private let dashboard: FightcadeDashboard
+    private var eventContinuations: [AsyncStream<FightcadeLobbyEvent>.Continuation] = []
+    private var joinedChannelNames: [String] = []
+
+    init(dashboard: FightcadeDashboard) {
+        self.dashboard = dashboard
+    }
+
+    func eventStream() -> AsyncStream<FightcadeLobbyEvent> {
+        AsyncStream { continuation in
+            Task { self.addEventContinuation(continuation) }
+        }
+    }
+
+    func connect(for session: AuthSession) async throws -> FightcadeDashboard {
+        await waitForEventListener()
+        return dashboard
+    }
+
+    func refreshChannels() async throws {}
+
+    func searchChannels(_ request: FightcadeChannelSearchRequest) async throws -> FightcadeChannelSearchResult {
+        FightcadeChannelSearchResult(channels: [], page: request.page, hasMorePages: false)
+    }
+
+    func loadChannelFilterOptions() async throws -> FightcadeChannelFilterOptions {
+        FightcadeChannelFilterOptions()
+    }
+
+    func loadUpcomingEvents(limit: Int) async throws -> [FightcadeEvent] { [] }
+
+    func setFavorite(_ isFavorite: Bool, for channel: FightcadeChannel) async throws {}
+
+    func join(channel: FightcadeChannel) async throws {
+        joinedChannelNames.append(channel.name)
+        emit(.joinedChannel(channel.name))
+    }
+
+    func leave(channel: FightcadeChannel) async throws {
+        emit(.leftChannel(channel.name))
+    }
+
+    func sendChat(_ message: String, to channel: FightcadeChannel, from username: String) async throws {}
+
+    func challenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel, ranked: Int) async throws -> FightcadeChallenge {
+        FightcadeChallenge(username: user.name, channelName: channel.name, challengeID: 1, ranked: ranked)
+    }
+
+    func acceptChallenge(_ challenge: FightcadeChallenge) async throws {}
+
+    func rejectChallenge(_ challenge: FightcadeChallenge) async throws {}
+
+    func cancelChallenge(_ challenge: FightcadeChallenge) async throws {}
+
+    func disconnect() async {}
+
+    func waitForJoinedChannelNames(count: Int) async -> [String] {
+        for _ in 0..<100 {
+            if joinedChannelNames.count >= count {
+                return joinedChannelNames
+            }
+
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+
+        return joinedChannelNames
+    }
+
+    private func addEventContinuation(_ continuation: AsyncStream<FightcadeLobbyEvent>.Continuation) {
+        eventContinuations.append(continuation)
+    }
+
+    private func waitForEventListener() async {
+        for _ in 0..<100 {
+            if !eventContinuations.isEmpty {
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
+    private func emit(_ event: FightcadeLobbyEvent) {
+        for continuation in eventContinuations {
+            continuation.yield(event)
+        }
+    }
+}
+
+private final class InMemoryJoinedChannelStore: JoinedChannelPersisting {
+    var ids: [FightcadeChannel.ID]
+
+    init(ids: [FightcadeChannel.ID] = []) {
+        self.ids = ids
+    }
+
+    func joinedChannelIDs(for session: AuthSession) -> [FightcadeChannel.ID] {
+        ids
+    }
+
+    func saveJoinedChannelIDs(_ ids: [FightcadeChannel.ID], for session: AuthSession) {
+        self.ids = ids
+    }
+}
+
+private actor EmptyChannelCache: FightcadeChannelCaching {
+    func loadChannels(for session: AuthSession) async -> [FightcadeChannel] { [] }
+
+    func saveChannels(_ channels: [FightcadeChannel], for session: AuthSession) async {}
 }
 
 private final class InMemoryFriendStore: FightcadeFriendPersisting, @unchecked Sendable {
