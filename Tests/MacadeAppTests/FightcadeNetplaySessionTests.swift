@@ -205,6 +205,24 @@ final class FightcadeNetplaySessionTests: XCTestCase {
         XCTAssertEqual(localTransport.sent.map(\.1), [emulator])
     }
 
+    func testUDPProxyUsesNativeGGPOPortBeforeLearningEmulatorSourcePort() async throws {
+        let peer = FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)
+        let peerTransport = ScriptedUDPTransport(receives: [
+            (Data(hex: "02efbeadde"), peer)
+        ])
+        let localTransport = ScriptedUDPTransport(receives: [])
+        let proxy = FightcadeUDPProxy(
+            peerTransport: peerTransport,
+            localTransport: localTransport,
+            configuration: FightcadeUDPProxyConfiguration(peer: peer, localEmulatorPort: 7001)
+        )
+
+        let result = try await proxy.step()
+
+        XCTAssertEqual(result.forwardedPeerPackets, 1)
+        XCTAssertEqual(localTransport.sent.map(\.1), [FightcadeNetplayEndpoint(host: "127.0.0.1", port: 6000)])
+    }
+
     func testUDPProxyFiltersPunchTokenPacketsAndUnexpectedPeerHost() async throws {
         let peer = FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)
         let peerTransport = ScriptedUDPTransport(receives: [

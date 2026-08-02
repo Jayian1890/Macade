@@ -356,6 +356,7 @@ struct FightcadeNetplayLaunchDiagnostics {
             local UDP bind port: \(plan.localBindPort)
             local emulator proxy port: \(plan.emulatorProxyPort)
             proxy initial emulator endpoint: \(proxyConfiguration.initialEmulatorEndpoint.host):\(proxyConfiguration.initialEmulatorEndpoint.port)
+            proxy local listening endpoint: 127.0.0.1:\(plan.emulatorProxyPort)
             proxy max packet bytes: \(proxyConfiguration.maximumPacketBytes)
             proxy filters: hole-punch token packets containing " ok" or " _"
             normal NAT fallback scan radius: 512

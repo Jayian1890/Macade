@@ -7,6 +7,7 @@ This note documents Macade-specific connection assistance around the verified Fi
 - Applies to embedded FBNeo `quark:served` match launches.
 - Keeps native GGPO packet formats unchanged: sync request/reply, compressed input, quality report, and quality reply remain the documented UDP types `1...5`.
 - Uses a local UDP proxy at `127.0.0.1:7001...7009` so Macade can preserve the UDP socket used for Fightcade master registration and peer hole punching.
+- Before it observes FBNeo's source socket, the proxy forwards peer packets to the default native GGPO local UDP port `6000`; once FBNeo sends a packet, the proxy updates to that exact source port.
 - Native `ggpo_client_connect` honors `MACADE_GGPO_PROXY_HOST`, `MACADE_GGPO_PROXY_PORT`, and `MACADE_GGPO_TCP_REGISTER_PORT` only when Macade sets them.
 
 ## Connection Assistance

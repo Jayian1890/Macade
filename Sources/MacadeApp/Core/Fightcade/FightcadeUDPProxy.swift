@@ -3,6 +3,7 @@ import Foundation
 struct FightcadeUDPProxyConfiguration: Equatable, Sendable {
     let peer: FightcadeNetplayEndpoint
     let localEmulatorPort: Int
+    let initialEmulatorPort: Int
     let maximumPacketBytes: Int
     let pollTimeout: TimeInterval
     let maxPacketsPerStep: Int
@@ -12,6 +13,7 @@ struct FightcadeUDPProxyConfiguration: Equatable, Sendable {
     init(
         peer: FightcadeNetplayEndpoint,
         localEmulatorPort: Int,
+        initialEmulatorPort: Int = 6000,
         maximumPacketBytes: Int = 16_384,
         pollTimeout: TimeInterval = 0.01,
         maxPacketsPerStep: Int = 64,
@@ -20,6 +22,7 @@ struct FightcadeUDPProxyConfiguration: Equatable, Sendable {
     ) {
         self.peer = peer
         self.localEmulatorPort = localEmulatorPort
+        self.initialEmulatorPort = initialEmulatorPort
         self.maximumPacketBytes = maximumPacketBytes
         self.pollTimeout = pollTimeout
         self.maxPacketsPerStep = maxPacketsPerStep
@@ -28,7 +31,7 @@ struct FightcadeUDPProxyConfiguration: Equatable, Sendable {
     }
 
     var initialEmulatorEndpoint: FightcadeNetplayEndpoint {
-        FightcadeNetplayEndpoint(host: "127.0.0.1", port: localEmulatorPort)
+        FightcadeNetplayEndpoint(host: "127.0.0.1", port: initialEmulatorPort)
     }
 }
 

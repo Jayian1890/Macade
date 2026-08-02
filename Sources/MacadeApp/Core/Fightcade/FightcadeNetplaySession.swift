@@ -247,11 +247,12 @@ final class FightcadeBSDUDPTransport: FightcadeUDPTransporting, @unchecked Senda
     }
 
     func receive(maximumBytes: Int, timeout: TimeInterval) async throws -> (Data, FightcadeNetplayEndpoint) {
-        var tv = timeval(
-            tv_sec: Int(timeout),
-            tv_usec: suseconds_t((timeout.truncatingRemainder(dividingBy: 1)) * 1_000_000)
-        )
-        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+        var descriptor = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
+        let milliseconds = max(0, Int((timeout * 1000).rounded(.up)))
+        guard poll(&descriptor, 1, Int32(milliseconds)) > 0 else {
+            throw POSIXError(.ETIMEDOUT)
+        }
+
         var storage = sockaddr_storage()
         var storageLength = socklen_t(MemoryLayout<sockaddr_storage>.size)
         var buffer = [UInt8](repeating: 0, count: maximumBytes)
