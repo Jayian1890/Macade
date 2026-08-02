@@ -54,9 +54,9 @@ If macOS warns that the app was downloaded from the internet, open it from Finde
 
 Macade includes a built-in updater that pulls directly from this repository's GitHub Releases.
 
-The updater checks the installed app version against the newest public release, downloads the macOS release asset, verifies a `.sha256` sidecar if one is attached, and opens the downloaded update for installation.
+The updater checks the installed app version against the newest public release, gives users an **Update Later** deferral option, then downloads, verifies, installs, and relaunches Macade automatically.
 
-Release assets should be named with `Macade` and use `.zip`, `.dmg`, or `.pkg` so the updater can identify them.
+Release assets should be named with `Macade` and use `.zip`, `.dmg`, or `.pkg` so the updater can identify them. `.zip` and `.dmg` app bundles are preferred because they can be staged and replaced without opening Installer UI.
 
 ## Project Status
 

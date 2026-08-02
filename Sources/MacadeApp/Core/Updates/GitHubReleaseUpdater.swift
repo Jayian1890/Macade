@@ -14,7 +14,10 @@ struct GitHubReleaseUpdater {
         guard version.isNewer(than: currentVersion) else {
             return nil
         }
-        guard let asset = release.assets.first(where: { $0.isInstallableMacAsset }) else {
+        guard let asset = release.assets
+            .filter(\.isInstallableMacAsset)
+            .sorted(by: { $0.automaticInstallPriority < $1.automaticInstallPriority })
+            .first else {
             throw MacadeUpdaterError.noInstallableAsset
         }
         let checksum = release.assets.first { $0.isChecksumFor(assetName: asset.name) }
@@ -117,6 +120,14 @@ private struct GitHubReleaseAsset: Decodable {
         let lower = name.lowercased()
         let isArchive = lower.hasSuffix(".dmg") || lower.hasSuffix(".pkg") || lower.hasSuffix(".zip")
         return isArchive && lower.contains("macade")
+    }
+
+    var automaticInstallPriority: Int {
+        let lower = name.lowercased()
+        if lower.hasSuffix(".zip") { return 0 }
+        if lower.hasSuffix(".dmg") { return 1 }
+        if lower.hasSuffix(".pkg") { return 2 }
+        return 3
     }
 
     var updateAsset: MacadeUpdateAsset {

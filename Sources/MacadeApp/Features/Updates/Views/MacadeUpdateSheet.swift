@@ -45,11 +45,15 @@ struct MacadeUpdateSheet: View {
         case .current:
             messageView("Macade is up to date.", detail: "You already have the newest public release.")
         case .available(let update):
-            updateView(update, detail: "A newer build is ready to download from GitHub Releases.")
+            updateView(update, detail: "Macade will download and install this update automatically.")
+        case .scheduled(let update, let secondsRemaining):
+            updateView(update, detail: "Automatic update starts in \(secondsRemaining) seconds. Choose Update Later to keep using this version for now.")
         case .downloading(let update):
-            updateView(update, detail: "Downloading \(update.asset.name)...")
+            updateView(update, detail: "Downloading and verifying \(update.asset.name)...")
         case .downloaded(let update, let url):
-            updateView(update, detail: "Downloaded to \(url.lastPathComponent). Open it to install the update.")
+            updateView(update, detail: "Downloaded \(url.lastPathComponent). Preparing automatic install and relaunch...")
+        case .installing(let update):
+            updateView(update, detail: "Installing Macade \(update.version) and relaunching...")
         case .failed(let message):
             messageView("Update check failed.", detail: message)
         }
@@ -102,9 +106,10 @@ struct MacadeUpdateSheet: View {
             if controller.availableUpdate != nil {
                 Button("Release Notes") { controller.openReleasePage() }
                     .buttonStyle(.borderless)
-                Button("Skip This Version") { controller.skipAvailableUpdate() }
+                Button("Update Later") { controller.updateLater() }
                     .buttonStyle(.borderless)
                     .foregroundStyle(MacadeColor.inkMuted)
+                    .disabled(isInstalling)
             }
 
             Spacer()
@@ -120,12 +125,14 @@ struct MacadeUpdateSheet: View {
     @ViewBuilder
     private var primaryButton: some View {
         switch controller.status {
-        case .available:
-            Button("Download Update") { controller.downloadAvailableUpdate() }
+        case .available, .scheduled:
+            Button("Updating Soon") {}
                 .buttonStyle(ChannelHeaderButtonStyle(isProminent: true))
-        case .downloaded:
-            Button("Open Installer") { controller.openDownloadedUpdate() }
+                .disabled(true)
+        case .downloaded, .installing:
+            Button("Relaunching") {}
                 .buttonStyle(ChannelHeaderButtonStyle(isProminent: true))
+                .disabled(true)
         case .failed, .current, .idle:
             Button("Check Again") { controller.showAndCheck() }
                 .buttonStyle(ChannelHeaderButtonStyle(isProminent: true))
@@ -138,9 +145,14 @@ struct MacadeUpdateSheet: View {
 
     private var title: String {
         switch controller.status {
-        case .available, .downloading, .downloaded: "Update Available"
+        case .available, .scheduled, .downloading, .downloaded, .installing: "Update Available"
         case .failed: "Updater"
         default: "Check for Updates"
         }
+    }
+
+    private var isInstalling: Bool {
+        if case .installing = controller.status { return true }
+        return false
     }
 }
