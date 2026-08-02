@@ -47,7 +47,10 @@
 		BF00000B00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift */; };
 		BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000011 /* FightcadeLauncher.swift */; };
 		BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000012 /* FightcadeChallenge.swift */; };
+		BF00000B00000000000000E4 /* FightcadeAutoMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E4 /* FightcadeAutoMatch.swift */; };
 		BF00000B0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */; };
+		BF00000B00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */; };
+		BF00000B00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */; };
 		BF00000B0000000000000014 /* ChannelErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000014 /* ChannelErrorBanner.swift */; };
 		BF00000B0000000000000015 /* FightcadeRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000015 /* FightcadeRuntime.swift */; };
 		BF00000B0000000000000016 /* FightcadeROMDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000016 /* FightcadeROMDownloader.swift */; };
@@ -188,7 +191,10 @@
 		BF00000C00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+Welcome.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000011 /* FightcadeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLauncher.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000012 /* FightcadeChallenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChallenge.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000E4 /* FightcadeAutoMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeAutoMatch.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Challenge.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+AutoMatch.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Events.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000014 /* ChannelErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelErrorBanner.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000015 /* FightcadeRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeRuntime.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000016 /* FightcadeROMDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeROMDownloader.swift; sourceTree = "<group>"; };
@@ -490,6 +496,7 @@
 			isa = PBXGroup;
 			children = (
 				BF00000C0000000000000012 /* FightcadeChallenge.swift */,
+				BF00000C00000000000000E4 /* FightcadeAutoMatch.swift */,
 				BF00000C0000000000000017 /* FightcadeChannel+LaunchMetadata.swift */,
 				BF00000C00000000000000A6 /* FightcadeChannelBrowserModels.swift */,
 				BF00000C0000000000000005 /* FightcadeChannel.swift */,
@@ -526,11 +533,13 @@
 			isa = PBXGroup;
 			children = (
 				BF00000C0000000000000009 /* AuthenticatedHomeViewModel.swift */,
+				BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */,
 				BF00000C00000000000000C4 /* AuthenticatedHomeViewModel+Status.swift */,
 				BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */,
 				BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */,
 				BF00000C00000000000000C0 /* ChatTranslationRequestBuilder.swift */,
 				BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */,
+				BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */,
 				BF00000C000000000000003B /* AuthenticatedHomeViewModel+EmbeddedEmulation.swift */,
 				BF00000C00000000000000C8 /* AuthenticatedHomeViewModel+Friends.swift */,
 				BF00000C00000000000000C9 /* AuthenticatedHomeViewModel+GameLaunch.swift */,
@@ -774,7 +783,10 @@
 				BF00000B00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift in Sources */,
 				BF00000B00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift in Sources */,
 				BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */,
+				BF00000B00000000000000E4 /* FightcadeAutoMatch.swift in Sources */,
 				BF00000B0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift in Sources */,
+				BF00000B00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift in Sources */,
+				BF00000B00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift in Sources */,
 				BF00000B0000000000000014 /* ChannelErrorBanner.swift in Sources */,
 				BF00000B000000000000002E /* ChallengeBanner.swift in Sources */,
 				BF00000B000000000000002F /* ChatMessageRow.swift in Sources */,

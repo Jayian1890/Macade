@@ -43,6 +43,8 @@ struct ChannelHeader: View {
                 .help("Download ROM")
             }
 
+            autoMatchButton
+
             if viewModel.selectedHasLocalROM {
                 romTools
             }
@@ -70,6 +72,17 @@ struct ChannelHeader: View {
                 .fill(MacadeColor.divider)
                 .frame(height: 1)
         }
+    }
+
+    private var autoMatchButton: some View {
+        Button {
+            viewModel.toggleAutoMatch(for: channel)
+        } label: {
+            Label("Auto", systemImage: viewModel.isAutoMatching(in: channel) ? "bolt.fill" : "bolt")
+        }
+        .buttonStyle(ChannelHeaderButtonStyle(isProminent: viewModel.isAutoMatching(in: channel)))
+        .disabled(!viewModel.canToggleAutoMatch(for: channel))
+        .help(viewModel.autoMatchHelpText(for: channel))
     }
 
     private var romTools: some View {

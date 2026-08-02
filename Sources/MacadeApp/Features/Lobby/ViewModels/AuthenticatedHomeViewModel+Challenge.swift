@@ -112,6 +112,7 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
+        stopAllAutoMatch(cancelsOutstandingChallenges: true)
         rememberMatchOpponent(challenge)
         isSendingChallenge = true
         errorMessage = nil
@@ -195,11 +196,13 @@ extension AuthenticatedHomeViewModel {
     }
 
     func clearChallenge(_ challenge: FightcadeChallenge) {
+        removeAutoMatchChallenge(challenge)
         incomingChallenges.removeAll { $0.id == challenge.id }
         outgoingChallenges.removeAll { $0.id == challenge.id }
     }
 
     func clearChallenges() {
+        clearAutoMatchChallengeIDs()
         incomingChallenges.removeAll()
         outgoingChallenges.removeAll()
     }
