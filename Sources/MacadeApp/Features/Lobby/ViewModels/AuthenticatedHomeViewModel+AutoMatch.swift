@@ -31,6 +31,8 @@ extension AuthenticatedHomeViewModel {
             return "Waiting for \(usernames.joined(separator: ", "))"
         case .noEligiblePlayers:
             return "No eligible auto match players"
+        case .allEligiblePlayersTried:
+            return "All eligible players have already been invited"
         case .currentUserUnavailable:
             return "Waiting for your roster entry"
         case .missingCurrentUserRank:
@@ -56,6 +58,7 @@ extension AuthenticatedHomeViewModel {
         var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
         state.isEnabled = false
         state.activeChallengeIDs.removeAll()
+        state.challengedUsernames.removeAll()
         state.status = .idle
         autoMatchStatesByChannel[channelName] = state
 
@@ -92,6 +95,8 @@ extension AuthenticatedHomeViewModel {
 
         var state = autoMatchStatesByChannel[channel.name] ?? FightcadeAutoMatchState()
         state.isEnabled = true
+        state.activeChallengeIDs.removeAll()
+        state.challengedUsernames.removeAll()
         state.status = .searching
         autoMatchStatesByChannel[channel.name] = state
         appendSystemMessage("Auto match enabled.", channelName: channel.name)
@@ -109,6 +114,7 @@ extension AuthenticatedHomeViewModel {
                 var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
                 state.isEnabled = false
                 state.activeChallengeIDs.removeAll()
+                state.challengedUsernames.removeAll()
                 state.status = .idle
                 autoMatchStatesByChannel[channelName] = state
             }
@@ -149,16 +155,14 @@ extension AuthenticatedHomeViewModel {
 
     private func makeAutoMatchAttempt(for channel: FightcadeChannel) -> FightcadeAutoMatchAttempt {
         let state = autoMatchStatesByChannel[channel.name] ?? FightcadeAutoMatchState()
-        let blockedUsernames = challengeBlockedUsernames(in: channel.name)
         let attempt = FightcadeAutoMatchPlanner().attempt(
             users: usersByChannel[channel.name] ?? [],
             session: session,
-            blockedUsernames: blockedUsernames,
-            rotationIndex: state.rotationIndex
+            activeChallengeUsernames: challengeBlockedUsernames(in: channel.name),
+            challengedUsernames: state.challengedUsernames
         )
 
         var nextState = state
-        nextState.rotationIndex = attempt.nextRotationIndex
         nextState.status = attempt.status
         autoMatchStatesByChannel[channel.name] = nextState
         return attempt
@@ -234,6 +238,7 @@ extension AuthenticatedHomeViewModel {
     private func rememberAutoMatchChallenge(_ challenge: FightcadeChallenge) {
         var state = autoMatchStatesByChannel[challenge.channelName] ?? FightcadeAutoMatchState()
         state.activeChallengeIDs.insert(challenge.id)
+        state.challengedUsernames.insert(normalizedUsername(challenge.username))
         autoMatchStatesByChannel[challenge.channelName] = state
     }
 
@@ -244,6 +249,7 @@ extension AuthenticatedHomeViewModel {
             && !user.isAway
             && !user.isPlaying
             && !challengeBlockedUsernames(in: channel.name).contains(normalizedUsername(user.name))
+            && autoMatchStatesByChannel[channel.name]?.challengedUsernames.contains(normalizedUsername(user.name)) != true
     }
 
     private func challengeBlockedUsernames(in channelName: String) -> Set<String> {

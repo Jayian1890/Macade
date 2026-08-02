@@ -26,6 +26,7 @@ enum FightcadeAutoMatchStatus: Equatable, Sendable {
     case searching
     case waiting(usernames: [String])
     case noEligiblePlayers
+    case allEligiblePlayersTried
     case currentUserUnavailable
     case missingCurrentUserRank
     case paused(String)
@@ -33,14 +34,13 @@ enum FightcadeAutoMatchStatus: Equatable, Sendable {
 
 struct FightcadeAutoMatchState: Equatable, Sendable {
     var isEnabled = false
-    var rotationIndex = 0
     var activeChallengeIDs = Set<String>()
+    var challengedUsernames = Set<String>()
     var status = FightcadeAutoMatchStatus.idle
 }
 
 struct FightcadeAutoMatchAttempt: Equatable, Sendable {
     let users: [FightcadeChannelUser]
-    let nextRotationIndex: Int
     let status: FightcadeAutoMatchStatus
 }
 
@@ -54,21 +54,22 @@ struct FightcadeAutoMatchPlanner: Sendable {
     func attempt(
         users: [FightcadeChannelUser],
         session: AuthSession,
-        blockedUsernames: Set<String>,
-        rotationIndex: Int
+        activeChallengeUsernames: Set<String>,
+        challengedUsernames: Set<String>
     ) -> FightcadeAutoMatchAttempt {
         let sessionUsernames = [session.username, session.displayName]
             .map(normalizedUsername)
             .filter { !$0.isEmpty }
         guard let currentUser = users.first(where: { sessionUsernames.contains(normalizedUsername($0.name)) }) else {
-            return FightcadeAutoMatchAttempt(users: [], nextRotationIndex: 0, status: .currentUserUnavailable)
+            return FightcadeAutoMatchAttempt(users: [], status: .currentUserUnavailable)
         }
 
         guard let currentRank = currentUser.rank, currentRank > 0 else {
-            return FightcadeAutoMatchAttempt(users: [], nextRotationIndex: 0, status: .missingCurrentUserRank)
+            return FightcadeAutoMatchAttempt(users: [], status: .missingCurrentUserRank)
         }
 
-        let normalizedBlockedUsernames = Set(blockedUsernames.map(normalizedUsername))
+        let normalizedActiveChallengeUsernames = Set(activeChallengeUsernames.map(normalizedUsername))
+        let normalizedChallengedUsernames = Set(challengedUsernames.map(normalizedUsername))
         let currentCountry = normalizedCountryCode(currentUser.countryCode)
         let candidates = users.filter { user in
             isEligible(
@@ -76,22 +77,23 @@ struct FightcadeAutoMatchPlanner: Sendable {
                 currentRank: currentRank,
                 currentCountry: currentCountry,
                 sessionUsernames: sessionUsernames,
-                blockedUsernames: normalizedBlockedUsernames
+                activeChallengeUsernames: normalizedActiveChallengeUsernames
             )
-        }
-        .sorted { lhs, rhs in
-            sortCandidates(lhs, rhs, currentRank: currentRank)
         }
 
         guard !candidates.isEmpty else {
-            return FightcadeAutoMatchAttempt(users: [], nextRotationIndex: 0, status: .noEligiblePlayers)
+            return FightcadeAutoMatchAttempt(users: [], status: .noEligiblePlayers)
         }
 
-        let start = ((rotationIndex % candidates.count) + candidates.count) % candidates.count
-        let rotated = Array(candidates[start...]) + Array(candidates[..<start])
-        let selected = Array(rotated.prefix(configuration.maxChallengesPerAttempt))
-        let nextIndex = (start + selected.count) % candidates.count
-        return FightcadeAutoMatchAttempt(users: selected, nextRotationIndex: nextIndex, status: .searching)
+        let untriedCandidates = candidates.filter {
+            !normalizedChallengedUsernames.contains(normalizedUsername($0.name))
+        }
+        guard !untriedCandidates.isEmpty else {
+            return FightcadeAutoMatchAttempt(users: [], status: .allEligiblePlayersTried)
+        }
+
+        let selected = Array(untriedCandidates.shuffled().prefix(configuration.maxChallengesPerAttempt))
+        return FightcadeAutoMatchAttempt(users: selected, status: .searching)
     }
 
     private func isEligible(
@@ -99,11 +101,11 @@ struct FightcadeAutoMatchPlanner: Sendable {
         currentRank: Int,
         currentCountry: String?,
         sessionUsernames: [String],
-        blockedUsernames: Set<String>
+        activeChallengeUsernames: Set<String>
     ) -> Bool {
         let username = normalizedUsername(user.name)
         guard !sessionUsernames.contains(username),
-              !blockedUsernames.contains(username),
+              !activeChallengeUsernames.contains(username),
               !user.isAway,
               !user.isPlaying,
               let rank = user.rank,
@@ -115,29 +117,6 @@ struct FightcadeAutoMatchPlanner: Sendable {
         let sameCountry = currentCountry != nil && normalizedCountryCode(user.countryCode) == currentCountry
         let lowPing = user.matchmakingPing.map { $0 < configuration.maximumPing } ?? false
         return sameCountry || lowPing
-    }
-
-    private func sortCandidates(
-        _ lhs: FightcadeChannelUser,
-        _ rhs: FightcadeChannelUser,
-        currentRank: Int
-    ) -> Bool {
-        let leftRankDelta = abs((lhs.rank ?? 0) - currentRank)
-        let rightRankDelta = abs((rhs.rank ?? 0) - currentRank)
-        if leftRankDelta != rightRankDelta {
-            return leftRankDelta < rightRankDelta
-        }
-
-        switch (lhs.matchmakingPing, rhs.matchmakingPing) {
-        case let (left?, right?) where left != right:
-            return left < right
-        case (_?, nil):
-            return true
-        case (nil, _?):
-            return false
-        default:
-            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-        }
     }
 
     private func normalizedUsername(_ username: String) -> String {

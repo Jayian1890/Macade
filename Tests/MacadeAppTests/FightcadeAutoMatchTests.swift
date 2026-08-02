@@ -19,15 +19,14 @@ final class FightcadeAutoMatchTests: XCTestCase {
         let attempt = planner.attempt(
             users: users,
             session: session,
-            blockedUsernames: ["blocked"],
-            rotationIndex: 0
+            activeChallengeUsernames: ["blocked"],
+            challengedUsernames: []
         )
 
-        XCTAssertEqual(attempt.users.map(\.name), ["sameCountry", "lowPing"])
-        XCTAssertEqual(attempt.nextRotationIndex, 0)
+        XCTAssertEqual(Set(attempt.users.map(\.name)), ["sameCountry", "lowPing"])
     }
 
-    func testPlannerRotatesBatchesByTwoUsers() {
+    func testPlannerDoesNotRepeatAlreadyChallengedUsers() {
         let planner = FightcadeAutoMatchPlanner()
         let session = AuthSession(username: "me", displayName: "Me")
         let users = [
@@ -38,13 +37,34 @@ final class FightcadeAutoMatchTests: XCTestCase {
             makeUser("D", countryCode: "US", ping: 40, rank: 3)
         ]
 
-        let first = planner.attempt(users: users, session: session, blockedUsernames: [], rotationIndex: 0)
-        let second = planner.attempt(users: users, session: session, blockedUsernames: [], rotationIndex: first.nextRotationIndex)
+        let first = planner.attempt(
+            users: users,
+            session: session,
+            activeChallengeUsernames: [],
+            challengedUsernames: []
+        )
+        let firstNames = Set(first.users.map(\.name))
+        let second = planner.attempt(
+            users: users,
+            session: session,
+            activeChallengeUsernames: [],
+            challengedUsernames: firstNames
+        )
+        let secondNames = Set(second.users.map(\.name))
 
-        XCTAssertEqual(first.users.map(\.name), ["A", "B"])
-        XCTAssertEqual(first.nextRotationIndex, 2)
-        XCTAssertEqual(second.users.map(\.name), ["C", "D"])
-        XCTAssertEqual(second.nextRotationIndex, 0)
+        XCTAssertEqual(first.users.count, 2)
+        XCTAssertEqual(second.users.count, 2)
+        XCTAssertTrue(firstNames.isDisjoint(with: secondNames))
+
+        let exhausted = planner.attempt(
+            users: users,
+            session: session,
+            activeChallengeUsernames: [],
+            challengedUsernames: firstNames.union(secondNames)
+        )
+
+        XCTAssertTrue(exhausted.users.isEmpty)
+        XCTAssertEqual(exhausted.status, .allEligiblePlayersTried)
     }
 
     func testPlannerRequiresCurrentUserRank() {
@@ -55,7 +75,12 @@ final class FightcadeAutoMatchTests: XCTestCase {
             makeUser("A", countryCode: "US", ping: 10, rank: 3)
         ]
 
-        let attempt = planner.attempt(users: users, session: session, blockedUsernames: [], rotationIndex: 0)
+        let attempt = planner.attempt(
+            users: users,
+            session: session,
+            activeChallengeUsernames: [],
+            challengedUsernames: []
+        )
 
         XCTAssertTrue(attempt.users.isEmpty)
         XCTAssertEqual(attempt.status, .missingCurrentUserRank)

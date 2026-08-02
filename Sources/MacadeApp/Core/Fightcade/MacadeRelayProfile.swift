@@ -21,36 +21,55 @@ enum MacadeRelayGate {
 }
 
 enum MacadeRelayKey: String, CaseIterable, Codable, Identifiable, Sendable {
-    case equals
-    case minus
-    case zero
-    case nine
-    case eight
+    case q
+    case w
+    case e
+    case r
+    case t
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .equals: "="
-        case .minus: "-"
-        case .zero: "0"
-        case .nine: "9"
-        case .eight: "8"
+        case .q: "Q"
+        case .w: "W"
+        case .e: "E"
+        case .r: "R"
+        case .t: "T"
         }
     }
 
     var keyCode: UInt16 {
         switch self {
-        case .equals: 24
-        case .minus: 27
-        case .zero: 29
-        case .nine: 25
-        case .eight: 28
+        case .q: 12
+        case .w: 13
+        case .e: 14
+        case .r: 15
+        case .t: 17
         }
     }
 
     static func match(_ keyCode: UInt16) -> MacadeRelayKey? {
         allCases.first { $0.keyCode == keyCode }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let value = try container.decode(String.self)
+        switch value {
+        case Self.q.rawValue, "equals": self = .q
+        case Self.w.rawValue, "minus": self = .w
+        case Self.e.rawValue, "zero": self = .e
+        case Self.r.rawValue, "nine": self = .r
+        case Self.t.rawValue, "eight": self = .t
+        default:
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported relay key.")
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
     }
 }
 
@@ -140,6 +159,9 @@ struct MacadeRelayProfile: Codable, Equatable, Sendable {
             var lane = existing[key] ?? MacadeRelayLane(key: key)
             lane.key = key
             lane.title = String(lane.title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(48))
+            if Self.legacyDefaultTitles.contains(lane.title) {
+                lane.title = "Lane \(key.label)"
+            }
             if lane.title.isEmpty {
                 lane.title = "Lane \(key.label)"
             }
@@ -147,6 +169,8 @@ struct MacadeRelayProfile: Codable, Equatable, Sendable {
             return lane
         })
     }
+
+    private static let legacyDefaultTitles = Set(["Lane =", "Lane -", "Lane 0", "Lane 9", "Lane 8"])
 
     private static func normalizedFrame(_ frame: MacadeRelayFrame) -> MacadeRelayFrame {
         var normalized = frame

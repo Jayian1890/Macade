@@ -7,7 +7,7 @@ struct RelayConsoleView: View {
 
     @State private var profile = MacadeRelayProfileStore().load()
     @State private var savedProfile = MacadeRelayProfileStore().load()
-    @State private var selectedKey: MacadeRelayKey = .equals
+    @State private var selectedKey: MacadeRelayKey = .q
     @State private var isCapturingFrame = false
     @State private var isRecordingSequence = false
     @State private var recorder = RelayConsoleRecorder()
@@ -93,7 +93,7 @@ struct RelayConsoleView: View {
 
             Spacer()
 
-            Text("Use the same hidden chat command to reopen this console. Lanes are fixed to top-row =, -, 0, 9, and 8.")
+            Text("Use the same hidden chat command to reopen this console. Lanes are fixed to top-row Q, W, E, R, and T.")
                 .font(MacadeTypography.caption)
                 .foregroundStyle(MacadeColor.inkMuted)
                 .fixedSize(horizontal: false, vertical: true)
@@ -281,7 +281,7 @@ struct RelayConsoleView: View {
         let loaded = store.load()
         profile = loaded
         savedProfile = loaded
-        selectedKey = loaded.lanes.first?.key ?? .equals
+        selectedKey = loaded.lanes.first?.key ?? .q
     }
 
     private func saveProfile() {
@@ -301,7 +301,7 @@ struct RelayConsoleView: View {
 
     private func resetAll() {
         profile = .defaults
-        selectedKey = .equals
+        selectedKey = .q
         isCapturingFrame = false
         cancelSequenceRecording(updateStatus: false)
         statusMessage = "Relay reset. Save to apply."
