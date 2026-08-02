@@ -24,15 +24,6 @@ struct ChannelHeader: View {
                     .foregroundStyle(MacadeColor.ink)
                     .lineLimit(1)
 
-                Button {
-                    viewModel.showChannelTV(for: channel)
-                } label: {
-                    Label("TV", systemImage: "tv.fill")
-                }
-                .buttonStyle(ChannelHeaderButtonStyle())
-                .disabled(!viewModel.canStartChannelTV(in: channel) || viewModel.isLaunchingGame)
-                .help("Start channel TV")
-
                 if channel.isRanked {
                     Image(systemName: "rosette")
                         .font(.system(size: 12, weight: .black))
@@ -69,6 +60,15 @@ struct ChannelHeader: View {
                 ProgressView()
                     .controlSize(.small)
             }
+
+            Button {
+                viewModel.showChannelTV(for: channel)
+            } label: {
+                Label("TV", systemImage: "tv.fill")
+            }
+            .buttonStyle(ChannelHeaderButtonStyle())
+            .disabled(!viewModel.canStartChannelTV(in: channel) || viewModel.isLaunchingGame)
+            .help("Start channel TV")
         }
         .padding(.horizontal, MacadeSpacing.medium)
         .frame(height: 48)
