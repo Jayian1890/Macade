@@ -68,6 +68,20 @@ struct FightcadeChannel: Identifiable, Equatable, Codable, Sendable {
     }
 }
 
+extension Array where Element == FightcadeChannel {
+    func sortedByUserCountDescending() -> [FightcadeChannel] {
+        sorted { lhs, rhs in
+            let leftCount = lhs.playerCount ?? 0
+            let rightCount = rhs.playerCount ?? 0
+            if leftCount != rightCount {
+                return leftCount > rightCount
+            }
+
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+    }
+}
+
 extension String {
     var normalizedFightcadeFavoriteKey: String {
         trimmingCharacters(in: .whitespacesAndNewlines)

@@ -259,9 +259,30 @@ struct ChannelBrowserView: View {
     }
 
     private var filterSystems: [String] {
-        viewModel.browser.filterOptions.systems.isEmpty
+        let systems = viewModel.browser.filterOptions.systems.isEmpty
             ? Array(Set(viewModel.channels.compactMap(\.system))).sorted()
             : viewModel.browser.filterOptions.systems
+        return systems.sorted(by: sortSystemsByUserCount)
+    }
+
+    private func sortSystemsByUserCount(_ lhs: String, _ rhs: String) -> Bool {
+        let leftCount = userCount(forSystem: lhs)
+        let rightCount = userCount(forSystem: rhs)
+        if leftCount != rightCount {
+            return leftCount > rightCount
+        }
+
+        return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+    }
+
+    private func userCount(forSystem system: String) -> Int {
+        viewModel.channels.reduce(0) { total, channel in
+            guard channel.system?.localizedCaseInsensitiveCompare(system) == .orderedSame else {
+                return total
+            }
+
+            return total + (channel.playerCount ?? 0)
+        }
     }
 
     private func filterSection(

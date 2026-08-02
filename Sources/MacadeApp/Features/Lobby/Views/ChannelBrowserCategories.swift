@@ -23,7 +23,7 @@ struct CategoryStrip: View {
 
     var systems: [String] {
         Array(Set(channels.compactMap(\.system).filter { !$0.isEmpty }))
-            .sorted()
+            .sorted(by: sortCategoriesByUserCount)
             .prefix(4)
             .map { $0 }
     }
@@ -48,7 +48,37 @@ struct CategoryStrip: View {
     }
 
     private var displayCategories: [String] {
-        categories.isEmpty ? ["Popular", "My Favorites"] + systems : categories
+        (categories.isEmpty ? ["Popular", "My Favorites"] + systems : categories)
+            .sorted(by: sortCategoriesByUserCount)
+    }
+
+    private func sortCategoriesByUserCount(_ lhs: String, _ rhs: String) -> Bool {
+        let leftCount = userCount(for: lhs)
+        let rightCount = userCount(for: rhs)
+        if leftCount != rightCount {
+            return leftCount > rightCount
+        }
+
+        return lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
+    }
+
+    private func userCount(for category: String) -> Int {
+        matchingChannels(for: category).reduce(0) { $0 + ($1.playerCount ?? 0) }
+    }
+
+    private func matchingChannels(for category: String) -> [FightcadeChannel] {
+        switch category.normalizedBrowserCategory {
+        case "popular":
+            return channels
+        case "my favorites", "favorites":
+            return channels.filter(\.isFavorite)
+        default:
+            let normalizedCategory = category.normalizedBrowserCategory
+            return channels.filter { channel in
+                channel.system?.normalizedBrowserCategory == normalizedCategory
+                    || channel.title.normalizedBrowserCategory.contains(normalizedCategory)
+            }
+        }
     }
 
     private func subtitle(for category: String) -> String {

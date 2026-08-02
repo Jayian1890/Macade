@@ -5,9 +5,9 @@
 Macade brings the Fightcade arcade experience to macOS with a modern SwiftUI interface, embedded FBNeo gameplay, live lobbies, chat, spectating, ranked rooms, and GitHub-powered auto updates. It is built for players who want the Fightcade community without feeling like they are running a Windows or Linux app through a Mac-shaped compromise.
 
 <p align="center">
-  <img src="docs/assets/macade-screenshot-1.png" alt="Macade lobby screenshot" width="30%">
-  <img src="docs/assets/macade-screenshot-2.png" alt="Macade embedded gameplay screenshot" width="30%">
-  <img src="docs/assets/macade-screenshot-3.png" alt="Macade chat and spectating screenshot" width="30%">
+  <img src="assets/macade-screenshot-1.png" alt="Macade lobby screenshot" width="30%">
+  <img src="assets/macade-screenshot-2.png" alt="Macade embedded gameplay screenshot" width="30%">
+  <img src="assets/macade-screenshot-3.png" alt="Macade chat and spectating screenshot" width="30%">
 </p>
 
 ## Why Macade

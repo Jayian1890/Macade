@@ -123,14 +123,14 @@ final class AuthenticatedHomeViewModel {
 
         let query = browser.query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
-            return systemFiltered
+            return systemFiltered.sortedByUserCountDescending()
         }
 
         return systemFiltered.filter { channel in
             channel.name.localizedCaseInsensitiveContains(query)
                 || channel.title.localizedCaseInsensitiveContains(query)
                 || channel.subtitle.localizedCaseInsensitiveContains(query)
-        }
+        }.sortedByUserCountDescending()
     }
 
     var selectedChannel: FightcadeChannel? {
@@ -162,7 +162,7 @@ final class AuthenticatedHomeViewModel {
         return usersByChannel[channelName] ?? []
     }
 
-    var popularChannels: [FightcadeChannel] { Array(channels.prefix(12)) }
+    var popularChannels: [FightcadeChannel] { Array(channels.sortedByUserCountDescending().prefix(12)) }
 
     var hiddenGemChannels: [FightcadeChannel] {
         Array(channels
@@ -171,9 +171,9 @@ final class AuthenticatedHomeViewModel {
             .prefix(12))
     }
 
-    var favoriteChannels: [FightcadeChannel] { Array(channels.filter(\.isFavorite).prefix(12)) }
+    var favoriteChannels: [FightcadeChannel] { Array(channels.filter(\.isFavorite).sortedByUserCountDescending().prefix(12)) }
 
-    var browserChannels: [FightcadeChannel] { browser.results.isEmpty ? filteredChannels : browser.results }
+    var browserChannels: [FightcadeChannel] { browser.results.isEmpty ? filteredChannels : browser.results.sortedByUserCountDescending() }
 
     var browserLandingSections: [FightcadeWelcomeSection] {
         dashboard?.browserSections.filter { !$0.isEmpty } ?? []
