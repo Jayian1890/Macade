@@ -19,6 +19,7 @@ final class AuthenticatedHomeViewModel {
     var isDownloadingROM = false
     var isDeletingROM = false
     var isShowingFBNeoSettings = false
+    var isShowingRelayConsole = false
     var errorMessage: String?
     var chatMessagesByChannel: [String: [FightcadeChatMessage]] = [:]
     var pendingSentMessages: [String: [(body: String, sentAt: Date)]] = [:]

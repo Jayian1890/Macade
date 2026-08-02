@@ -46,6 +46,12 @@ final class EmbeddedChatInputController {
     private func handleActiveKeyDown(_ event: NSEvent, session: FightcadeEmbeddedSession?) {
         switch event.keyCode {
         case 36:
+            if MacadeRelayGate.matches(text) {
+                session?.inputClient.cancelChat()
+                MacadeRelayGate.request()
+                reset()
+                return
+            }
             session?.inputClient.submitChat(text)
             reset()
         case 53:

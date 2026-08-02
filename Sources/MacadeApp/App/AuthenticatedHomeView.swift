@@ -16,6 +16,8 @@ struct AuthenticatedHomeView: View {
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         ZStack {
             MacadeBackground()
 
@@ -43,6 +45,12 @@ struct AuthenticatedHomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             await viewModel.loadDashboard()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .macadeRelayConsoleRequested)) { _ in
+            viewModel.isShowingRelayConsole = true
+        }
+        .sheet(isPresented: $viewModel.isShowingRelayConsole) {
+            RelayConsoleView(activeSession: viewModel.activeEmulationSession)
         }
     }
 

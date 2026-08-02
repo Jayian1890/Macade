@@ -130,6 +130,12 @@
 		BF00000B00000000000000B6 /* MacadeUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B6 /* MacadeUpdateController.swift */; };
 		BF00000B00000000000000D7 /* MacadeUpdateInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D7 /* MacadeUpdateInstaller.swift */; };
 		BF00000B00000000000000B7 /* MacadeUpdateSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B7 /* MacadeUpdateSheet.swift */; };
+		BF00000B00000000000000D8 /* MacadeRelayProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D8 /* MacadeRelayProfile.swift */; };
+		BF00000B00000000000000D9 /* MacadeRelayRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D9 /* MacadeRelayRunner.swift */; };
+		BF00000B00000000000000DA /* EmbeddedRelayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DA /* EmbeddedRelayController.swift */; };
+		BF00000B00000000000000DB /* RelayConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DB /* RelayConsoleView.swift */; };
+		BF00000B00000000000000DC /* RelayConsoleParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DC /* RelayConsoleParts.swift */; };
+		BF00000B00000000000000DD /* RelayConsoleRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DD /* RelayConsoleRecorder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -259,6 +265,12 @@
 		BF00000C00000000000000B6 /* MacadeUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeUpdateController.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000D7 /* MacadeUpdateInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeUpdateInstaller.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000B7 /* MacadeUpdateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeUpdateSheet.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000D8 /* MacadeRelayProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeRelayProfile.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000D9 /* MacadeRelayRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeRelayRunner.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000DA /* EmbeddedRelayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedRelayController.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000DB /* RelayConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleView.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000DC /* RelayConsoleParts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleParts.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000DD /* RelayConsoleRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleRecorder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -439,6 +451,8 @@
 				BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */,
 				BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */,
 				BF00000C00000000000000D1 /* MacadeControllerPreferences.swift */,
+				BF00000C00000000000000D8 /* MacadeRelayProfile.swift */,
+				BF00000C00000000000000D9 /* MacadeRelayRunner.swift */,
 			);
 			path = Fightcade;
 			sourceTree = "<group>";
@@ -531,8 +545,12 @@
 				BF00000C00000000000000D3 /* ChannelTVView.swift */,
 				BF00000C000000000000003F /* EmbeddedChatInputController.swift */,
 				BF00000C0000000000000041 /* EmbeddedInputEventRouter.swift */,
+				BF00000C00000000000000DA /* EmbeddedRelayController.swift */,
 				BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */,
 				BF00000C0000000000000045 /* EmbeddedEmulatorSessionControls.swift */,
+				BF00000C00000000000000DB /* RelayConsoleView.swift */,
+				BF00000C00000000000000DC /* RelayConsoleParts.swift */,
+				BF00000C00000000000000DD /* RelayConsoleRecorder.swift */,
 				BF00000C00000000000000C1 /* NativeEmulatorOverlay.swift */,
 				BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */,
 				BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */,
@@ -770,6 +788,10 @@
 				BF00000B000000000000003F /* EmbeddedChatInputController.swift in Sources */,
 				BF00000B0000000000000040 /* SDLScancodeMapper.swift in Sources */,
 				BF00000B0000000000000041 /* EmbeddedInputEventRouter.swift in Sources */,
+				BF00000B00000000000000DA /* EmbeddedRelayController.swift in Sources */,
+				BF00000B00000000000000DB /* RelayConsoleView.swift in Sources */,
+				BF00000B00000000000000DC /* RelayConsoleParts.swift in Sources */,
+				BF00000B00000000000000DD /* RelayConsoleRecorder.swift in Sources */,
 				BF00000B0000000000000015 /* FightcadeRuntime.swift in Sources */,
 				BF00000B00000000000000D5 /* FightcadeRuntimeManifest.swift in Sources */,
 				BF00000B0000000000000016 /* FightcadeROMDownloader.swift in Sources */,
@@ -788,6 +810,8 @@
 				BF00000B00000000000000A5 /* FightcadeProxyDiagnostics.swift in Sources */,
 				BF00000B000000000000001F /* FightcadeFBNeoConfig.swift in Sources */,
 				BF00000B00000000000000D1 /* MacadeControllerPreferences.swift in Sources */,
+				BF00000B00000000000000D8 /* MacadeRelayProfile.swift in Sources */,
+				BF00000B00000000000000D9 /* MacadeRelayRunner.swift in Sources */,
 				BF00000B0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift in Sources */,
 				BF00000B00000000000000C0 /* ChatTranslationRequestBuilder.swift in Sources */,
 				BF00000B0000000000000021 /* ChannelHeaderView.swift in Sources */,

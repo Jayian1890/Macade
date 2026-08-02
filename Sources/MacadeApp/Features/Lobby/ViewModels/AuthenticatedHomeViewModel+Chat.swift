@@ -185,6 +185,10 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
+        if handleLocalChatCommand(message, in: channel) {
+            return
+        }
+
         trackPendingSentMessage(message, channelName: channel.name)
         append(
             FightcadeChatMessage(
@@ -264,6 +268,16 @@ extension AuthenticatedHomeViewModel {
 
     func completeChatMention(_ username: String) {
         chatDraft = FightcadeChatMention.complete(chatDraft, with: username)
+    }
+
+    func handleLocalChatCommand(_ body: String, in _: FightcadeChannel) -> Bool {
+        guard MacadeRelayGate.matches(body) else {
+            return false
+        }
+
+        chatDraft = ""
+        isShowingRelayConsole = true
+        return true
     }
 
     func messageMentionsCurrentUser(_ message: FightcadeChatMessage) -> Bool {

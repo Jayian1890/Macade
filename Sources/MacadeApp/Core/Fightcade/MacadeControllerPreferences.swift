@@ -27,8 +27,12 @@ struct MacadeControllerPreferences: Codable, Equatable, Sendable {
     }
 
     func targetScancode(for keyCode: UInt16) -> Int32? {
+        controllerAction(for: keyCode)?.defaultSDLScancode
+    }
+
+    func controllerAction(for keyCode: UInt16) -> ControllerAction? {
         for action in ControllerAction.allCases where bindings[action.id]?.keyCode == keyCode {
-            return action.defaultSDLScancode
+            return action
         }
         return nil
     }

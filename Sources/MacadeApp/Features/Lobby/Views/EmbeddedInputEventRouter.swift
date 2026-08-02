@@ -7,6 +7,7 @@ final class EmbeddedInputEventRouter {
 
     private weak var session: FightcadeEmbeddedSession?
     private var chatInput = EmbeddedChatInputController()
+    private var relayInput = EmbeddedRelayController()
     private var localMonitor: Any?
     private var globalMonitor: Any?
     private var diagnosticCount = 0
@@ -29,6 +30,7 @@ final class EmbeddedInputEventRouter {
     func bind(session: FightcadeEmbeddedSession?) {
         self.session = session
         chatInput = EmbeddedChatInputController()
+        relayInput.reset()
         startMonitors()
         appendDiagnostic("bind session=\(session?.id.uuidString ?? "nil") active=\(session?.isActive == true)\n")
     }
@@ -36,6 +38,7 @@ final class EmbeddedInputEventRouter {
     func unbind(session: FightcadeEmbeddedSession?) {
         if self.session === session {
             self.session = nil
+            relayInput.reset()
             appendDiagnostic("unbind session=\(session?.id.uuidString ?? "nil")\n")
         }
     }
@@ -65,11 +68,19 @@ final class EmbeddedInputEventRouter {
                 appendDiagnostic("chat-consumed keyDown keyCode=\(event.keyCode) chars=\(event.charactersIgnoringModifiers ?? "")\n")
                 return true
             }
+            if relayInput.keyDown(with: event, session: session) {
+                appendDiagnostic("relay-consumed keyDown keyCode=\(event.keyCode) chars=\(event.charactersIgnoringModifiers ?? "")\n")
+                return true
+            }
             send(event: event, isPressed: true, session: session)
             return true
         case .keyUp:
             if chatInput.keyUp(with: event) {
                 appendDiagnostic("chat-consumed keyUp keyCode=\(event.keyCode) chars=\(event.charactersIgnoringModifiers ?? "")\n")
+                return true
+            }
+            if relayInput.keyUp(with: event) {
+                appendDiagnostic("relay-consumed keyUp keyCode=\(event.keyCode) chars=\(event.charactersIgnoringModifiers ?? "")\n")
                 return true
             }
             send(event: event, isPressed: false, session: session)
@@ -117,6 +128,7 @@ final class EmbeddedInputEventRouter {
         guard let responder = NSApp.keyWindow?.firstResponder else { return false }
         if responder is NSTextView { return true }
         if responder is NSTextField { return true }
+        if responder is RelayCaptureResponder { return true }
         return false
     }
 

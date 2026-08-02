@@ -52,6 +52,10 @@ struct ChatInput: View {
             .frame(height: 50)
         }
         .onAppear { isChatFocused = true }
+        .onChange(of: viewModel.chatDraft) { _, draft in
+            guard !isTranslatingDraft else { return }
+            _ = viewModel.handleLocalChatCommand(draft, in: channel)
+        }
         .translationTask(outgoingConfiguration) { session in
             await translateAndSendPendingDraft(with: session)
         }
@@ -173,6 +177,10 @@ struct ChatInput: View {
         guard !isTranslatingDraft else { return }
         let body = String(viewModel.chatDraft.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500))
         guard !body.isEmpty else { return }
+        if viewModel.handleLocalChatCommand(body, in: channel) {
+            refocusChat()
+            return
+        }
         guard let target = selectedInputTargetIdentifier else {
             viewModel.sendChat(to: channel)
             refocusChat()
