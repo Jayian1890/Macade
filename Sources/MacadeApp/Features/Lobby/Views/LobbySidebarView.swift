@@ -13,7 +13,6 @@ struct LobbySidebarView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: MacadeSpacing.medium) {
                     filters
-                    ChallengeSidebarSection(viewModel: viewModel)
                     joinedSection
                     FriendsSidebarSection(viewModel: viewModel)
                 }

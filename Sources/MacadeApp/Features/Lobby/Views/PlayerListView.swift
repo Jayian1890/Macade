@@ -72,7 +72,9 @@ struct PlayerListView: View {
 
             if let detailRow = state.detailRow {
                 PlayerDetailPane(
+                    channel: channel,
                     user: detailRow.user,
+                    viewModel: viewModel,
                     isChallengeable: detailRow.isChallengeable,
                     isChallenging: detailRow.isChallenging,
                     isCurrentUser: detailRow.isCurrentUser,

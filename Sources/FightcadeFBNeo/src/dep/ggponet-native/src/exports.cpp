@@ -64,6 +64,18 @@ bool __cdecl ggpo_set_frame_delay(GGPOSession *session, int frame_delay)
    return session->vtable->set_frame_delay(session, frame_delay);
 }
 
+bool __cdecl ggpo_replay_get_status(GGPOSession *session, GGPOReplayStatus *status)
+{
+   return ggponet::reconstructed::replay_session_get_status(session, status) ||
+          ggponet::reconstructed::streaming_session_get_replay_status(session, status);
+}
+
+bool __cdecl ggpo_replay_seek(GGPOSession *session, int frame)
+{
+   return ggponet::reconstructed::replay_session_seek(session, frame) ||
+          ggponet::reconstructed::streaming_session_seek_replay(session, frame);
+}
+
 bool __cdecl ggpo_client_set_game_event(GGPOSession *session, GGPOClientGameEventType type, void *data)
 {
    if (session == nullptr) {

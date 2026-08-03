@@ -111,29 +111,17 @@ private struct ChallengeSidebarCard: View {
             Button(action: openAction) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
-                        Text(user?.countryFlag ?? "")
-                            .font(.system(size: 11))
-
                         Text(challenge.username)
                             .font(.system(size: 12, weight: .black, design: .rounded))
                             .foregroundStyle(MacadeColor.ink)
                             .lineLimit(1)
-
-                        Spacer(minLength: 0)
-
-                        Text(matchType)
-                            .font(.system(size: 9, weight: .black, design: .monospaced))
-                            .foregroundStyle(accent)
                     }
 
                     HStack(spacing: 5) {
-                        Text(challenge.channelName)
+                        PingQualityIcon(user?.ping, size: 9)
+
+                        Text(compactUserDetail)
                             .lineLimit(1)
-                            .help(challenge.channelName)
-
-                        Text("-")
-
-                        Text(user?.displayRank ?? "--")
                     }
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundStyle(MacadeColor.inkMuted)
@@ -143,10 +131,7 @@ private struct ChallengeSidebarCard: View {
             .buttonStyle(.plain)
 
             HStack(spacing: 6) {
-                PingQualityIcon(user?.ping, size: 9)
-
                 Spacer(minLength: 0)
-
                 actionButtons
             }
         }
@@ -169,8 +154,11 @@ private struct ChallengeSidebarCard: View {
         }
     }
 
-    private var matchType: String {
-        challenge.ranked == 0 ? "UNR" : "FT\(challenge.ranked)"
+    private var compactUserDetail: String {
+        let country = user?.countryFlag.nonEmpty ?? "--"
+        let ping = user?.ping.map { "\($0)ms" } ?? "--ms"
+        let rank = user?.displayRank ?? "--"
+        return "\(country) · \(ping) · \(rank)"
     }
 
     private func iconButton(
@@ -189,5 +177,96 @@ private struct ChallengeSidebarCard: View {
         .buttonStyle(.plain)
         .disabled(isBusy)
         .help(help)
+    }
+}
+
+struct ChallengeChatRow: View {
+    enum Mode {
+        case incoming
+        case outgoing
+    }
+
+    let challenge: FightcadeChallenge
+    let user: FightcadeChannelUser?
+    let mode: Mode
+    let isBusy: Bool
+    let acceptAction: () -> Void
+    let rejectAction: () -> Void
+    let cancelAction: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: MacadeSpacing.small) {
+            Text("now")
+                .font(MacadeTypography.caption)
+                .foregroundStyle(MacadeColor.inkMuted.opacity(0.62))
+                .frame(width: 54, alignment: .leading)
+
+            Image(systemName: mode == .incoming ? "bolt.circle.fill" : "paperplane.circle.fill")
+                .font(.system(size: 28, weight: .black))
+                .foregroundStyle(accent)
+                .frame(width: 28, height: 28)
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(messageText)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(MacadeColor.ink)
+                    .textSelection(.enabled)
+
+                HStack(spacing: MacadeSpacing.xSmall) {
+                    PingQualityIcon(user?.ping, size: 10)
+
+                    Text(userDetail)
+                        .font(MacadeTypography.caption)
+                        .foregroundStyle(MacadeColor.inkMuted)
+
+                    Spacer(minLength: MacadeSpacing.small)
+
+                    actionButtons
+                }
+            }
+            .padding(MacadeSpacing.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(MacadeColor.panel.opacity(0.68), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(accent.opacity(0.34), lineWidth: 1))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        switch mode {
+        case .incoming:
+            Button("Decline", action: rejectAction)
+                .buttonStyle(.borderless)
+                .disabled(isBusy)
+            Button("Accept", action: acceptAction)
+                .buttonStyle(.borderedProminent)
+                .tint(MacadeColor.warning)
+                .disabled(isBusy)
+        case .outgoing:
+            Button("Cancel", action: cancelAction)
+                .buttonStyle(.borderless)
+                .disabled(isBusy)
+        }
+    }
+
+    private var accent: Color {
+        mode == .incoming ? MacadeColor.warning : MacadeColor.neonCyan
+    }
+
+    private var messageText: String {
+        switch mode {
+        case .incoming:
+            "\(challenge.username) challenged you."
+        case .outgoing:
+            "Challenge sent to \(challenge.username)."
+        }
+    }
+
+    private var userDetail: String {
+        let country = user?.countryFlag.nonEmpty ?? "--"
+        let ping = user?.ping.map { "\($0)ms" } ?? "--ms"
+        let rank = user?.displayRank ?? "Unranked"
+        return "\(country) · \(ping) · Rank \(rank)"
     }
 }

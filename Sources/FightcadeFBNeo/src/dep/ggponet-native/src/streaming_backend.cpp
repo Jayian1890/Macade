@@ -56,7 +56,9 @@ struct StreamingBackend {
    size_t send_offset;
    std::map<unsigned int, int> pending_commands;
    std::deque<TcpEvent> events;
-   std::deque<GameInputRecord> inputs;
+   std::vector<GameInputRecord> inputs;
+   std::vector<unsigned char> initial_state;
+   unsigned int input_cursor;
    std::string p1;
    std::string p2;
    std::string blurb;
@@ -384,6 +386,7 @@ bool process_event(StreamingBackend *backend, const TcpEvent &event)
       std::vector<unsigned char> state(static_cast<size_t>(event.state_size));
       uLongf state_size = static_cast<uLongf>(state.size());
       if (uncompress(state.data(), &state_size, event.compressed_state.data(), event.compressed_state.size()) == Z_OK) {
+         backend->initial_state.assign(state.data(), state.data() + state_size);
          backend->callbacks.load_game_state(state.data(), static_cast<int>(state_size));
       }
    } else if (event.type == 0x10) {
@@ -414,13 +417,12 @@ bool __cdecl streaming_idle(GGPOSession *session, int timeout)
 bool __cdecl streaming_synchronize_input(GGPOSession *session, void *values, int size, int players)
 {
    auto *backend = reinterpret_cast<StreamingBackend *>(session);
-   if (backend->inputs.empty()) {
+   if (backend->input_cursor >= backend->inputs.size()) {
       return false;
    }
    const int copied_players = players < 3 ? players : 2;
    const size_t copied_size = static_cast<size_t>(size * copied_players);
-   std::memcpy(values, backend->inputs.front().bits, copied_size);
-   backend->inputs.pop_front();
+   std::memcpy(values, backend->inputs[backend->input_cursor++].bits, copied_size);
    return true;
 }
 
@@ -464,6 +466,7 @@ GGPOSession *create_streaming_session(GGPOSessionCallbacks *callbacks, const cha
    backend->match_id = match_id != nullptr ? match_id : "";
    backend->send_offset = 0;
    backend->spectator_count = 0;
+   backend->input_cursor = 0;
    if (backend->socket_fd >= 0) {
       send_version(backend);
    } else {
@@ -472,5 +475,23 @@ GGPOSession *create_streaming_session(GGPOSessionCallbacks *callbacks, const cha
    backend->callbacks.begin_game(backend->game.data());
    return reinterpret_cast<GGPOSession *>(backend);
 }
-
+bool streaming_session_get_replay_status(GGPOSession *session, GGPOReplayStatus *status) {
+   if (session == nullptr || status == nullptr || session->vtable != &streaming_vtable) return false;
+   auto *backend = reinterpret_cast<StreamingBackend *>(session);
+   status->seekable = !backend->initial_state.empty();
+   status->current_frame = static_cast<int>(backend->input_cursor);
+   status->total_frames = static_cast<int>(backend->inputs.size());
+   status->buffered_frames = status->total_frames;
+   return status->seekable != 0;
+}
+bool streaming_session_seek_replay(GGPOSession *session, int frame) {
+   if (session == nullptr || session->vtable != &streaming_vtable) return false;
+   auto *backend = reinterpret_cast<StreamingBackend *>(session);
+   if (backend->initial_state.empty()) return false;
+   const int target = std::max(0, std::min(frame, static_cast<int>(backend->inputs.size())));
+   backend->callbacks.load_game_state(backend->initial_state.data(), static_cast<int>(backend->initial_state.size()));
+   backend->input_cursor = 0;
+   while (static_cast<int>(backend->input_cursor) < target) if (!backend->callbacks.advance_frame(0)) return false;
+   return true;
+}
 }

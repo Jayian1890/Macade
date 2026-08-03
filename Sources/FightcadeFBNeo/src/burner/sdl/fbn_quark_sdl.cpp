@@ -357,6 +357,7 @@ bool QuarkInit(const char *connect)
    kNetSpectator = 0;
    kNetQuarkId[0] = 0;
    bForce60Hz = 0;
+   QuarkReplayResetControls();
    ranked_match = 0;
    local_player = 0;
    frame_delay = 0;
@@ -434,6 +435,7 @@ void QuarkEnd()
 void QuarkRunIdle(int ms)
 {
    char chat[160];
+   QuarkReplayApplyControls();
    if (MacadeEmbeddedConsumeChatSubmit(chat, sizeof(chat))) {
       QuarkSendChatText(chat);
    }

@@ -13,6 +13,7 @@ void MacadeEmbeddedSetOverlaySpectators(int spectators);
 void MacadeEmbeddedSetOverlayStats(int ping, int delay);
 void MacadeEmbeddedSetOverlayMatchEnded();
 void MacadeEmbeddedAddOverlayChatLine(const char* name, const char* text);
+void MacadeEmbeddedSetReplayStatus(int currentFrame, int totalFrames, int bufferedFrames, int seekable, int paused, int fastForwarding);
 int MacadeEmbeddedConsumeChatSubmit(char* text, int size);
 
 extern "C" int MacadeEmbeddedKeyState(int scancode);

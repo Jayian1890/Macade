@@ -212,6 +212,8 @@ private actor RecordingLobbyService: FightcadeLobbyServicing {
 
     func loadUpcomingEvents(limit: Int) async throws -> [FightcadeEvent] { [] }
 
+    func loadRecentMatches(for username: String, gameID: String, limit: Int) async throws -> [FightcadeRecentMatch] { [] }
+
     func setFavorite(_ isFavorite: Bool, for channel: FightcadeChannel) async throws {}
 
     func join(channel: FightcadeChannel) async throws {

@@ -5,6 +5,7 @@ import AppKit
 @MainActor
 protocol FightcadeLaunching: Sendable {
     func canLaunchLocalGame(emulator: String) -> Bool
+    func canLaunchFightcadeReplay(emulator: String) -> Bool
     func hasLocalROM(emulator: String, gameID: String) -> Bool
     func open(_ route: FightcadeLaunchRoute) async throws
     func openEmbedded(_ launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedSession
@@ -28,6 +29,16 @@ struct FightcadeLauncher: FightcadeLaunching {
     func canLaunchLocalGame(emulator: String) -> Bool {
         guard let runtimeRoot = try? runtime.root(),
               runtimeManifest(in: runtimeRoot).supportsEmbedded(emulator: emulator),
+              (try? emulatorExecutable(emulator: emulator, runtime: runtimeRoot)) != nil else {
+            return false
+        }
+
+        return true
+    }
+
+    func canLaunchFightcadeReplay(emulator: String) -> Bool {
+        guard let runtimeRoot = try? runtime.root(),
+              runtimeManifest(in: runtimeRoot).supports(.fightcadeSpectate, emulator: emulator),
               (try? emulatorExecutable(emulator: emulator, runtime: runtimeRoot)) != nil else {
             return false
         }

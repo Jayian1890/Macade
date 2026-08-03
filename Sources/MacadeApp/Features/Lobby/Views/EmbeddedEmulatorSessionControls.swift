@@ -11,6 +11,10 @@ struct EmbeddedEmulatorSessionControls: View {
 
     var body: some View {
         HStack(spacing: MacadeSpacing.xSmall) {
+            if session.mode == .replay {
+                ReplayPlaybackControls(session: session)
+            }
+
             recordMenu
             scaleMenu
             scanlinesButton
@@ -137,5 +141,73 @@ struct EmbeddedEmulatorSessionControls: View {
             "Status: \(session.statusText)",
             "Log: \(session.logURL.path)"
         ].joined(separator: "\n")
+    }
+}
+
+private struct ReplayPlaybackControls: View {
+    let session: FightcadeEmbeddedSession
+    @State private var scrubFrame = 0.0
+    @State private var isScrubbing = false
+
+    private let stepFrames = 300
+
+    var body: some View {
+        if let state = session.overlayState?.replayControl {
+            HStack(spacing: 5) {
+                iconButton("backward.fill", help: "Reverse 5 seconds") {
+                    session.inputClient.stepReplay(by: -stepFrames)
+                }
+
+                iconButton(state.isPaused ? "play.fill" : "pause.fill", help: state.isPaused ? "Play" : "Pause") {
+                    session.inputClient.setReplayPaused(!state.isPaused)
+                }
+
+                iconButton("forward.fill", isActive: state.isFastForwarding, help: "Fast forward") {
+                    session.inputClient.setReplayFastForwarding(!state.isFastForwarding)
+                }
+
+                Slider(
+                    value: Binding(
+                        get: { isScrubbing ? scrubFrame : Double(state.currentFrame) },
+                        set: { scrubFrame = $0; isScrubbing = true }
+                    ),
+                    in: 0...Double(max(state.totalFrames, state.bufferedFrames, 1)),
+                    step: 1,
+                    onEditingChanged: scrubChanged
+                )
+                .frame(width: 132)
+                .disabled(!state.isSeekable)
+
+                Text(frameText(state))
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .foregroundStyle(MacadeColor.inkMuted)
+                    .frame(width: 86, alignment: .trailing)
+            }
+            .help(state.isSeekable ? "Scrub through buffered replay frames" : "Replay is buffering before seeking is available")
+        }
+    }
+
+    private func iconButton(_ name: String, isActive: Bool = false, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: name)
+                .font(.system(size: 10, weight: .black))
+                .frame(width: 22, height: 22)
+                .foregroundStyle(isActive ? MacadeColor.midnight : MacadeColor.inkMuted)
+                .background(isActive ? MacadeColor.warning : MacadeColor.panel.opacity(0.82), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+
+    private func scrubChanged(_ editing: Bool) {
+        guard !editing else { return }
+        session.inputClient.seekReplay(to: Int(scrubFrame.rounded()))
+        isScrubbing = false
+    }
+
+    private func frameText(_ state: FightcadeReplayControlState) -> String {
+        let total = max(state.totalFrames, state.bufferedFrames)
+        guard total > 0 else { return "-- / --" }
+        return "\(state.currentFrame) / \(total)"
     }
 }

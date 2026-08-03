@@ -45,6 +45,22 @@ final class FightcadeEmbeddedInputClient: @unchecked Sendable {
         send("volume \(max(0, min(100, volume)))")
     }
 
+    func setReplayPaused(_ isPaused: Bool) {
+        send("replayPause \(isPaused ? 1 : 0)")
+    }
+
+    func setReplayFastForwarding(_ isFastForwarding: Bool) {
+        send("replayFastForward \(isFastForwarding ? 1 : 0)")
+    }
+
+    func seekReplay(to frame: Int) {
+        send("replaySeek \(max(0, frame))")
+    }
+
+    func stepReplay(by frameDelta: Int) {
+        send("replayStep \(frameDelta)")
+    }
+
     func close() {
         lock.withLock {
             if socketDescriptor >= 0 {

@@ -121,14 +121,15 @@ extension AuthenticatedHomeViewModel {
             }
             activeMatchOpponentUsername = nil
             activeMatchOpponentChannelName = nil
-            channelTVStatusText = "Downloading replay..."
-
-            let replayURL = try await cachedFightcadeReplayURL(for: link)
-            guard !Task.isCancelled else { return }
             channelTVStatusText = "Tuning replay \(link.replayID)..."
-            let session = try await launcher.openEmbedded(.replay(
+            let session = try await launcher.openEmbedded(.replayStream(
                 channelID: channel.id,
-                launch: FightcadeReplayLaunch(emulator: link.emulator, gameID: link.gameID, replayPath: replayURL.path)
+                launch: FightcadeReplayStreamLaunch(
+                    emulator: link.emulator,
+                    gameID: link.gameID,
+                    quarkID: "\(link.replayID).7",
+                    port: FightcadeReplayStreamLaunch.defaultPort
+                )
             ))
             guard !Task.isCancelled, isShowingChannelTV else {
                 session.stop()
@@ -184,7 +185,7 @@ extension AuthenticatedHomeViewModel {
             .appendingPathComponent(link.gameID)
     }
 
-    private func waitForFightcadeReplaySession(_ session: FightcadeEmbeddedSession) async {
+    func waitForFightcadeReplaySession(_ session: FightcadeEmbeddedSession) async {
         while !Task.isCancelled,
               isShowingChannelTV,
               activeEmulationSession?.id == session.id,

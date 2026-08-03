@@ -93,6 +93,19 @@ struct FightcadeReplayLaunch: Equatable, Sendable {
     }
 }
 
+struct FightcadeReplayStreamLaunch: Equatable, Sendable {
+    static let defaultPort = 7100
+
+    let emulator: String
+    let gameID: String
+    let quarkID: String
+    let port: Int
+
+    var quarkCommand: String {
+        "quark:stream,\(gameID),\(quarkID),\(port)"
+    }
+}
+
 struct FightcadeMatchStart: Equatable, Sendable {
     let channelName: String
     let gameID: String?

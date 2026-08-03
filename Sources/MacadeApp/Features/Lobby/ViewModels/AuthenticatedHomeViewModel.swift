@@ -13,6 +13,14 @@ final class AuthenticatedHomeViewModel {
     var isJoining = false
     var isRestoringJoinedChannels = false
     var restoringJoinedChannelCount = 0
+    var isShowingStartupLoading = true
+    var startupLoadingTitle = "Opening Lobby"
+    var startupLoadingDetail = "Preparing your Fightcade session."
+    var startupLoadingProgress = 0.34
+    var startupLoadingDetails = [
+        "Session restored",
+        "Preparing lobby connection"
+    ]
     var isLeavingChannel = false
     var isSendingChat = false
     var isLaunchingGame = false
@@ -25,6 +33,7 @@ final class AuthenticatedHomeViewModel {
     var pendingSentMessages: [String: [(body: String, sentAt: Date)]] = [:]
     var detectedChatLanguageIdentifiersByChannel: [String: Set<String>] = [:]
     var usersByChannel: [String: [FightcadeChannelUser]] = [:]
+    var recentMatchStatesByKey: [FightcadeRecentMatchKey: FightcadeRecentMatchState] = [:]
     var incomingChallenges: [FightcadeChallenge] = []
     var outgoingChallenges: [FightcadeChallenge] = []
     var autoMatchStatesByChannel: [String: FightcadeAutoMatchState] = [:]
@@ -181,18 +190,51 @@ final class AuthenticatedHomeViewModel {
         isLoading = true
         errorMessage = nil
         let savedJoinedChannelCount = joinedChannelStore.joinedChannelIDs(for: session).count
+        updateStartupLoading(
+            title: "Opening Lobby",
+            detail: "Loading local profile for \(session.displayName).",
+            progress: 0.38,
+            details: startupDetails(savedJoinedChannelCount: savedJoinedChannelCount, current: "Loading friends and saved rooms")
+        )
         if savedJoinedChannelCount > 0 {
             restoringJoinedChannelCount = savedJoinedChannelCount
             isRestoringJoinedChannels = true
         }
         await loadFriendsIfNeeded()
+        updateStartupLoading(
+            title: "Opening Lobby",
+            detail: "Starting lobby event stream.",
+            progress: 0.46,
+            details: startupDetails(savedJoinedChannelCount: savedJoinedChannelCount, current: "Loaded friends")
+        )
         await startListeningForEvents()
+        updateStartupLoading(
+            title: "Loading Channels",
+            detail: "Checking cached channel data while Fightcade connects.",
+            progress: 0.54,
+            details: startupDetails(savedJoinedChannelCount: savedJoinedChannelCount, current: "Event stream ready")
+        )
         await loadCachedChannelsIfAvailable(replacingCurrentDashboard: false)
-        defer { isLoading = false }
+        updateStartupLoading(
+            title: "Connecting to Fightcade",
+            detail: "Opening the encrypted lobby socket.",
+            progress: 0.62,
+            details: startupDetails(savedJoinedChannelCount: savedJoinedChannelCount, current: "Authenticating lobby connection")
+        )
+        defer {
+            isLoading = false
+            completeStartupLoadingIfReady()
+        }
 
         do {
             let loadedDashboard = try await lobbyService.connect(for: session)
             let mergedChannels = channels.mergingLiveChannels(loadedDashboard.channels)
+            updateStartupLoading(
+                title: "Syncing Channels",
+                detail: "Received \(loadedDashboard.channels.count) active Fightcade channels.",
+                progress: 0.78,
+                details: startupDetails(savedJoinedChannelCount: savedJoinedChannelCount, current: "Merging live channel list")
+            )
             applyDashboard(
                 FightcadeDashboard(
                     connectedUsername: loadedDashboard.connectedUsername,
@@ -206,15 +248,42 @@ final class AuthenticatedHomeViewModel {
             saveChannelsToCache(mergedChannels)
             loadUpcomingEvents()
             startChannelRefreshLoop()
+            if isRestoringJoinedChannels {
+                updateRestoredChannelStartupProgress()
+            } else {
+                finishStartupLoading()
+            }
         } catch let error as FightcadeLobbyError {
             isRestoringJoinedChannels = false
             restoringJoinedChannelCount = 0
             errorMessage = error.localizedDescription
+            finishStartupLoading()
         } catch {
             isRestoringJoinedChannels = false
             restoringJoinedChannelCount = 0
             errorMessage = "Could not load lobby."
+            finishStartupLoading()
         }
+    }
+
+    private func updateRestoredChannelStartupProgress() {
+        guard isShowingStartupLoading, restoringJoinedChannelCount > 0 else {
+            return
+        }
+
+        let remainingCount = restoringJoinedChannelIDs.count
+        let restoredCount = max(0, restoringJoinedChannelCount - remainingCount)
+        let restoredFraction = Double(restoredCount) / Double(max(restoringJoinedChannelCount, 1))
+        updateStartupLoading(
+            title: "Rejoining Rooms",
+            detail: "Rejoined \(restoredCount) of \(restoringJoinedChannelCount) saved rooms.",
+            progress: 0.84 + min(restoredFraction, 1) * 0.12,
+            details: [
+                "Restoring saved room membership",
+                "\(remainingCount) room\(remainingCount == 1 ? "" : "s") remaining",
+                "Loading current player lists as rooms respond"
+            ]
+        )
     }
 
     func refresh() {
@@ -338,6 +407,8 @@ final class AuthenticatedHomeViewModel {
                 restoringJoinedChannelIDs.remove(channel.id)
                 isJoining = !joiningChannelIDs.isEmpty
                 isRestoringJoinedChannels = !restoringJoinedChannelIDs.isEmpty
+                updateRestoredChannelStartupProgress()
+                completeStartupLoadingIfReady()
             }
 
             do {

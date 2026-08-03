@@ -62,7 +62,6 @@ extension AuthenticatedHomeViewModel {
 
             playIncomingChallengeSound()
             rememberIncomingChallenge(challenge)
-            appendSystemMessage("\(challenge.username) challenged you", channelName: challenge.channelName)
         case .challengeCanceled(let challenge):
             clearChallenge(challenge)
             appendSystemMessage("\(challenge.username) canceled the challenge", channelName: challenge.channelName)

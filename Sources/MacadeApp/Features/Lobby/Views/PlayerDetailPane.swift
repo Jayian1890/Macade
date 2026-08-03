@@ -85,20 +85,26 @@ struct PlayerAvatarView: View {
 }
 
 struct PlayerDetailPane: View {
+    let channel: FightcadeChannel
     let user: FightcadeChannelUser
+    @Bindable var viewModel: AuthenticatedHomeViewModel
     let isChallengeable: Bool
     let isChallenging: Bool
     let isCurrentUser: Bool
     @Binding var isMinimized: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 6) {
             header
 
             if !isMinimized {
-                ForEach(detailItems) { item in
-                    detailRow(item)
+                LazyVGrid(columns: detailColumns, alignment: .leading, spacing: 6) {
+                    ForEach(detailItems) { item in
+                        detailChip(item)
+                    }
                 }
+
+                PlayerRecentMatchesView(channel: channel, user: user, viewModel: viewModel)
             }
         }
         .padding(MacadeSpacing.small)
@@ -110,9 +116,16 @@ struct PlayerDetailPane: View {
         )
     }
 
+    private var detailColumns: [GridItem] {
+        [
+            GridItem(.flexible(minimum: 82), spacing: 6),
+            GridItem(.flexible(minimum: 82), spacing: 6)
+        ]
+    }
+
     private var header: some View {
         HStack(spacing: MacadeSpacing.small) {
-            PlayerAvatarView(user: user, size: 46, borderColor: headerAccent)
+            PlayerAvatarView(user: user, size: 42, borderColor: headerAccent)
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: MacadeSpacing.xSmall) {
@@ -131,7 +144,7 @@ struct PlayerDetailPane: View {
                     }
                 }
 
-                Text("\(user.countryFlag) \(user.listStatusText.capitalized)")
+                Text(statusText)
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundStyle(user.statusAccent)
                     .lineLimit(1)
@@ -152,12 +165,11 @@ struct PlayerDetailPane: View {
         }
     }
 
-    private func detailRow(_ item: DetailItem) -> some View {
-        HStack(alignment: .top, spacing: MacadeSpacing.xSmall) {
+    private func detailChip(_ item: DetailItem) -> some View {
+        HStack(alignment: .center, spacing: MacadeSpacing.xSmall) {
             Image(systemName: item.icon)
                 .font(.system(size: 10, weight: .black))
-                .frame(width: 14)
-                .padding(.top, 2)
+                .frame(width: 13)
                 .help(item.help)
 
             VStack(alignment: .leading, spacing: 1) {
@@ -168,15 +180,22 @@ struct PlayerDetailPane: View {
                 Text(item.value)
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(item.accent)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.88)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
+        .background(MacadeColor.midnight.opacity(0.34), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(MacadeColor.stroke.opacity(0.52), lineWidth: 1))
         .foregroundStyle(item.accent)
+        .help(item.value)
     }
 
     private var detailItems: [DetailItem] {
         [
-            DetailItem(icon: "person.text.rectangle", label: "Name", value: user.name, help: "Player name", accent: MacadeColor.ink),
+            DetailItem(icon: user.statusSymbolName, label: "Status", value: statusText, help: "Status", accent: user.statusAccent),
             DetailItem(icon: "rosette", label: "Rank", value: user.displayRank ?? "Unranked", help: "Rank", accent: user.rankAccent),
             DetailItem(icon: user.connectionSymbolName, label: "Connection", value: connectionText, help: "Connection", accent: user.connectionAccent),
             DetailItem(icon: challengeIcon, label: "Challenge", value: challengeText, help: "Challenge", accent: challengeAccent)
@@ -195,9 +214,13 @@ struct PlayerDetailPane: View {
         return user.statusAccent
     }
 
+    private var statusText: String {
+        "\(user.countryFlag) \(user.listStatusText.capitalized)"
+    }
+
     private var connectionText: String {
         if let ping = user.ping {
-            return "\(user.connectionDetail), \(ping) ms"
+            return "\(user.connectionDetail) · \(ping)ms"
         }
 
         return user.connectionDetail

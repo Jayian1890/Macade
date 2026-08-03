@@ -40,8 +40,20 @@ struct AuthenticatedHomeView: View {
             }
             .background(.black.opacity(0.22))
             .transition(.opacity)
+
+            if viewModel.isShowingStartupLoading {
+                StartupLoadingView(
+                    title: viewModel.startupLoadingTitle,
+                    detail: viewModel.startupLoadingDetail,
+                    progress: viewModel.startupLoadingProgress,
+                    details: viewModel.startupLoadingDetails
+                )
+                .zIndex(10)
+                .transition(.opacity)
+            }
         }
         .animation(.easeInOut(duration: 0.28), value: viewModel.isRestoringJoinedChannels)
+        .animation(.smooth(duration: 0.2), value: viewModel.isShowingStartupLoading)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task {
             await viewModel.loadDashboard()

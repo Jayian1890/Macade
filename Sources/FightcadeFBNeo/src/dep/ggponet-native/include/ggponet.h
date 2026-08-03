@@ -179,6 +179,13 @@ typedef struct {
    } timesync;
 } GGPONetworkStats;
 
+typedef struct {
+   int seekable;
+   int current_frame;
+   int total_frames;
+   int buffered_frames;
+} GGPOReplayStatus;
+
 /*
  * ggpo_start_session --
  *
@@ -284,6 +291,12 @@ __declspec(dllexport) bool __cdecl ggpo_get_stats(GGPOSession *,
 
 __declspec(dllexport) bool __cdecl ggpo_set_frame_delay(GGPOSession *,
                                                         int frame_delay);
+
+__declspec(dllexport) bool __cdecl ggpo_replay_get_status(GGPOSession *,
+                                                          GGPOReplayStatus *status);
+
+__declspec(dllexport) bool __cdecl ggpo_replay_seek(GGPOSession *,
+                                                    int frame);
 
 /*
  * ggpo_log --

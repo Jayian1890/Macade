@@ -95,6 +95,18 @@ final class ChannelTVTests: XCTestCase {
         XCTAssertTrue(FightcadeEmbeddedLaunch.replay(channelID: "sfiii3nr1", launch: launch).requiresQuark)
     }
 
+    func testReplayStreamLaunchUsesFightcadeWebRedirectShape() {
+        let launch = FightcadeReplayStreamLaunch(
+            emulator: "fbneo",
+            gameID: "sfiii3nr1",
+            quarkID: "1785591363134-2108.7",
+            port: 7100
+        )
+
+        XCTAssertEqual(launch.quarkCommand, "quark:stream,sfiii3nr1,1785591363134-2108.7,7100")
+        XCTAssertTrue(FightcadeEmbeddedLaunch.replayStream(channelID: "sfiii3nr1", launch: launch).requiresQuark)
+    }
+
     private func makeChannel(
         gameID: String,
         title: String = "Street Fighter III",

@@ -285,4 +285,16 @@ struct FightcadeEmbeddedLaunch: Sendable, Equatable {
             match: nil
         )
     }
+
+    static func replayStream(channelID: FightcadeChannel.ID, launch: FightcadeReplayStreamLaunch) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(
+            channelID: channelID,
+            mode: .replay,
+            emulator: launch.emulator,
+            gameID: launch.gameID,
+            arguments: [launch.quarkCommand],
+            title: "Replay · \(launch.gameID)",
+            match: nil
+        )
+    }
 }

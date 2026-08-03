@@ -51,6 +51,10 @@
 		BF00000B0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */; };
 		BF00000B00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */; };
 		BF00000B00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */; };
+		BF00000B00000000000000E7 /* FightcadeRecentMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E7 /* FightcadeRecentMatch.swift */; };
+		BF00000B00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift */; };
+		BF00000B00000000000000E9 /* AuthenticatedHomeViewModel+RecentMatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E9 /* AuthenticatedHomeViewModel+RecentMatches.swift */; };
+		BF00000B00000000000000EA /* PlayerRecentMatchesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000EA /* PlayerRecentMatchesView.swift */; };
 		BF00000B0000000000000014 /* ChannelErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000014 /* ChannelErrorBanner.swift */; };
 		BF00000B0000000000000015 /* FightcadeRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000015 /* FightcadeRuntime.swift */; };
 		BF00000B0000000000000016 /* FightcadeROMDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000016 /* FightcadeROMDownloader.swift */; };
@@ -195,6 +199,10 @@
 		BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Challenge.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+AutoMatch.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Events.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000E7 /* FightcadeRecentMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeRecentMatch.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyService+RecentMatches.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000E9 /* AuthenticatedHomeViewModel+RecentMatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+RecentMatches.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000EA /* PlayerRecentMatchesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerRecentMatchesView.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000014 /* ChannelErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelErrorBanner.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000015 /* FightcadeRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeRuntime.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000016 /* FightcadeROMDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeROMDownloader.swift; sourceTree = "<group>"; };
@@ -502,6 +510,7 @@
 				BF00000C0000000000000005 /* FightcadeChannel.swift */,
 				BF00000C000000000000000E /* FightcadeChatMessage.swift */,
 				BF00000C00000000000000B1 /* FightcadeChatMention.swift */,
+				BF00000C00000000000000E7 /* FightcadeRecentMatch.swift */,
 				BF00000C00000000000000C6 /* FightcadeFriend.swift */,
 				BF00000C00000000000000B2 /* FightcadeMotdTextFormatter.swift */,
 				BF00000C0000000000000006 /* FightcadeDashboard.swift */,
@@ -517,6 +526,7 @@
 				BF00000C0000000000000008 /* FightcadeLobbyService.swift */,
 				BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */,
 				BF00000C00000000000000C5 /* FightcadeLobbyService+Connection.swift */,
+				BF00000C00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift */,
 				BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */,
 				BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */,
 				BF00000C00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift */,
@@ -546,6 +556,7 @@
 				BF00000C0000000000000033 /* AuthenticatedHomeViewModel+JoinedChannels.swift */,
 				BF00000C000000000000001D /* AuthenticatedHomeViewModel+LaunchAvailability.swift */,
 				BF00000C0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift */,
+				BF00000C00000000000000E9 /* AuthenticatedHomeViewModel+RecentMatches.swift */,
 				BF00000C0000000000000035 /* AuthenticatedHomeViewModel+Spectate.swift */,
 				BF00000C00000000000000D4 /* AuthenticatedHomeViewModel+ChannelTV.swift */,
 				BF00000C00000000000000D6 /* ChannelTVCandidates.swift */,
@@ -585,6 +596,7 @@
 				BF00000C0000000000000040 /* SDLScancodeMapper.swift */,
 				BF00000C0000000000000036 /* FightcadeChannelUser+Display.swift */,
 				BF00000C000000000000003D /* PlayerListView.swift */,
+				BF00000C00000000000000EA /* PlayerRecentMatchesView.swift */,
 				BF00000C0000000000000042 /* PlayerRow.swift */,
 				BF00000C000000000000003E /* PlayerDetailPane.swift */,
 				BF00000C0000000000000031 /* PingQualityIcon.swift */,
@@ -762,6 +774,7 @@
 				BF00000B00000000000000A6 /* FightcadeChannelBrowserModels.swift in Sources */,
 				BF00000B00000000000000A7 /* FightcadeLobbyService+Browser.swift in Sources */,
 				BF00000B00000000000000C5 /* FightcadeLobbyService+Connection.swift in Sources */,
+				BF00000B00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift in Sources */,
 				BF00000B00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift in Sources */,
 				BF00000B00000000000000A9 /* ChannelBrowserControls.swift in Sources */,
 				BF00000B00000000000000AA /* ChannelBrowserCards.swift in Sources */,
@@ -778,6 +791,7 @@
 				BF00000B00000000000000B1 /* FightcadeChatMention.swift in Sources */,
 				BF00000B00000000000000B2 /* FightcadeMotdTextFormatter.swift in Sources */,
 				BF00000B00000000000000C6 /* FightcadeFriend.swift in Sources */,
+				BF00000B00000000000000E7 /* FightcadeRecentMatch.swift in Sources */,
 				BF00000B000000000000000F /* FightcadeLobbyEvent.swift in Sources */,
 				BF00000B0000000000000010 /* FightcadeLobbyPayloadParser.swift in Sources */,
 				BF00000B00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift in Sources */,
@@ -791,6 +805,7 @@
 				BF00000B000000000000002E /* ChallengeBanner.swift in Sources */,
 				BF00000B000000000000002F /* ChatMessageRow.swift in Sources */,
 				BF00000B0000000000000030 /* AuthenticatedHomeViewModel+PlayerRefresh.swift in Sources */,
+				BF00000B00000000000000E9 /* AuthenticatedHomeViewModel+RecentMatches.swift in Sources */,
 				BF00000B0000000000000031 /* PingQualityIcon.swift in Sources */,
 				BF00000B00000000000000C7 /* FightcadeFriendStore.swift in Sources */,
 				BF00000B0000000000000032 /* JoinedChannelStore.swift in Sources */,
@@ -813,6 +828,7 @@
 				BF00000B0000000000000047 /* EmbeddedVideoNSView.swift in Sources */,
 				BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */,
 				BF00000B000000000000003D /* PlayerListView.swift in Sources */,
+				BF00000B00000000000000EA /* PlayerRecentMatchesView.swift in Sources */,
 				BF00000B0000000000000042 /* PlayerRow.swift in Sources */,
 				BF00000B000000000000003E /* PlayerDetailPane.swift in Sources */,
 				BF00000B0000000000000043 /* WatchMatchRow.swift in Sources */,
@@ -982,7 +998,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -996,7 +1012,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -1011,7 +1027,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1025,7 +1041,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.3.0;
+				MARKETING_VERSION = 0.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;

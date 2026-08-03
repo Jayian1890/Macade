@@ -38,7 +38,9 @@ struct ReplayInputQueue {
 struct ReplayBackend {
    const GGPOSessionVTable *vtable;
    GGPOSessionCallbacks callbacks;
-   ReplayInputQueue inputs;
+   std::vector<GameInputRecord> input_history;
+   std::vector<unsigned char> initial_state;
+   unsigned int cursor;
 };
 
 void queue_construct(ReplayInputQueue *queue)
@@ -141,15 +143,14 @@ bool __cdecl replay_idle(GGPOSession *, int timeout)
 bool __cdecl replay_synchronize_input(GGPOSession *session, void *values, int size, int players)
 {
    auto *backend = reinterpret_cast<ReplayBackend *>(session);
-   if (backend->inputs.count == 0) {
+   if (backend->cursor >= backend->input_history.size()) {
       return false;
    }
 
    const int copied_players = players < 3 ? players : 2;
    const size_t copied_size = static_cast<size_t>(size * copied_players);
-   GameInputRecord *input = queue_front(&backend->inputs);
-   std::memcpy(values, input->bits, copied_size);
-   queue_pop(&backend->inputs);
+   const GameInputRecord &input = backend->input_history[backend->cursor++];
+   std::memcpy(values, input.bits, copied_size);
    return true;
 }
 
@@ -185,7 +186,7 @@ bool __cdecl replay_set_frame_delay(GGPOSession *, int)
 
 void __cdecl replay_destroy(GGPOSession *session)
 {
-   std::free(session);
+   delete reinterpret_cast<ReplayBackend *>(session);
 }
 
 const GGPOSessionVTable replay_vtable = {
@@ -314,38 +315,81 @@ void load_replay(ReplayBackend *backend, const char *path)
    }
 
    uLongf decompressed_size = static_cast<uLongf>(payload_size);
-   uncompress(decompressed, &decompressed_size, payload, static_cast<uLong>(compressed_state_size));
+   if (uncompress(decompressed, &decompressed_size, payload, static_cast<uLong>(compressed_state_size)) != Z_OK) {
+      std::free(decompressed);
+      return;
+   }
+
+   backend->initial_state.assign(decompressed, decompressed + state_size);
 
    unsigned char *input_base = decompressed + state_size;
    for (long i = 0; i < input_count; ++i) {
       GameInputRecord input;
       game_input_construct(&input, 0, input_base + i * input_size, static_cast<int>(input_size));
-      queue_push(&backend->inputs, &input);
+      backend->input_history.push_back(input);
    }
 
    if (std::strcmp(version, "0.20") == 0) {
-      queue_pop(&backend->inputs);
+      if (!backend->input_history.empty()) {
+         backend->input_history.erase(backend->input_history.begin());
+      }
    }
 
    backend->callbacks.begin_game(game);
-   backend->callbacks.load_game_state(decompressed, static_cast<int>(state_size));
+   backend->callbacks.load_game_state(backend->initial_state.data(), static_cast<int>(backend->initial_state.size()));
+   std::free(decompressed);
 }
 
 } // namespace
 
 GGPOSession *create_replay_session(GGPOSessionCallbacks *callbacks, const char *path)
 {
-   void *storage = std::malloc(sizeof(ReplayBackend));
-   if (storage == nullptr) {
+   auto *backend = new ReplayBackend();
+   if (backend == nullptr) {
       return nullptr;
    }
 
-   auto *backend = static_cast<ReplayBackend *>(storage);
    backend->vtable = &replay_vtable;
    std::memcpy(&backend->callbacks, callbacks, sizeof(backend->callbacks));
-   queue_construct(&backend->inputs);
+   backend->cursor = 0;
    load_replay(backend, path);
    return reinterpret_cast<GGPOSession *>(backend);
+}
+
+bool replay_session_get_status(GGPOSession *session, GGPOReplayStatus *status)
+{
+   if (session == nullptr || status == nullptr || session->vtable != &replay_vtable) {
+      return false;
+   }
+
+   auto *backend = reinterpret_cast<ReplayBackend *>(session);
+   status->seekable = !backend->initial_state.empty();
+   status->current_frame = static_cast<int>(backend->cursor);
+   status->total_frames = static_cast<int>(backend->input_history.size());
+   status->buffered_frames = status->total_frames;
+   return status->seekable != 0;
+}
+
+bool replay_session_seek(GGPOSession *session, int frame)
+{
+   if (session == nullptr || session->vtable != &replay_vtable) {
+      return false;
+   }
+
+   auto *backend = reinterpret_cast<ReplayBackend *>(session);
+   if (backend->initial_state.empty()) {
+      return false;
+   }
+
+   const int target = std::max(0, std::min(frame, static_cast<int>(backend->input_history.size())));
+   backend->callbacks.load_game_state(backend->initial_state.data(), static_cast<int>(backend->initial_state.size()));
+   backend->cursor = 0;
+   while (static_cast<int>(backend->cursor) < target) {
+      if (!backend->callbacks.advance_frame(0)) {
+         return false;
+      }
+   }
+   return true;
 }
 
 }

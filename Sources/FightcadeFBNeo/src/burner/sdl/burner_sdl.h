@@ -108,6 +108,13 @@ void QuarkSendChatText(char *text);
 void QuarkSendChatCmd(char *text, char cmd);
 void QuarkUpdateStats(double fps);
 void QuarkRecordReplay();
+void QuarkReplayResetControls();
+void QuarkReplayApplyControls();
+void QuarkReplaySetPaused(int paused);
+void QuarkReplaySetFastForward(int enabled);
+void QuarkReplaySeek(int frame);
+void QuarkReplayStep(int delta);
+void QuarkReplayPublishStatus();
 
 //inpdipsw.cpp
 void InpDIPSWResetDIPs();

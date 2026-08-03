@@ -36,6 +36,7 @@ struct ChannelChatView: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
     let showsPreview: Bool
     let backgroundOpacity: Double
+    @State private var challengeAnchors: [String: ChannelChallengeAnchor] = [:]
     private let topID = "channel-chat-top"
     private let bottomID = "channel-chat-bottom"
 
@@ -54,6 +55,8 @@ struct ChannelChatView: View {
     var body: some View {
         let messages = channelMessages
         let users = channelUsers
+        let challenges = channelChallenges
+        let challengeRevision = channelChallengeRevision(challenges)
         let usersByName = users.reduce(into: [String: FightcadeChannelUser]()) { result, user in
             result[normalizedUsername(user.name)] = user
         }
@@ -87,6 +90,8 @@ struct ChannelChatView: View {
                             }
                         }
 
+                        challengeRows(anchoredTo: .top, from: challenges)
+
                         ForEach(messages) { message in
                             let chatUser = usersByName[normalizedUsername(message.username)]
                             ChatMessageRow(
@@ -99,6 +104,8 @@ struct ChannelChatView: View {
                                 viewModel: viewModel
                             )
                                 .id(message.id)
+
+                            challengeRows(anchoredTo: .message(message.id), from: challenges)
                         }
 
                         Color.clear
@@ -109,12 +116,19 @@ struct ChannelChatView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .onAppear {
+                    syncChallengeAnchors(messages: messages, challenges: challenges)
                     scrollToInitialPosition(proxy)
                 }
                 .onChange(of: messages.last?.id) { _, _ in
+                    syncChallengeAnchors(messages: messages, challenges: challenges)
+                    scrollAfterMessagesChanged(proxy)
+                }
+                .onChange(of: challengeRevision) { _, _ in
+                    syncChallengeAnchors(messages: messages, challenges: challenges)
                     scrollAfterMessagesChanged(proxy)
                 }
                 .onChange(of: channel.id) { _, _ in
+                    syncChallengeAnchors(messages: messages, challenges: challenges)
                     scrollToInitialPosition(proxy)
                 }
             }
@@ -162,6 +176,69 @@ struct ChannelChatView: View {
         viewModel.usersByChannel[channel.name] ?? []
     }
 
+    private var incomingChannelChallenges: [FightcadeChallenge] {
+        viewModel.incomingChallenges.filter { challengeMatchesChannel($0) }
+    }
+
+    private var outgoingChannelChallenges: [FightcadeChallenge] {
+        viewModel.outgoingChallenges.filter { challengeMatchesChannel($0) }
+    }
+
+    private var channelChallenges: [ChannelChallengeItem] {
+        incomingChannelChallenges.map { ChannelChallengeItem(challenge: $0, mode: .incoming) }
+            + outgoingChannelChallenges.map { ChannelChallengeItem(challenge: $0, mode: .outgoing) }
+    }
+
+    private func channelChallengeRevision(_ challenges: [ChannelChallengeItem]) -> String {
+        challenges
+            .map(\.id)
+            .joined(separator: "|")
+    }
+
+    @ViewBuilder
+    private func challengeRows(anchoredTo anchor: ChannelChallengeAnchor, from challenges: [ChannelChallengeItem]) -> some View {
+        ForEach(challenges) { item in
+            if challengeAnchors[item.id] == anchor {
+                ChallengeChatRow(
+                    challenge: item.challenge,
+                    user: viewModel.user(for: item.challenge),
+                    mode: item.mode,
+                    isBusy: viewModel.isSendingChallenge,
+                    acceptAction: { viewModel.acceptIncomingChallenge(item.challenge) },
+                    rejectAction: { viewModel.rejectIncomingChallenge(item.challenge) },
+                    cancelAction: { viewModel.cancelOutgoingChallenge(item.challenge) }
+                )
+                .id(item.id)
+            }
+        }
+    }
+
+    private func syncChallengeAnchors(messages: [FightcadeChatMessage], challenges: [ChannelChallengeItem]) {
+        let activeChallengeIDs = Set(challenges.map(\.id))
+        let visibleMessageIDs = Set(messages.map(\.id))
+        let defaultAnchor = messages.last.map { ChannelChallengeAnchor.message($0.id) } ?? .top
+        var updatedAnchors = challengeAnchors.filter { activeChallengeIDs.contains($0.key) }
+
+        for (challengeID, anchor) in updatedAnchors {
+            if case .message(let messageID) = anchor, !visibleMessageIDs.contains(messageID) {
+                updatedAnchors[challengeID] = .top
+            }
+        }
+
+        for challenge in challenges where updatedAnchors[challenge.id] == nil {
+            updatedAnchors[challenge.id] = defaultAnchor
+        }
+
+        if updatedAnchors != challengeAnchors {
+            challengeAnchors = updatedAnchors
+        }
+    }
+
+    private func challengeMatchesChannel(_ challenge: FightcadeChallenge) -> Bool {
+        normalizedUsername(challenge.channelName) == normalizedUsername(channel.name)
+            || normalizedUsername(challenge.channelName) == normalizedUsername(channel.id)
+    }
+
     private func normalizedUsername(_ value: String) -> String {
         value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
     }
@@ -178,6 +255,29 @@ struct ChannelChatView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+        }
+    }
+}
+
+private enum ChannelChallengeAnchor: Equatable {
+    case top
+    case message(FightcadeChatMessage.ID)
+}
+
+private struct ChannelChallengeItem: Identifiable {
+    let challenge: FightcadeChallenge
+    let mode: ChallengeChatRow.Mode
+
+    var id: String {
+        "\(modeID)-challenge-\(challenge.id)"
+    }
+
+    private var modeID: String {
+        switch mode {
+        case .incoming:
+            return "incoming"
+        case .outgoing:
+            return "outgoing"
         }
     }
 }

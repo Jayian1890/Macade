@@ -6,6 +6,7 @@ protocol FightcadeLobbyServicing: Sendable {
     func refreshChannels() async throws
     func searchChannels(matching query: String) async throws -> [FightcadeChannel]
     func loadUpcomingEvents(limit: Int) async throws -> [FightcadeEvent]
+    func loadRecentMatches(for username: String, gameID: String, limit: Int) async throws -> [FightcadeRecentMatch]
     func setFavorite(_ isFavorite: Bool, for channel: FightcadeChannel) async throws
     func join(channel: FightcadeChannel) async throws
     func leave(channel: FightcadeChannel) async throws

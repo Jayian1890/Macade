@@ -30,6 +30,10 @@ static void EnsureVideo();
 extern int MacadeEmbeddedVideoScale;
 extern int nAudVolume;
 extern int AudSoundSetVolume();
+extern void QuarkReplaySetPaused(int paused);
+extern void QuarkReplaySetFastForward(int enabled);
+extern void QuarkReplaySeek(int frame);
+extern void QuarkReplayStep(int delta);
 
 static int ClampVideoScale(int scale)
 {
@@ -76,6 +80,12 @@ enum {
 	kOverlayPlayerScore = 148,
 	kOverlayConnectionPhase = 3420,
 	kOverlayMatchEnded = 3424,
+	kOverlayReplayCurrentFrame = 3428,
+	kOverlayReplayTotalFrames = 3432,
+	kOverlayReplayBufferedFrames = 3436,
+	kOverlayReplaySeekable = 3440,
+	kOverlayReplayPaused = 3444,
+	kOverlayReplayFastForwarding = 3448,
 };
 
 static void Store32(int offset, uint32_t value)
@@ -244,6 +254,7 @@ void MacadeEmbeddedPumpInput()
 		int scancode = 0;
 		int videoScale = 0;
 		int volume = 0;
+		int replayValue = 0;
 		if (sscanf(buffer, "key %d %d", &pressed, &scancode) == 2 && scancode >= 0 && scancode < (int)sizeof(gKeys)) {
 			gKeys[scancode] = pressed ? 1 : 0;
 		} else if (sscanf(buffer, "videoScale %d", &videoScale) == 1) {
@@ -251,6 +262,14 @@ void MacadeEmbeddedPumpInput()
 		} else if (sscanf(buffer, "volume %d", &volume) == 1) {
 			nAudVolume = ClampVolume(volume) * 100;
 			AudSoundSetVolume();
+		} else if (sscanf(buffer, "replayPause %d", &replayValue) == 1) {
+			QuarkReplaySetPaused(replayValue);
+		} else if (sscanf(buffer, "replayFastForward %d", &replayValue) == 1) {
+			QuarkReplaySetFastForward(replayValue);
+		} else if (sscanf(buffer, "replaySeek %d", &replayValue) == 1) {
+			QuarkReplaySeek(replayValue);
+		} else if (sscanf(buffer, "replayStep %d", &replayValue) == 1) {
+			QuarkReplayStep(replayValue);
 		} else if (strcmp(buffer, "chatBegin") == 0) {
 			gChatInputActive = true;
 			gChatInput[0] = 0;
@@ -393,6 +412,18 @@ void MacadeEmbeddedAddOverlayChatLine(const char* name, const char* text)
 	StoreString(kOverlayChatLines, kOverlayChatLineNameLength, name);
 	StoreString(kOverlayChatLines + kOverlayChatLineText, kOverlayChatLineTextLength, text);
 	Store32(kOverlayChatFrames, 300);
+	BumpOverlay();
+}
+
+void MacadeEmbeddedSetReplayStatus(int currentFrame, int totalFrames, int bufferedFrames, int seekable, int paused, int fastForwarding)
+{
+	EnsureVideo();
+	Store32(kOverlayReplayCurrentFrame, currentFrame > 0 ? (uint32_t)currentFrame : 0);
+	Store32(kOverlayReplayTotalFrames, totalFrames > 0 ? (uint32_t)totalFrames : 0);
+	Store32(kOverlayReplayBufferedFrames, bufferedFrames > 0 ? (uint32_t)bufferedFrames : 0);
+	Store32(kOverlayReplaySeekable, seekable ? 1 : 0);
+	Store32(kOverlayReplayPaused, paused ? 1 : 0);
+	Store32(kOverlayReplayFastForwarding, fastForwarding ? 1 : 0);
 	BumpOverlay();
 }
 

@@ -49,6 +49,7 @@ struct FightcadeEmbeddedOverlayState: Equatable, Sendable {
     let chatLines: [ChatLine]
     let players: [Player]
     let isMatchEnded: Bool
+    let replayControl: FightcadeReplayControlState?
 
     struct ChatLine: Equatable, Sendable, Identifiable {
         var id: String { "\(name):\(text)" }
@@ -69,6 +70,20 @@ struct FightcadeEmbeddedOverlayState: Equatable, Sendable {
         var displayName: String {
             name.isEmpty ? fallbackName : name
         }
+    }
+}
+
+struct FightcadeReplayControlState: Equatable, Sendable {
+    let currentFrame: Int
+    let totalFrames: Int
+    let bufferedFrames: Int
+    let isSeekable: Bool
+    let isPaused: Bool
+    let isFastForwarding: Bool
+
+    var progress: Double {
+        guard totalFrames > 0 else { return 0 }
+        return min(max(Double(currentFrame) / Double(totalFrames), 0), 1)
     }
 }
 
@@ -302,7 +317,22 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
             chatInput: loadString(Header.overlayChatInput, length: Header.overlayChatInputLength),
             chatLines: chatLines,
             players: players,
-            isMatchEnded: loadUInt32(Header.overlayMatchEnded) != 0
+            isMatchEnded: loadUInt32(Header.overlayMatchEnded) != 0,
+            replayControl: loadReplayControlState()
+        )
+    }
+
+    private func loadReplayControlState() -> FightcadeReplayControlState? {
+        let totalFrames = Int(loadUInt32(Header.overlayReplayTotalFrames))
+        let bufferedFrames = Int(loadUInt32(Header.overlayReplayBufferedFrames))
+        guard totalFrames > 0 || bufferedFrames > 0 else { return nil }
+        return FightcadeReplayControlState(
+            currentFrame: Int(loadUInt32(Header.overlayReplayCurrentFrame)),
+            totalFrames: totalFrames,
+            bufferedFrames: bufferedFrames,
+            isSeekable: loadUInt32(Header.overlayReplaySeekable) != 0,
+            isPaused: loadUInt32(Header.overlayReplayPaused) != 0,
+            isFastForwarding: loadUInt32(Header.overlayReplayFastForwarding) != 0
         )
     }
 
@@ -388,5 +418,11 @@ final class FightcadeEmbeddedVideoStream: @unchecked Sendable {
         static let overlayPlayerScore = 148
         static let overlayConnectionPhase = overlay + 3356
         static let overlayMatchEnded = overlay + 3360
+        static let overlayReplayCurrentFrame = overlay + 3364
+        static let overlayReplayTotalFrames = overlay + 3368
+        static let overlayReplayBufferedFrames = overlay + 3372
+        static let overlayReplaySeekable = overlay + 3376
+        static let overlayReplayPaused = overlay + 3380
+        static let overlayReplayFastForwarding = overlay + 3384
     }
 }
