@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 
 @MainActor
@@ -12,8 +13,9 @@ struct MacadeUpdateInstaller {
         let mode = updateFileURL.pathExtension.lowercased() == "pkg" ? "pkg" : "app"
 
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/nohup")
         process.arguments = [
+            "/bin/sh",
             scriptURL.path,
             mode,
             installedAppURL.path,
@@ -21,11 +23,21 @@ struct MacadeUpdateInstaller {
             String(ProcessInfo.processInfo.processIdentifier),
             stagingRoot.path
         ]
-        let null = try FileHandle(forWritingTo: URL(fileURLWithPath: "/dev/null"))
-        process.standardOutput = null
-        process.standardError = null
+        let nullInput = try FileHandle(forReadingFrom: URL(fileURLWithPath: "/dev/null"))
+        let nullOutput = try FileHandle(forWritingTo: URL(fileURLWithPath: "/dev/null"))
+        process.standardInput = nullInput
+        process.standardOutput = nullOutput
+        process.standardError = nullOutput
         try process.run()
+        requestApplicationExit()
+    }
+
+    private func requestApplicationExit() {
+        ProcessInfo.processInfo.enableSuddenTermination()
         NSApplication.shared.terminate(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            exit(EXIT_SUCCESS)
+        }
     }
 
     private func preparedPayload(from updateFileURL: URL, stagingRoot: URL) async throws -> URL {
