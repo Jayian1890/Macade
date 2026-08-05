@@ -149,6 +149,7 @@
 		BF00000B00000000000000DB /* RelayConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DB /* RelayConsoleView.swift */; };
 		BF00000B00000000000000DC /* RelayConsoleParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DC /* RelayConsoleParts.swift */; };
 		BF00000B00000000000000DD /* RelayConsoleRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DD /* RelayConsoleRecorder.swift */; };
+		BF00000B00000000000000EB /* MacadeAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000EB /* MacadeAboutView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -297,6 +298,7 @@
 		BF00000C00000000000000DB /* RelayConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleView.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000DC /* RelayConsoleParts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleParts.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000DD /* RelayConsoleRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleRecorder.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000EB /* MacadeAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeAboutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -373,6 +375,7 @@
 		BF0000040000000000000007 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				BF00000D000000000000000D /* About */,
 				BF0000040000000000000008 /* Auth */,
 				BF00000D0000000000000002 /* Lobby */,
 				BF00000D0000000000000007 /* Settings */,
@@ -661,6 +664,22 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
+		BF00000D000000000000000D /* About */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000D000000000000000E /* Views */,
+			);
+			path = About;
+			sourceTree = "<group>";
+		};
+		BF00000D000000000000000E /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				BF00000C00000000000000EB /* MacadeAboutView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -787,6 +806,7 @@
 				BF00000B00000000000000B6 /* MacadeUpdateController.swift in Sources */,
 				BF00000B00000000000000D7 /* MacadeUpdateInstaller.swift in Sources */,
 				BF00000B00000000000000B7 /* MacadeUpdateSheet.swift in Sources */,
+				BF00000B00000000000000EB /* MacadeAboutView.swift in Sources */,
 				BF00000B000000000000000E /* FightcadeChatMessage.swift in Sources */,
 				BF00000B00000000000000B1 /* FightcadeChatMention.swift in Sources */,
 				BF00000B00000000000000B2 /* FightcadeMotdTextFormatter.swift in Sources */,

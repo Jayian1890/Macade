@@ -1,5 +1,9 @@
 import SwiftUI
 
+private enum MacadeWindowID {
+    static let about = "about"
+}
+
 @MainActor
 final class MacadeAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -48,6 +52,7 @@ final class MacadeAppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct MacadeApp: App {
     @NSApplicationDelegateAdaptor(MacadeAppDelegate.self) private var appDelegate
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         WindowGroup {
@@ -59,6 +64,12 @@ struct MacadeApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1120, height: 720)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About Macade") {
+                    openWindow(id: MacadeWindowID.about)
+                }
+            }
+
             CommandGroup(after: .appInfo) {
                 Button("Check for Updates...") {
                     MacadeUpdateController.shared.showAndCheck()
@@ -70,5 +81,10 @@ struct MacadeApp: App {
         Settings {
             MacadeSettingsView()
         }
+
+        Window("About Macade", id: MacadeWindowID.about) {
+            MacadeAboutView()
+        }
+        .windowResizability(.contentSize)
     }
 }
