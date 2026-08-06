@@ -1,6 +1,6 @@
 import Foundation
 import XCTest
-@testable import MacadeApp
+@testable import Macade
 
 final class FightcadeNetplaySessionTests: XCTestCase {
     func testQuarkSessionPlanBuildsMasterPayloads() {
@@ -347,5 +347,18 @@ private final class QueueingUDPTransportFactory: FightcadeUDPTransportFactory, @
         bindPorts.append(bindPort)
         guard !transports.isEmpty else { throw POSIXError(.ENOTCONN) }
         return transports.removeFirst()
+    }
+}
+
+private extension Data {
+    init(hex: String) {
+        var bytes: [UInt8] = []
+        var index = hex.startIndex
+        while index < hex.endIndex {
+            let next = hex.index(index, offsetBy: 2)
+            bytes.append(UInt8(hex[index..<next], radix: 16)!)
+            index = next
+        }
+        self.init(bytes)
     }
 }

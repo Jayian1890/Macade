@@ -38,6 +38,7 @@ extension AuthenticatedHomeViewModel {
         case .usersUpdated(let channelName, let users):
             usersByChannel[channelName] = users.sorted(by: sortUsers)
             updateChannelPlayerCount(channelName: channelName, count: users.count)
+            cancelUnavailableAutoMatchChallenges(in: channelName)
         case .userJoined(let channelName, let user):
             var users = usersByChannel[channelName] ?? []
             users.removeAll { $0.id == user.id }
@@ -47,8 +48,12 @@ extension AuthenticatedHomeViewModel {
         case .userLeft(let channelName, let username):
             usersByChannel[channelName]?.removeAll { $0.id == username }
             updateChannelPlayerCount(channelName: channelName, count: usersByChannel[channelName]?.count ?? 0)
+            cancelUnavailableAutoMatchChallenges(in: channelName)
         case .userStatusUpdated(let update):
             applyUserStatusUpdate(update)
+            for channelName in targetChannelNames(channelName: update.channelName, gameID: update.stream?.gameID) {
+                cancelUnavailableAutoMatchChallenges(in: channelName)
+            }
         case .liveStreamUpdated(let update):
             applyLiveStreamUpdate(update)
         case .chatMessage(let message):
@@ -63,12 +68,19 @@ extension AuthenticatedHomeViewModel {
             playIncomingChallengeSound()
             rememberIncomingChallenge(challenge)
         case .challengeCanceled(let challenge):
+            let isAutoMatchChallenge = recordAutoMatchChallengeCanceled(challenge)
             clearChallenge(challenge)
-            appendSystemMessage("\(challenge.username) canceled the challenge", channelName: challenge.channelName)
+            if !isAutoMatchChallenge {
+                appendSystemMessage("\(challenge.username) canceled the challenge", channelName: challenge.channelName)
+            }
         case .challengeRejected(let challenge):
+            let isAutoMatchChallenge = recordAutoMatchChallengeRejected(challenge)
             clearChallenge(challenge)
-            appendSystemMessage("\(challenge.username) rejected the challenge", channelName: challenge.channelName)
+            if !isAutoMatchChallenge {
+                appendSystemMessage("\(challenge.username) rejected the challenge", channelName: challenge.channelName)
+            }
         case .challengeAccepted(let challenge):
+            recordAutoMatchChallengeAccepted(challenge)
             stopAllAutoMatch()
             rememberMatchOpponent(challenge)
             Task { await settleChallenges(afterAccepting: challenge) }

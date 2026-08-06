@@ -265,7 +265,11 @@ extension AuthenticatedHomeViewModel {
     }
 
     func handleChallengeWarning(_ warning: FightcadeChallengeWarning) {
-        clearChallengeWarningTarget(warning)
+        let clearedChallenges = clearChallengeWarningTarget(warning)
+        if recordAutoMatchChallengeWarning(warning, clearedChallenges: clearedChallenges) {
+            return
+        }
+
         errorMessage = warning.message
 
         let channelName = warning.channelName ?? selectedChannel?.name ?? activeOutgoingChallenge?.channelName
@@ -303,37 +307,47 @@ extension AuthenticatedHomeViewModel {
             || outgoingChallenges.contains { $0.id == challenge.id }
     }
 
-    private func clearChallengeWarningTarget(_ warning: FightcadeChallengeWarning) {
+    private func clearChallengeWarningTarget(_ warning: FightcadeChallengeWarning) -> [FightcadeChallenge] {
         if let challengeID = warning.challengeID {
-            incomingChallenges.removeAll { $0.challengeID == challengeID }
-            outgoingChallenges.removeAll { $0.challengeID == challengeID }
-            return
+            return removeChallenges { $0.challengeID == challengeID }
         }
 
         if let username = warning.username, let channelName = warning.channelName {
-            outgoingChallenges.removeAll {
+            return removeOutgoingChallenges {
                 $0.channelName == channelName
                     && $0.username.caseInsensitiveCompare(username) == .orderedSame
             }
-            return
         }
 
         if let username = warning.username {
-            outgoingChallenges.removeAll {
+            return removeOutgoingChallenges {
                 $0.username.caseInsensitiveCompare(username) == .orderedSame
             }
-            return
         }
 
         if let channelName = warning.channelName,
            let index = outgoingChallenges.firstIndex(where: { $0.channelName == channelName }) {
-            outgoingChallenges.remove(at: index)
-            return
+            return [outgoingChallenges.remove(at: index)]
         }
 
         if !outgoingChallenges.isEmpty {
-            outgoingChallenges.removeFirst()
+            return [outgoingChallenges.removeFirst()]
         }
+
+        return []
+    }
+
+    private func removeOutgoingChallenges(matching isMatch: (FightcadeChallenge) -> Bool) -> [FightcadeChallenge] {
+        let removedChallenges = outgoingChallenges.filter(isMatch)
+        outgoingChallenges.removeAll(where: isMatch)
+        return removedChallenges
+    }
+
+    private func removeChallenges(matching isMatch: (FightcadeChallenge) -> Bool) -> [FightcadeChallenge] {
+        let removedChallenges = (incomingChallenges + outgoingChallenges).filter(isMatch)
+        incomingChallenges.removeAll(where: isMatch)
+        outgoingChallenges.removeAll(where: isMatch)
+        return removedChallenges
     }
 
     private func hasOutgoingChallenge(for user: FightcadeChannelUser, in channel: FightcadeChannel) -> Bool {

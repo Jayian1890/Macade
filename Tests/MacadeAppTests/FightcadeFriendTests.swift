@@ -1,5 +1,5 @@
 import XCTest
-@testable import MacadeApp
+@testable import Macade
 
 final class FightcadeFriendTests: XCTestCase {
     func testFileFriendStoreRoundTripsSessionScopedFriends() async throws {

@@ -4,26 +4,29 @@ struct ChallengeSidebarSection: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
 
     var body: some View {
-        if !viewModel.incomingChallenges.isEmpty || !viewModel.outgoingChallenges.isEmpty {
-            VStack(alignment: .leading, spacing: MacadeSpacing.small) {
-                header
+        let incomingChallenges = viewModel.incomingChallenges
+        let outgoingChallenges = viewModel.outgoingChallenges.filter { !viewModel.isAutoMatchManagedChallenge($0) }
 
-                if !viewModel.incomingChallenges.isEmpty {
+        if !incomingChallenges.isEmpty || !outgoingChallenges.isEmpty {
+            VStack(alignment: .leading, spacing: MacadeSpacing.small) {
+                header(totalCount: incomingChallenges.count + outgoingChallenges.count)
+
+                if !incomingChallenges.isEmpty {
                     challengeGroup(
                         title: "Incoming",
                         icon: "bolt.horizontal.fill",
                         accent: MacadeColor.warning,
-                        challenges: viewModel.incomingChallenges,
+                        challenges: incomingChallenges,
                         mode: .incoming
                     )
                 }
 
-                if !viewModel.outgoingChallenges.isEmpty {
+                if !outgoingChallenges.isEmpty {
                     challengeGroup(
                         title: "Sent",
                         icon: "paperplane.fill",
                         accent: MacadeColor.neonCyan,
-                        challenges: viewModel.outgoingChallenges,
+                        challenges: outgoingChallenges,
                         mode: .outgoing
                     )
                 }
@@ -37,7 +40,7 @@ struct ChallengeSidebarSection: View {
         }
     }
 
-    private var header: some View {
+    private func header(totalCount: Int) -> some View {
         HStack(spacing: MacadeSpacing.xSmall) {
             Image(systemName: "bolt.circle.fill")
                 .foregroundStyle(MacadeColor.warning)
@@ -48,7 +51,7 @@ struct ChallengeSidebarSection: View {
 
             Spacer()
 
-            Text("\(viewModel.incomingChallenges.count + viewModel.outgoingChallenges.count)")
+            Text("\(totalCount)")
                 .font(.system(size: 10, weight: .black, design: .monospaced))
                 .foregroundStyle(MacadeColor.warning)
         }

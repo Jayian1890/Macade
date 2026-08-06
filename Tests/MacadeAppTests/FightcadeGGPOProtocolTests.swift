@@ -1,6 +1,6 @@
 import XCTest
 import Darwin
-@testable import MacadeApp
+@testable import Macade
 
 final class FightcadeGGPOProtocolTests: XCTestCase {
     func testCommandFrameEncodesLengthSequenceCommandAndPayloadAsBigEndianUInt32() {

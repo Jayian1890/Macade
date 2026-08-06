@@ -48,8 +48,10 @@
 		BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000011 /* FightcadeLauncher.swift */; };
 		BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000012 /* FightcadeChallenge.swift */; };
 		BF00000B00000000000000E4 /* FightcadeAutoMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E4 /* FightcadeAutoMatch.swift */; };
+		BF00000B00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift */; };
 		BF00000B0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */; };
 		BF00000B00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */; };
+		BF00000B00000000000000ED /* AuthenticatedHomeViewModel+AutoMatchSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000ED /* AuthenticatedHomeViewModel+AutoMatchSettings.swift */; };
 		BF00000B00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */; };
 		BF00000B00000000000000E7 /* FightcadeRecentMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E7 /* FightcadeRecentMatch.swift */; };
 		BF00000B00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift */; };
@@ -150,7 +152,36 @@
 		BF00000B00000000000000DC /* RelayConsoleParts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DC /* RelayConsoleParts.swift */; };
 		BF00000B00000000000000DD /* RelayConsoleRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DD /* RelayConsoleRecorder.swift */; };
 		BF00000B00000000000000EB /* MacadeAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000EB /* MacadeAboutView.swift */; };
+		BF00000B00000000000000EE /* AutoMatchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000EE /* AutoMatchSettingsView.swift */; };
+		BF00000B00000000000000EF /* FightcadeMentionNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000EF /* FightcadeMentionNotifier.swift */; };
+		BF10000B0000000000000001 /* FightcadeMatchLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000001 /* FightcadeMatchLaunchTests.swift */; };
+		BF10000B0000000000000002 /* FightcadeRecentMatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000002 /* FightcadeRecentMatchTests.swift */; };
+		BF10000B0000000000000003 /* FightcadeUserStatusReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000003 /* FightcadeUserStatusReporterTests.swift */; };
+		BF10000B0000000000000004 /* FightcadeFBNeoSettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000004 /* FightcadeFBNeoSettingsStoreTests.swift */; };
+		BF10000B0000000000000005 /* FightcadeWelcomeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000005 /* FightcadeWelcomeParserTests.swift */; };
+		BF10000B0000000000000006 /* FightcadeRuntimeRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000006 /* FightcadeRuntimeRegressionTests.swift */; };
+		BF10000B0000000000000007 /* FightcadeNetplaySessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000007 /* FightcadeNetplaySessionTests.swift */; };
+		BF10000B0000000000000008 /* FightcadeAutoMatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000008 /* FightcadeAutoMatchTests.swift */; };
+		BF10000B0000000000000009 /* FightcadeROMIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000009 /* FightcadeROMIndexTests.swift */; };
+		BF10000B000000000000000A /* ChannelTVTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C000000000000000A /* ChannelTVTests.swift */; };
+		BF10000B000000000000000B /* FightcadePreviewURLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C000000000000000B /* FightcadePreviewURLTests.swift */; };
+		BF10000B000000000000000C /* FightcadeGGPOProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C000000000000000C /* FightcadeGGPOProtocolTests.swift */; };
+		BF10000B000000000000000D /* FightcadeFriendTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C000000000000000D /* FightcadeFriendTests.swift */; };
+		BF10000B000000000000000E /* FightcadeChannelCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C000000000000000E /* FightcadeChannelCacheTests.swift */; };
+		BF10000B000000000000000F /* FightcadeLobbyPayloadParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C000000000000000F /* FightcadeLobbyPayloadParserTests.swift */; };
+		BF10000B0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift */; };
+		BF10000B0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BF10000F0000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BF0000080000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BF0000050000000000000001;
+			remoteInfo = Macade;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		BF0000020000000000000001 /* MacadeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeApp.swift; sourceTree = "<group>"; };
@@ -197,8 +228,10 @@
 		BF00000C0000000000000011 /* FightcadeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLauncher.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000012 /* FightcadeChallenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChallenge.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000E4 /* FightcadeAutoMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeAutoMatch.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeAutoMatchConfigurationStore.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Challenge.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+AutoMatch.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000ED /* AuthenticatedHomeViewModel+AutoMatchSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+AutoMatchSettings.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Events.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000E7 /* FightcadeRecentMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeRecentMatch.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyService+RecentMatches.swift"; sourceTree = "<group>"; };
@@ -299,10 +332,37 @@
 		BF00000C00000000000000DC /* RelayConsoleParts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleParts.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000DD /* RelayConsoleRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayConsoleRecorder.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000EB /* MacadeAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeAboutView.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000EE /* AutoMatchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoMatchSettingsView.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000EF /* FightcadeMentionNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeMentionNotifier.swift; sourceTree = "<group>"; };
+		BF1000020000000000000001 /* MacadeAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacadeAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF10000C0000000000000001 /* FightcadeMatchLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeMatchLaunchTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000002 /* FightcadeRecentMatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeRecentMatchTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000003 /* FightcadeUserStatusReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeUserStatusReporterTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000004 /* FightcadeFBNeoSettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeFBNeoSettingsStoreTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000005 /* FightcadeWelcomeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeWelcomeParserTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000006 /* FightcadeRuntimeRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeRuntimeRegressionTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000007 /* FightcadeNetplaySessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplaySessionTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000008 /* FightcadeAutoMatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeAutoMatchTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000009 /* FightcadeROMIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeROMIndexTests.swift; sourceTree = "<group>"; };
+		BF10000C000000000000000A /* ChannelTVTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelTVTests.swift; sourceTree = "<group>"; };
+		BF10000C000000000000000B /* FightcadePreviewURLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadePreviewURLTests.swift; sourceTree = "<group>"; };
+		BF10000C000000000000000C /* FightcadeGGPOProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOProtocolTests.swift; sourceTree = "<group>"; };
+		BF10000C000000000000000D /* FightcadeFriendTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeFriendTests.swift; sourceTree = "<group>"; };
+		BF10000C000000000000000E /* FightcadeChannelCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChannelCacheTests.swift; sourceTree = "<group>"; };
+		BF10000C000000000000000F /* FightcadeLobbyPayloadParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyPayloadParserTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOServedHandshakeTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsPreferencesStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		BF0000030000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BF1000030000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -318,6 +378,7 @@
 				BF0000020000000000000013 /* Package */,
 				BF0000020000000000000014 /* AGENTS.md */,
 				BF0000040000000000000002 /* Sources */,
+				BF1000040000000000000001 /* Tests */,
 				BF0000040000000000000012 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -437,8 +498,41 @@
 			isa = PBXGroup;
 			children = (
 				BF0000020000000000000012 /* Macade.app */,
+				BF1000020000000000000001 /* MacadeAppTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		BF1000040000000000000001 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				BF1000040000000000000002 /* MacadeAppTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		BF1000040000000000000002 /* MacadeAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				BF10000C000000000000000A /* ChannelTVTests.swift */,
+				BF10000C0000000000000008 /* FightcadeAutoMatchTests.swift */,
+				BF10000C000000000000000E /* FightcadeChannelCacheTests.swift */,
+				BF10000C0000000000000004 /* FightcadeFBNeoSettingsStoreTests.swift */,
+				BF10000C000000000000000D /* FightcadeFriendTests.swift */,
+				BF10000C000000000000000C /* FightcadeGGPOProtocolTests.swift */,
+				BF10000C0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift */,
+				BF10000C000000000000000F /* FightcadeLobbyPayloadParserTests.swift */,
+				BF10000C0000000000000001 /* FightcadeMatchLaunchTests.swift */,
+				BF10000C0000000000000007 /* FightcadeNetplaySessionTests.swift */,
+				BF10000C000000000000000B /* FightcadePreviewURLTests.swift */,
+				BF10000C0000000000000002 /* FightcadeRecentMatchTests.swift */,
+				BF10000C0000000000000009 /* FightcadeROMIndexTests.swift */,
+				BF10000C0000000000000006 /* FightcadeRuntimeRegressionTests.swift */,
+				BF10000C0000000000000003 /* FightcadeUserStatusReporterTests.swift */,
+				BF10000C0000000000000005 /* FightcadeWelcomeParserTests.swift */,
+				BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */,
+			);
+			path = MacadeAppTests;
 			sourceTree = "<group>";
 		};
 		BF0000040000000000000013 /* Resources */ = {
@@ -530,6 +624,7 @@
 				BF00000C00000000000000A7 /* FightcadeLobbyService+Browser.swift */,
 				BF00000C00000000000000C5 /* FightcadeLobbyService+Connection.swift */,
 				BF00000C00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift */,
+				BF00000C00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift */,
 				BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */,
 				BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */,
 				BF00000C00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift */,
@@ -547,9 +642,11 @@
 			children = (
 				BF00000C0000000000000009 /* AuthenticatedHomeViewModel.swift */,
 				BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */,
+				BF00000C00000000000000ED /* AuthenticatedHomeViewModel+AutoMatchSettings.swift */,
 				BF00000C00000000000000C4 /* AuthenticatedHomeViewModel+Status.swift */,
 				BF00000C00000000000000A8 /* AuthenticatedHomeViewModel+Browser.swift */,
 				BF00000C0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift */,
+				BF00000C00000000000000EF /* FightcadeMentionNotifier.swift */,
 				BF00000C00000000000000C0 /* ChatTranslationRequestBuilder.swift */,
 				BF00000C0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift */,
 				BF00000C00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift */,
@@ -576,6 +673,7 @@
 				BF00000C000000000000000C /* ChannelDetailView.swift */,
 				BF00000C00000000000000C2 /* ChatInputView.swift */,
 				BF00000C0000000000000021 /* ChannelHeaderView.swift */,
+				BF00000C00000000000000EE /* AutoMatchSettingsView.swift */,
 				BF00000C0000000000000014 /* ChannelErrorBanner.swift */,
 				BF00000C00000000000000AA /* ChannelBrowserCards.swift */,
 				BF00000C00000000000000A9 /* ChannelBrowserControls.swift */,
@@ -700,6 +798,24 @@
 			productReference = BF0000020000000000000012 /* Macade.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BF1000050000000000000001 /* MacadeAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF1000060000000000000001 /* Build configuration list for PBXNativeTarget "MacadeAppTests" */;
+			buildPhases = (
+				BF1000030000000000000001 /* Frameworks */,
+				BF1000070000000000000001 /* Sources */,
+				BF10000A0000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BF1000100000000000000001 /* PBXTargetDependency */,
+			);
+			name = MacadeAppTests;
+			productName = MacadeAppTests;
+			productReference = BF1000020000000000000001 /* MacadeAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -712,6 +828,10 @@
 				TargetAttributes = {
 					BF0000050000000000000001 = {
 						CreatedOnToolsVersion = 27.0;
+					};
+					BF1000050000000000000001 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = BF0000050000000000000001;
 					};
 				};
 			};
@@ -729,6 +849,7 @@
 			projectRoot = "";
 			targets = (
 				BF0000050000000000000001 /* Macade */,
+				BF1000050000000000000001 /* MacadeAppTests */,
 			);
 		};
 /* End PBXProject section */
@@ -741,6 +862,13 @@
 				BF0000010000000000000012 /* Assets.xcassets in Resources */,
 				BF00000B0000000000000019 /* FightcadeRuntime in Resources */,
 				BF00000B000000000000001A /* rom-index.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BF10000A0000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -818,8 +946,10 @@
 				BF00000B00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift in Sources */,
 				BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */,
 				BF00000B00000000000000E4 /* FightcadeAutoMatch.swift in Sources */,
+				BF00000B00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift in Sources */,
 				BF00000B0000000000000013 /* AuthenticatedHomeViewModel+Challenge.swift in Sources */,
 				BF00000B00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift in Sources */,
+				BF00000B00000000000000ED /* AuthenticatedHomeViewModel+AutoMatchSettings.swift in Sources */,
 				BF00000B00000000000000E6 /* AuthenticatedHomeViewModel+Events.swift in Sources */,
 				BF00000B0000000000000014 /* ChannelErrorBanner.swift in Sources */,
 				BF00000B000000000000002E /* ChallengeBanner.swift in Sources */,
@@ -885,8 +1015,10 @@
 				BF00000B00000000000000D8 /* MacadeRelayProfile.swift in Sources */,
 				BF00000B00000000000000D9 /* MacadeRelayRunner.swift in Sources */,
 				BF00000B0000000000000020 /* AuthenticatedHomeViewModel+Chat.swift in Sources */,
+				BF00000B00000000000000EF /* FightcadeMentionNotifier.swift in Sources */,
 				BF00000B00000000000000C0 /* ChatTranslationRequestBuilder.swift in Sources */,
 				BF00000B0000000000000021 /* ChannelHeaderView.swift in Sources */,
+				BF00000B00000000000000EE /* AutoMatchSettingsView.swift in Sources */,
 				BF00000B0000000000000023 /* FightcadeROMLibrary.swift in Sources */,
 				BF00000B0000000000000024 /* FightcadeFBNeoSettings.swift in Sources */,
 				BF00000B0000000000000025 /* AuthenticatedHomeViewModel+ROMManagement.swift in Sources */,
@@ -894,7 +1026,39 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BF1000070000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF10000B000000000000000A /* ChannelTVTests.swift in Sources */,
+				BF10000B0000000000000008 /* FightcadeAutoMatchTests.swift in Sources */,
+				BF10000B000000000000000E /* FightcadeChannelCacheTests.swift in Sources */,
+				BF10000B0000000000000004 /* FightcadeFBNeoSettingsStoreTests.swift in Sources */,
+				BF10000B000000000000000D /* FightcadeFriendTests.swift in Sources */,
+				BF10000B000000000000000C /* FightcadeGGPOProtocolTests.swift in Sources */,
+				BF10000B0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift in Sources */,
+				BF10000B000000000000000F /* FightcadeLobbyPayloadParserTests.swift in Sources */,
+				BF10000B0000000000000001 /* FightcadeMatchLaunchTests.swift in Sources */,
+				BF10000B0000000000000007 /* FightcadeNetplaySessionTests.swift in Sources */,
+				BF10000B000000000000000B /* FightcadePreviewURLTests.swift in Sources */,
+				BF10000B0000000000000002 /* FightcadeRecentMatchTests.swift in Sources */,
+				BF10000B0000000000000009 /* FightcadeROMIndexTests.swift in Sources */,
+				BF10000B0000000000000006 /* FightcadeRuntimeRegressionTests.swift in Sources */,
+				BF10000B0000000000000003 /* FightcadeUserStatusReporterTests.swift in Sources */,
+				BF10000B0000000000000005 /* FightcadeWelcomeParserTests.swift in Sources */,
+				BF10000B0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BF1000100000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BF0000050000000000000001 /* Macade */;
+			targetProxy = BF10000F0000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		BF0000090000000000000001 /* Debug */ = {
@@ -1069,6 +1233,50 @@
 			};
 			name = Release;
 		};
+		BF1000090000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macade.app/Contents/MacOS/Macade";
+			};
+			name = Debug;
+		};
+		BF1000090000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Macade.app/Contents/MacOS/Macade";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1086,6 +1294,15 @@
 			buildConfigurations = (
 				BF0000090000000000000003 /* Debug */,
 				BF0000090000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BF1000060000000000000001 /* Build configuration list for PBXNativeTarget "MacadeAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF1000090000000000000001 /* Debug */,
+				BF1000090000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

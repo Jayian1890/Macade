@@ -1,6 +1,6 @@
 import Foundation
 import XCTest
-@testable import MacadeApp
+@testable import Macade
 
 final class FightcadeROMIndexTests: XCTestCase {
     func testZipIndexPrefersArcadeWhenSystemIsUnknown() throws {

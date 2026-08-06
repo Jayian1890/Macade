@@ -1,24 +1,64 @@
 import Foundation
 
-struct FightcadeAutoMatchConfiguration: Equatable, Sendable {
+import Foundation
+
+struct FightcadeAutoMatchConfiguration: Codable, Equatable, Sendable {
     static let `default` = FightcadeAutoMatchConfiguration()
 
-    let maxChallengesPerAttempt: Int
-    let acceptanceTimeoutSeconds: Int
-    let rankTolerance: Int
-    let maximumPing: Int
+    var maxChallengesPerAttempt: Int
+    var acceptanceTimeoutSeconds: Int
+    var rankTolerance: Int
+    var maximumPing: Int
+    var retryCooldownSeconds: Int
 
     init(
-        maxChallengesPerAttempt: Int = 2,
-        acceptanceTimeoutSeconds: Int = 15,
+        maxChallengesPerAttempt: Int = 3,
+        acceptanceTimeoutSeconds: Int = 30,
         rankTolerance: Int = 1,
-        maximumPing: Int = 150
+        maximumPing: Int = 150,
+        retryCooldownSeconds: Int = 120
     ) {
         self.maxChallengesPerAttempt = max(1, maxChallengesPerAttempt)
         self.acceptanceTimeoutSeconds = max(1, acceptanceTimeoutSeconds)
         self.rankTolerance = max(0, rankTolerance)
         self.maximumPing = max(1, maximumPing)
+        self.retryCooldownSeconds = max(1, retryCooldownSeconds)
     }
+}
+
+struct FightcadeAutoMatchOutcomes: Equatable, Sendable {
+    var invited = 0
+    var rejected = 0
+    var failed = 0
+    var accepted = 0
+    var canceled = 0
+
+    mutating func record(_ outcome: FightcadeAutoMatchOutcomeKind) {
+        switch outcome {
+        case .invited:
+            invited += 1
+        case .rejected:
+            rejected += 1
+        case .failed:
+            failed += 1
+        case .accepted:
+            accepted += 1
+        case .canceled:
+            canceled += 1
+        }
+    }
+
+    var summaryText: String {
+        "I \(invited) · A \(accepted) · R \(rejected) · F \(failed)"
+    }
+}
+
+enum FightcadeAutoMatchOutcomeKind: Sendable {
+    case invited
+    case rejected
+    case failed
+    case accepted
+    case canceled
 }
 
 enum FightcadeAutoMatchStatus: Equatable, Sendable {
@@ -35,7 +75,9 @@ enum FightcadeAutoMatchStatus: Equatable, Sendable {
 struct FightcadeAutoMatchState: Equatable, Sendable {
     var isEnabled = false
     var activeChallengeIDs = Set<String>()
-    var challengedUsernames = Set<String>()
+    var managedChallengeIDs = Set<String>()
+    var challengeCooldownsByUsername: [String: Date] = [:]
+    var outcomes = FightcadeAutoMatchOutcomes()
     var status = FightcadeAutoMatchStatus.idle
 }
 

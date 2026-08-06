@@ -1,5 +1,7 @@
 import Foundation
 
+import Foundation
+
 extension AuthenticatedHomeViewModel {
     func toggleAutoMatch(for channel: FightcadeChannel) {
         if isAutoMatching(in: channel) {
@@ -18,9 +20,10 @@ extension AuthenticatedHomeViewModel {
     }
 
     func autoMatchHelpText(for channel: FightcadeChannel) -> String {
+        let configuration = autoMatchConfiguration(for: channel)
         guard isAutoMatching(in: channel) else {
             return isJoinedForAutoMatch(channel)
-                ? "Auto match players within one rank, same country or under 150 ms"
+                ? "Auto match within \(configuration.rankTolerance) rank, same country or under \(configuration.maximumPing) ms"
                 : "Join this room to enable auto match"
         }
 
@@ -32,7 +35,7 @@ extension AuthenticatedHomeViewModel {
         case .noEligiblePlayers:
             return "No eligible auto match players"
         case .allEligiblePlayersTried:
-            return "All eligible players have already been invited"
+            return "Eligible players are cooling down"
         case .currentUserUnavailable:
             return "Waiting for your roster entry"
         case .missingCurrentUserRank:
@@ -40,6 +43,14 @@ extension AuthenticatedHomeViewModel {
         case .paused(let reason):
             return reason
         }
+    }
+
+    func autoMatchOutcomeText(for channel: FightcadeChannel) -> String? {
+        guard let state = autoMatchStatesByChannel[channel.name] else {
+            return nil
+        }
+
+        return state.outcomes.summaryText
     }
 
     func stopAutoMatch(in channelName: String, reason: String? = nil, cancelsOutstandingChallenges: Bool = false) {
@@ -58,7 +69,6 @@ extension AuthenticatedHomeViewModel {
         var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
         state.isEnabled = false
         state.activeChallengeIDs.removeAll()
-        state.challengedUsernames.removeAll()
         state.status = .idle
         autoMatchStatesByChannel[channelName] = state
 
@@ -74,17 +84,89 @@ extension AuthenticatedHomeViewModel {
         }
     }
 
-    func removeAutoMatchChallenge(_ challenge: FightcadeChallenge) {
-        var state = autoMatchStatesByChannel[challenge.channelName] ?? FightcadeAutoMatchState()
-        state.activeChallengeIDs.remove(challenge.id)
+    @discardableResult
+    func removeAutoMatchChallenge(_ challenge: FightcadeChallenge) -> Bool {
+        guard var state = autoMatchStatesByChannel[challenge.channelName] else {
+            return false
+        }
+
+        let wasActive = state.activeChallengeIDs.remove(challenge.id) != nil
         autoMatchStatesByChannel[challenge.channelName] = state
+        return wasActive
     }
 
     func clearAutoMatchChallengeIDs() {
         for channelName in Array(autoMatchStatesByChannel.keys) {
             var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
             state.activeChallengeIDs.removeAll()
+            state.managedChallengeIDs.removeAll()
             autoMatchStatesByChannel[channelName] = state
+        }
+    }
+
+    func isAutoMatchManagedChallenge(_ challenge: FightcadeChallenge) -> Bool {
+        guard let state = autoMatchStatesByChannel[challenge.channelName] else {
+            return false
+        }
+
+        return state.activeChallengeIDs.contains(challenge.id)
+            || state.managedChallengeIDs.contains(challenge.id)
+    }
+
+    @discardableResult
+    func recordAutoMatchChallengeCanceled(_ challenge: FightcadeChallenge) -> Bool {
+        recordAutoMatchChallengeOutcome(challenge, status: .searching, outcome: .canceled)
+    }
+
+    @discardableResult
+    func recordAutoMatchChallengeRejected(_ challenge: FightcadeChallenge) -> Bool {
+        recordAutoMatchChallengeOutcome(challenge, status: .searching, outcome: .rejected)
+    }
+
+    @discardableResult
+    func recordAutoMatchChallengeAccepted(_ challenge: FightcadeChallenge) -> Bool {
+        recordAutoMatchChallengeOutcome(challenge, status: .idle, outcome: .accepted, startsCooldown: false)
+    }
+
+    @discardableResult
+    func recordAutoMatchChallengeWarning(
+        _ warning: FightcadeChallengeWarning,
+        clearedChallenges: [FightcadeChallenge]
+    ) -> Bool {
+        let autoMatchChallenges = clearedChallenges.filter(isAutoMatchManagedChallenge)
+        guard !autoMatchChallenges.isEmpty else {
+            return false
+        }
+
+        for challenge in autoMatchChallenges {
+            _ = recordAutoMatchChallengeOutcome(challenge, status: .paused(warning.message), outcome: .failed)
+        }
+
+        return true
+    }
+
+    func cancelUnavailableAutoMatchChallenges(in channelName: String) {
+        guard let state = autoMatchStatesByChannel[channelName], !state.activeChallengeIDs.isEmpty else {
+            return
+        }
+
+        let users = usersByChannel[channelName] ?? []
+        let unavailableChallenges = outgoingChallenges.filter { challenge in
+            state.activeChallengeIDs.contains(challenge.id) && !canKeepAutoMatchChallenge(challenge, users: users)
+        }
+        guard !unavailableChallenges.isEmpty else {
+            return
+        }
+
+        for challenge in unavailableChallenges {
+            clearChallenge(challenge)
+        }
+
+        Task { [weak self, unavailableChallenges] in
+            guard let self else { return }
+            for challenge in unavailableChallenges {
+                try? await lobbyService.cancelChallenge(challenge)
+            }
         }
     }
 
@@ -96,7 +178,8 @@ extension AuthenticatedHomeViewModel {
         var state = autoMatchStatesByChannel[channel.name] ?? FightcadeAutoMatchState()
         state.isEnabled = true
         state.activeChallengeIDs.removeAll()
-        state.challengedUsernames.removeAll()
+        state.challengeCooldownsByUsername = activeCooldowns(in: state, now: .now)
+        state.outcomes = FightcadeAutoMatchOutcomes()
         state.status = .searching
         autoMatchStatesByChannel[channel.name] = state
         appendSystemMessage("Auto match enabled.", channelName: channel.name)
@@ -114,7 +197,6 @@ extension AuthenticatedHomeViewModel {
                 var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
                 state.isEnabled = false
                 state.activeChallengeIDs.removeAll()
-                state.challengedUsernames.removeAll()
                 state.status = .idle
                 autoMatchStatesByChannel[channelName] = state
             }
@@ -132,7 +214,8 @@ extension AuthenticatedHomeViewModel {
                 continue
             }
 
-            let attempt = makeAutoMatchAttempt(for: channel)
+            let configuration = autoMatchConfiguration(for: channelName)
+            let attempt = makeAutoMatchAttempt(for: channel, configuration: configuration)
             guard !attempt.users.isEmpty else {
                 updateAutoMatchStatus(attempt.status, channelName: channelName)
                 await sleep(seconds: 5)
@@ -141,25 +224,37 @@ extension AuthenticatedHomeViewModel {
 
             let sentChallenges = await sendAutoMatchChallenges(attempt.users, in: channel)
             guard !sentChallenges.isEmpty else {
+                if case .paused = autoMatchStatesByChannel[channelName]?.status {
+                    await sleep(seconds: 5)
+                    continue
+                }
+
                 updateAutoMatchStatus(.noEligiblePlayers, channelName: channelName)
                 await sleep(seconds: 5)
                 continue
             }
 
             updateAutoMatchWaitingState(sentChallenges, channelName: channelName)
-            await sleep(seconds: FightcadeAutoMatchConfiguration.default.acceptanceTimeoutSeconds)
+            await waitForAutoMatchChallengesToResolve(
+                Set(sentChallenges.map(\.id)),
+                channelName: channelName,
+                timeoutSeconds: configuration.acceptanceTimeoutSeconds
+            )
             guard !Task.isCancelled else { return }
             await cancelUnacceptedAutoMatchChallenges(sentChallenges, channelName: channelName)
         }
     }
 
-    private func makeAutoMatchAttempt(for channel: FightcadeChannel) -> FightcadeAutoMatchAttempt {
-        let state = autoMatchStatesByChannel[channel.name] ?? FightcadeAutoMatchState()
-        let attempt = FightcadeAutoMatchPlanner().attempt(
+    private func makeAutoMatchAttempt(
+        for channel: FightcadeChannel,
+        configuration: FightcadeAutoMatchConfiguration
+    ) -> FightcadeAutoMatchAttempt {
+        let state = pruneAutoMatchCooldowns(channelName: channel.name)
+        let attempt = FightcadeAutoMatchPlanner(configuration: configuration).attempt(
             users: usersByChannel[channel.name] ?? [],
             session: session,
             activeChallengeUsernames: challengeBlockedUsernames(in: channel.name),
-            challengedUsernames: state.challengedUsernames
+            challengedUsernames: Set(state.challengeCooldownsByUsername.keys)
         )
 
         var nextState = state
@@ -184,14 +279,29 @@ extension AuthenticatedHomeViewModel {
                 rememberAutoMatchChallenge(challenge)
                 sentChallenges.append(challenge)
             } catch let error as FightcadeLobbyError {
-                errorMessage = error.localizedDescription
-                updateAutoMatchStatus(.paused(error.localizedDescription), channelName: channel.name)
+                recordAutoMatchSendFailure(username: user.name, channelName: channel.name, message: error.localizedDescription)
             } catch {
-                errorMessage = "Could not send auto match challenge."
-                updateAutoMatchStatus(.paused("Could not send auto match challenge."), channelName: channel.name)
+                recordAutoMatchSendFailure(username: user.name, channelName: channel.name, message: "Could not send auto match challenge.")
             }
         }
         return sentChallenges
+    }
+
+    private func waitForAutoMatchChallengesToResolve(
+        _ challengeIDs: Set<String>,
+        channelName: String,
+        timeoutSeconds: Int
+    ) async {
+        for _ in 0..<timeoutSeconds {
+            guard !Task.isCancelled else { return }
+
+            let activeChallengeIDs = autoMatchStatesByChannel[channelName]?.activeChallengeIDs ?? []
+            if activeChallengeIDs.isDisjoint(with: challengeIDs) {
+                return
+            }
+
+            await sleep(seconds: 1)
+        }
     }
 
     private func cancelUnacceptedAutoMatchChallenges(
@@ -210,7 +320,12 @@ extension AuthenticatedHomeViewModel {
 
         var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
         state.activeChallengeIDs.subtract(challengeIDs)
-        state.status = .searching
+        switch state.status {
+        case .paused:
+            break
+        default:
+            state.status = .searching
+        }
         autoMatchStatesByChannel[channelName] = state
     }
 
@@ -226,7 +341,6 @@ extension AuthenticatedHomeViewModel {
         state.activeChallengeIDs = Set(challenges.map(\.id))
         state.status = .waiting(usernames: challenges.map(\.username))
         autoMatchStatesByChannel[channelName] = state
-        appendSystemMessage("Auto match challenged \(challenges.map(\.username).joined(separator: ", ")).", channelName: channelName)
     }
 
     private func updateAutoMatchStatus(_ status: FightcadeAutoMatchStatus, channelName: String) {
@@ -238,8 +352,40 @@ extension AuthenticatedHomeViewModel {
     private func rememberAutoMatchChallenge(_ challenge: FightcadeChallenge) {
         var state = autoMatchStatesByChannel[challenge.channelName] ?? FightcadeAutoMatchState()
         state.activeChallengeIDs.insert(challenge.id)
-        state.challengedUsernames.insert(normalizedUsername(challenge.username))
+        state.managedChallengeIDs.insert(challenge.id)
+        state.challengeCooldownsByUsername[normalizedUsername(challenge.username)] = cooldownExpiration(channelName: challenge.channelName)
+        state.outcomes.invited += 1
         autoMatchStatesByChannel[challenge.channelName] = state
+    }
+
+    private func recordAutoMatchChallengeOutcome(
+        _ challenge: FightcadeChallenge,
+        status: FightcadeAutoMatchStatus,
+        outcome: FightcadeAutoMatchOutcomeKind,
+        startsCooldown: Bool = true
+    ) -> Bool {
+        guard var state = autoMatchStatesByChannel[challenge.channelName],
+              state.activeChallengeIDs.contains(challenge.id) || state.managedChallengeIDs.contains(challenge.id) else {
+            return false
+        }
+
+        state.activeChallengeIDs.remove(challenge.id)
+        state.managedChallengeIDs.remove(challenge.id)
+        if startsCooldown {
+            state.challengeCooldownsByUsername[normalizedUsername(challenge.username)] = cooldownExpiration(channelName: challenge.channelName)
+        }
+        state.outcomes.record(outcome)
+        state.status = status
+        autoMatchStatesByChannel[challenge.channelName] = state
+        return true
+    }
+
+    private func recordAutoMatchSendFailure(username: String, channelName: String, message: String) {
+        var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
+        state.challengeCooldownsByUsername[normalizedUsername(username)] = cooldownExpiration(channelName: channelName)
+        state.outcomes.failed += 1
+        state.status = .paused(message)
+        autoMatchStatesByChannel[channelName] = state
     }
 
     private func canAutoMatchChallenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel) -> Bool {
@@ -249,7 +395,41 @@ extension AuthenticatedHomeViewModel {
             && !user.isAway
             && !user.isPlaying
             && !challengeBlockedUsernames(in: channel.name).contains(normalizedUsername(user.name))
-            && autoMatchStatesByChannel[channel.name]?.challengedUsernames.contains(normalizedUsername(user.name)) != true
+            && !isAutoMatchUserCoolingDown(user.name, channelName: channel.name)
+    }
+
+    private func canKeepAutoMatchChallenge(_ challenge: FightcadeChallenge, users: [FightcadeChannelUser]) -> Bool {
+        guard let user = users.first(where: {
+            normalizedUsername($0.name) == normalizedUsername(challenge.username)
+        }) else {
+            return false
+        }
+
+        return !user.isAway && !user.isPlaying
+    }
+
+    private func pruneAutoMatchCooldowns(channelName: String) -> FightcadeAutoMatchState {
+        var state = autoMatchStatesByChannel[channelName] ?? FightcadeAutoMatchState()
+        state.challengeCooldownsByUsername = activeCooldowns(in: state, now: .now)
+        autoMatchStatesByChannel[channelName] = state
+        return state
+    }
+
+    private func activeCooldowns(in state: FightcadeAutoMatchState, now: Date) -> [String: Date] {
+        state.challengeCooldownsByUsername.filter { $0.value > now }
+    }
+
+    private func isAutoMatchUserCoolingDown(_ username: String, channelName: String) -> Bool {
+        let state = pruneAutoMatchCooldowns(channelName: channelName)
+        guard let expiresAt = state.challengeCooldownsByUsername[normalizedUsername(username)] else {
+            return false
+        }
+
+        return expiresAt > .now
+    }
+
+    private func cooldownExpiration(channelName: String) -> Date {
+        Date().addingTimeInterval(TimeInterval(autoMatchConfiguration(for: channelName).retryCooldownSeconds))
     }
 
     private func challengeBlockedUsernames(in channelName: String) -> Set<String> {

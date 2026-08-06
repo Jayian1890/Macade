@@ -1,5 +1,5 @@
 import XCTest
-@testable import MacadeApp
+@testable import Macade
 
 final class FightcadePreviewURLTests: XCTestCase {
     func testChannelPreviewURLUsesCurrentKOFAsset() {

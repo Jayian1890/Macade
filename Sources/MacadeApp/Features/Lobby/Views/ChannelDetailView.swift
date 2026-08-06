@@ -181,7 +181,9 @@ struct ChannelChatView: View {
     }
 
     private var outgoingChannelChallenges: [FightcadeChallenge] {
-        viewModel.outgoingChallenges.filter { challengeMatchesChannel($0) }
+        viewModel.outgoingChallenges.filter {
+            challengeMatchesChannel($0) && !viewModel.isAutoMatchManagedChallenge($0)
+        }
     }
 
     private var channelChallenges: [ChannelChallengeItem] {

@@ -3,6 +3,7 @@ import SwiftUI
 struct ChannelHeader: View {
     let channel: FightcadeChannel
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    @State private var isShowingAutoMatchSettings = false
 
     var body: some View {
         HStack(spacing: MacadeSpacing.medium) {
@@ -44,6 +45,8 @@ struct ChannelHeader: View {
             }
 
             autoMatchButton
+            autoMatchOutcomePill
+            autoMatchSettingsButton
 
             if viewModel.selectedHasLocalROM {
                 romTools
@@ -83,6 +86,36 @@ struct ChannelHeader: View {
         .buttonStyle(ChannelHeaderButtonStyle(isProminent: viewModel.isAutoMatching(in: channel)))
         .disabled(!viewModel.canToggleAutoMatch(for: channel))
         .help(viewModel.autoMatchHelpText(for: channel))
+    }
+
+    @ViewBuilder
+    private var autoMatchOutcomePill: some View {
+        if let text = viewModel.autoMatchOutcomeText(for: channel) {
+            Text(text)
+                .font(.system(size: 10, weight: .black, design: .monospaced))
+                .foregroundStyle(MacadeColor.neonCyan)
+                .padding(.horizontal, MacadeSpacing.small)
+                .frame(height: 28)
+                .background(MacadeColor.panel, in: Capsule())
+                .overlay(Capsule().stroke(MacadeColor.stroke, lineWidth: 1))
+                .help("Invited · Accepted · Rejected · Failed")
+        }
+    }
+
+    private var autoMatchSettingsButton: some View {
+        Button {
+            isShowingAutoMatchSettings = true
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 13, weight: .black))
+                .frame(width: 24, height: 24)
+        }
+        .buttonStyle(ChannelHeaderButtonStyle())
+        .disabled(!viewModel.canToggleAutoMatch(for: channel))
+        .help("Auto match settings")
+        .popover(isPresented: $isShowingAutoMatchSettings, arrowEdge: .bottom) {
+            AutoMatchSettingsView(channel: channel, viewModel: viewModel)
+        }
     }
 
     private var romTools: some View {

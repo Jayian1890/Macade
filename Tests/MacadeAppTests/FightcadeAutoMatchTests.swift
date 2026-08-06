@@ -1,7 +1,101 @@
 import XCTest
-@testable import MacadeApp
+@testable import Macade
 
 final class FightcadeAutoMatchTests: XCTestCase {
+    func testDefaultConfigurationUsesThreeInvitesAndThirtySecondRotation() {
+        let configuration = FightcadeAutoMatchConfiguration.default
+
+        XCTAssertEqual(configuration.maxChallengesPerAttempt, 3)
+        XCTAssertEqual(configuration.acceptanceTimeoutSeconds, 30)
+        XCTAssertEqual(configuration.retryCooldownSeconds, 120)
+    }
+
+    func testConfigurationStorePersistsPerSessionAndChannel() {
+        let suiteName = "MacadeAutoMatchTests-\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+        let store = UserDefaultsFightcadeAutoMatchConfigurationStore(userDefaults: userDefaults)
+        let session = AuthSession(username: "me", displayName: "Me")
+        let configuration = FightcadeAutoMatchConfiguration(
+            maxChallengesPerAttempt: 4,
+            acceptanceTimeoutSeconds: 45,
+            rankTolerance: 2,
+            maximumPing: 180,
+            retryCooldownSeconds: 90
+        )
+
+        store.saveConfiguration(configuration, for: session, channelName: "sfiii3n")
+
+        XCTAssertEqual(store.configuration(for: session, channelName: "sfiii3n"), configuration)
+        XCTAssertEqual(store.configuration(for: session, channelName: "kof98"), .default)
+        XCTAssertEqual(store.configuration(for: AuthSession(username: "other", displayName: "Other"), channelName: "sfiii3n"), .default)
+    }
+
+    @MainActor
+    func testAutoMatchRejectedInviteClearsWithoutChatMessage() {
+        let viewModel = makeViewModel()
+        let challenge = makeChallenge(username: "Opponent")
+        viewModel.outgoingChallenges = [challenge]
+        viewModel.autoMatchStatesByChannel[challenge.channelName] = makeAutoMatchState(for: challenge)
+
+        viewModel.handle(.challengeRejected(challenge))
+
+        XCTAssertTrue(viewModel.outgoingChallenges.isEmpty)
+        XCTAssertTrue(viewModel.chatMessagesByChannel[challenge.channelName, default: []].isEmpty)
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.activeChallengeIDs ?? [], [])
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.status, .searching)
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.outcomes.rejected, 1)
+    }
+
+    @MainActor
+    func testAutoMatchWarningClearsInviteWithoutChatOrGlobalError() {
+        let viewModel = makeViewModel()
+        let challenge = makeChallenge(username: "Opponent")
+        let message = "Cannot challenge this user because of ping restrictions."
+        viewModel.outgoingChallenges = [challenge]
+        viewModel.autoMatchStatesByChannel[challenge.channelName] = makeAutoMatchState(for: challenge)
+
+        viewModel.handle(.challengeRestricted(FightcadeChallengeWarning(
+            username: challenge.username,
+            channelName: challenge.channelName,
+            challengeID: challenge.challengeID,
+            message: message
+        )))
+
+        XCTAssertTrue(viewModel.outgoingChallenges.isEmpty)
+        XCTAssertNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.chatMessagesByChannel[challenge.channelName, default: []].isEmpty)
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.activeChallengeIDs ?? [], [])
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.status, .paused(message))
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.outcomes.failed, 1)
+    }
+
+    @MainActor
+    func testAutoMatchCancelEchoIsSuppressedAfterInviteWasCleared() {
+        let viewModel = makeViewModel()
+        let challenge = makeChallenge(username: "Opponent")
+        var state = makeAutoMatchState(for: challenge)
+        state.activeChallengeIDs.removeAll()
+        viewModel.autoMatchStatesByChannel[challenge.channelName] = state
+
+        viewModel.handle(.challengeCanceled(challenge))
+
+        XCTAssertTrue(viewModel.chatMessagesByChannel[challenge.channelName, default: []].isEmpty)
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.outcomes.canceled, 1)
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[challenge.channelName]?.managedChallengeIDs ?? [], [])
+    }
+
+    @MainActor
+    func testManualRejectedInviteStillAddsChatMessage() {
+        let viewModel = makeViewModel()
+        let challenge = makeChallenge(username: "Opponent")
+        viewModel.outgoingChallenges = [challenge]
+
+        viewModel.handle(.challengeRejected(challenge))
+
+        XCTAssertEqual(viewModel.chatMessagesByChannel[challenge.channelName]?.map(\.body), ["Opponent rejected the challenge"])
+    }
+
     func testPlannerSelectsOnlyRankAndCountryOrPingEligibleUsers() {
         let planner = FightcadeAutoMatchPlanner()
         let session = AuthSession(username: "me", displayName: "Me")
@@ -52,8 +146,8 @@ final class FightcadeAutoMatchTests: XCTestCase {
         )
         let secondNames = Set(second.users.map(\.name))
 
-        XCTAssertEqual(first.users.count, 2)
-        XCTAssertEqual(second.users.count, 2)
+        XCTAssertEqual(first.users.count, 3)
+        XCTAssertEqual(second.users.count, 1)
         XCTAssertTrue(firstNames.isDisjoint(with: secondNames))
 
         let exhausted = planner.attempt(
@@ -84,6 +178,25 @@ final class FightcadeAutoMatchTests: XCTestCase {
 
         XCTAssertTrue(attempt.users.isEmpty)
         XCTAssertEqual(attempt.status, .missingCurrentUserRank)
+    }
+
+    @MainActor
+    private func makeViewModel() -> AuthenticatedHomeViewModel {
+        AuthenticatedHomeViewModel(session: AuthSession(username: "me", displayName: "Me"))
+    }
+
+    private func makeChallenge(username: String) -> FightcadeChallenge {
+        FightcadeChallenge(username: username, channelName: "sfiii3n", challengeID: 7, ranked: FightcadeChallenge.defaultRankedValue)
+    }
+
+    private func makeAutoMatchState(for challenge: FightcadeChallenge) -> FightcadeAutoMatchState {
+        var state = FightcadeAutoMatchState()
+        state.isEnabled = true
+        state.activeChallengeIDs = [challenge.id]
+        state.managedChallengeIDs = [challenge.id]
+        state.challengeCooldownsByUsername = [challenge.username.lowercased(): .distantFuture]
+        state.status = .waiting(usernames: [challenge.username])
+        return state
     }
 
     private func makeUser(

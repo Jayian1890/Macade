@@ -37,6 +37,7 @@ final class AuthenticatedHomeViewModel {
     var incomingChallenges: [FightcadeChallenge] = []
     var outgoingChallenges: [FightcadeChallenge] = []
     var autoMatchStatesByChannel: [String: FightcadeAutoMatchState] = [:]
+    var autoMatchConfigurationsByChannel: [String: FightcadeAutoMatchConfiguration] = [:]
     var activeEmulationSession: FightcadeEmbeddedSession?
     var activeMatchOpponentUsername: String?
     var activeMatchOpponentChannelName: String?
@@ -76,6 +77,7 @@ final class AuthenticatedHomeViewModel {
     let joinedChannelStore: any JoinedChannelPersisting
     let channelCache: any FightcadeChannelCaching
     let friendStore: any FightcadeFriendPersisting
+    let autoMatchConfigurationStore: any FightcadeAutoMatchConfigurationPersisting
     private let diagnosticsSettings: FightcadeLobbyDiagnosticsSettings
     private var eventTask: Task<Void, Never>?
     var channelRefreshTask: Task<Void, Never>?
@@ -92,6 +94,7 @@ final class AuthenticatedHomeViewModel {
         joinedChannelStore: any JoinedChannelPersisting = UserDefaultsJoinedChannelStore(),
         channelCache: any FightcadeChannelCaching = FileFightcadeChannelCache(),
         friendStore: any FightcadeFriendPersisting = FileFightcadeFriendStore(),
+        autoMatchConfigurationStore: any FightcadeAutoMatchConfigurationPersisting = UserDefaultsFightcadeAutoMatchConfigurationStore(),
         diagnosticsSettings: FightcadeLobbyDiagnosticsSettings = FightcadeLobbyDiagnosticsSettings()
     ) {
         self.session = session
@@ -102,6 +105,7 @@ final class AuthenticatedHomeViewModel {
         self.joinedChannelStore = joinedChannelStore
         self.channelCache = channelCache
         self.friendStore = friendStore
+        self.autoMatchConfigurationStore = autoMatchConfigurationStore
         self.diagnosticsSettings = diagnosticsSettings
         self.isLobbyDiagnosticsEnabled = diagnosticsSettings.isEnabled
         self.includeLobbyDiagnosticChatBodies = diagnosticsSettings.includesChatBodies
