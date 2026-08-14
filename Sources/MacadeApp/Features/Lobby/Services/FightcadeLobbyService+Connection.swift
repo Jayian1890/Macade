@@ -22,13 +22,20 @@ extension FightcadeLobbyService {
         for _ in 0..<FightcadeLobbyLimit.maximumMessagesPerRequest {
             let payload = try await receivePayload(from: webSocket)
 
-            if let error = parser.loginError(in: payload) {
-                throw error
+            if parser.isAutologinResponse(payload) {
+                if let error = parser.loginError(in: payload) {
+                    throw error
+                }
+
+                if parser.hasLoggedInUser(in: payload) {
+                    favoriteChannelKeys = parser.favoriteChannelKeys(in: payload)
+                    return parser.launcherToken(in: payload)
+                }
+                continue
             }
 
-            if parser.hasLoggedInUser(in: payload) {
-                favoriteChannelKeys = parser.favoriteChannelKeys(in: payload)
-                return parser.launcherToken(in: payload)
+            if autologinBuffer.append(payload) {
+                diagnostics.note("autologin event buffer full; dropped oldest payload")
             }
         }
 
@@ -87,6 +94,7 @@ extension FightcadeLobbyService {
         favoriteChannelKeys.removeAll()
         pendingRequestIDs.removeAll()
         pendingResponses.removeAll()
+        autologinBuffer.removeAll()
         rateLimitedUntil = nil
         nextSendAllowedAt = .distantPast
         webSocket?.cancel(with: .normalClosure, reason: nil)
@@ -144,22 +152,32 @@ extension FightcadeLobbyService {
         while !Task.isCancelled {
             do {
                 let payload = try await receivePayload(from: webSocket)
-                if let requestIdx = parser.requestIndex(in: payload), pendingRequestIDs.contains(requestIdx) {
-                    pendingResponses[requestIdx] = payload
-                    continue
-                }
-
-                if parser.isRateLimitError(in: payload) {
-                    noteRateLimited()
-                }
-
-                if let event = parser.event(in: payload, currentChannelName: currentChannelName) {
-                    emit(event)
-                }
+                routeIncomingPayload(payload)
             } catch {
                 closeConnection(for: webSocket, emitting: "Connection closed.")
                 return
             }
+        }
+    }
+
+    func replayAutologinBuffer() {
+        for payload in autologinBuffer.drain() {
+            routeIncomingPayload(payload)
+        }
+    }
+
+    private func routeIncomingPayload(_ payload: [String: Any]) {
+        if let requestIdx = parser.requestIndex(in: payload), pendingRequestIDs.contains(requestIdx) {
+            pendingResponses[requestIdx] = payload
+            return
+        }
+
+        if parser.isRateLimitError(in: payload) {
+            noteRateLimited()
+        }
+
+        if let event = parser.event(in: payload, currentChannelName: currentChannelName) {
+            emit(event)
         }
     }
 
@@ -276,11 +294,39 @@ extension FightcadeLobbyService {
         heartbeatTask = nil
         pendingRequestIDs.removeAll()
         pendingResponses.removeAll()
+        autologinBuffer.removeAll()
         rateLimitedUntil = nil
         nextSendAllowedAt = .distantPast
         socket.cancel(with: .normalClosure, reason: nil)
         webSocket = nil
         emit(.error(message))
+    }
+}
+
+struct FightcadeLobbyPayloadBuffer {
+    private let limit: Int
+    private var payloads: [[String: Any]] = []
+
+    init(limit: Int = 64) {
+        self.limit = max(1, limit)
+    }
+
+    mutating func append(_ payload: [String: Any]) -> Bool {
+        let droppedOldest = payloads.count == limit
+        if droppedOldest {
+            payloads.removeFirst()
+        }
+        payloads.append(payload)
+        return droppedOldest
+    }
+
+    mutating func drain() -> [[String: Any]] {
+        defer { payloads.removeAll(keepingCapacity: true) }
+        return payloads
+    }
+
+    mutating func removeAll() {
+        payloads.removeAll(keepingCapacity: true)
     }
 }
 

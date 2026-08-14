@@ -173,6 +173,7 @@ struct ChatMessageRow: View {
                 .background(MacadeColor.warning, in: Capsule())
             }
             .buttonStyle(.plain)
+            .disabled(!viewModel.canOpenFightcadeReplay(replayLink))
             .help("Open Fightcade replay in TV")
         }
     }
@@ -185,6 +186,7 @@ struct ChatMessageRow: View {
             Button("Open Fightcade Replay") {
                 viewModel.openFightcadeReplay(replayLink, in: channel)
             }
+            .disabled(!viewModel.canOpenFightcadeReplay(replayLink))
         }
 
         Divider()

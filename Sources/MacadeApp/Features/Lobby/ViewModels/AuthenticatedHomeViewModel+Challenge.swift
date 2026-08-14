@@ -12,7 +12,8 @@ extension AuthenticatedHomeViewModel {
     }
 
     func canChallenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel) -> Bool {
-        guard joinedChannelIDs.contains(channel.id) else {
+        guard joinedChannelIDs.contains(channel.id),
+              canLaunchFightcadeGame(.fightcadeMatch, in: channel) else {
             return false
         }
 
@@ -109,6 +110,12 @@ extension AuthenticatedHomeViewModel {
 
     func acceptIncomingChallenge(_ challenge: FightcadeChallenge) {
         guard incomingChallenges.contains(where: { $0.id == challenge.id }) else {
+            return
+        }
+
+        guard canAcceptIncomingChallenge(challenge) else {
+            errorMessage = challengeChannel(for: challenge).map { unavailableFightcadeLaunchMessage(for: $0) }
+                ?? FightcadeLaunchError.missingGame.localizedDescription
             return
         }
 

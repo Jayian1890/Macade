@@ -180,9 +180,113 @@ final class FightcadeAutoMatchTests: XCTestCase {
         XCTAssertEqual(attempt.status, .missingCurrentUserRank)
     }
 
+    func testPlannerAllowsEligibleIncomingChallenge() {
+        let planner = FightcadeAutoMatchPlanner()
+        let session = AuthSession(username: "me", displayName: "Me")
+        let challenge = makeChallenge(username: "Opponent")
+        let users = [
+            makeUser("Me", countryCode: "US", ping: nil, rank: 3),
+            makeUser("Opponent", countryCode: "CA", ping: 120, rank: 4)
+        ]
+
+        XCTAssertTrue(planner.isEligibleIncomingChallenge(challenge, users: users, session: session))
+    }
+
+    func testPlannerRejectsIncomingChallengeOutsideSettings() {
+        let planner = FightcadeAutoMatchPlanner()
+        let session = AuthSession(username: "me", displayName: "Me")
+        let challenge = makeChallenge(username: "Opponent")
+        let users = [
+            makeUser("Me", countryCode: "US", ping: nil, rank: 3),
+            makeUser("Opponent", countryCode: "JP", ping: 180, rank: 5)
+        ]
+
+        XCTAssertFalse(planner.isEligibleIncomingChallenge(challenge, users: users, session: session))
+    }
+
+    @MainActor
+    func testAutoMatchAcceptsEligibleIncomingChallenge() async {
+        let lobbyService = RecordingAutoMatchLobbyService()
+        let viewModel = makeViewModel(lobbyService: lobbyService)
+        let channel = makeChannel()
+        let challenge = makeChallenge(username: "Opponent")
+        var state = FightcadeAutoMatchState()
+        state.isEnabled = true
+        viewModel.joinedChannelIDs = [channel.id]
+        viewModel.usersByChannel[channel.name] = [
+            makeUser("Me", countryCode: "US", ping: nil, rank: 3),
+            makeUser("Opponent", countryCode: "CA", ping: 120, rank: 4)
+        ]
+        viewModel.autoMatchStatesByChannel[channel.name] = state
+
+        viewModel.handle(.challengeReceived(challenge))
+
+        let acceptedChallenges = await lobbyService.waitForAcceptedChallenges(count: 1)
+        XCTAssertEqual(acceptedChallenges, [challenge])
+        XCTAssertEqual(viewModel.activeMatchOpponentUsername, "Opponent")
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[channel.name]?.isEnabled, false)
+    }
+
+    @MainActor
+    func testAutoMatchLeavesIneligibleIncomingChallengeForManualResponse() async {
+        let lobbyService = RecordingAutoMatchLobbyService()
+        let viewModel = makeViewModel(lobbyService: lobbyService)
+        let channel = makeChannel()
+        let challenge = makeChallenge(username: "Opponent")
+        var state = FightcadeAutoMatchState()
+        state.isEnabled = true
+        viewModel.joinedChannelIDs = [channel.id]
+        viewModel.usersByChannel[channel.name] = [
+            makeUser("Me", countryCode: "US", ping: nil, rank: 3),
+            makeUser("Opponent", countryCode: "JP", ping: 180, rank: 5)
+        ]
+        viewModel.autoMatchStatesByChannel[channel.name] = state
+
+        viewModel.handle(.challengeReceived(challenge))
+
+        let acceptedChallenges = await lobbyService.waitForAcceptedChallenges(count: 1)
+        XCTAssertEqual(acceptedChallenges, [])
+        XCTAssertEqual(viewModel.incomingChallenges, [challenge])
+        XCTAssertEqual(viewModel.autoMatchStatesByChannel[channel.name]?.isEnabled, true)
+    }
+
     @MainActor
     private func makeViewModel() -> AuthenticatedHomeViewModel {
         AuthenticatedHomeViewModel(session: AuthSession(username: "me", displayName: "Me"))
+    }
+
+    @MainActor
+    private func makeViewModel(lobbyService: any FightcadeLobbyServicing) -> AuthenticatedHomeViewModel {
+        let launcher = RouteGatedFightcadeLauncher()
+        launcher.capabilities = [.fightcadeMatch]
+        launcher.roms = [launcher.romKey(emulator: "fbneo", gameID: "sfiii3n")]
+        let viewModel = AuthenticatedHomeViewModel(
+            session: AuthSession(username: "me", displayName: "Me"),
+            lobbyService: lobbyService,
+            launcher: launcher
+        )
+        viewModel.dashboard = FightcadeDashboard(
+            connectedUsername: "Me",
+            welcomeMessage: nil,
+            channels: [makeChannel()]
+        )
+        return viewModel
+    }
+
+    private func makeChannel() -> FightcadeChannel {
+        FightcadeChannel(
+            id: "sfiii3n",
+            name: "sfiii3n",
+            title: "Street Fighter III 3rd Strike",
+            gameID: "sfiii3n",
+            system: "Arcade",
+            emulator: "fbneo",
+            playerCount: nil,
+            spectatorCount: nil,
+            isRanked: true,
+            isFavorite: false,
+            supportsTraining: true
+        )
     }
 
     private func makeChallenge(username: String) -> FightcadeChallenge {
@@ -226,5 +330,59 @@ final class FightcadeAutoMatchTests: XCTestCase {
             preventsWifiChallenges: false,
             stream: nil
         )
+    }
+}
+
+private actor RecordingAutoMatchLobbyService: FightcadeLobbyServicing {
+    private var acceptedChallenges: [FightcadeChallenge] = []
+
+    func eventStream() -> AsyncStream<FightcadeLobbyEvent> {
+        AsyncStream { _ in }
+    }
+
+    func connect(for session: AuthSession) async throws -> FightcadeDashboard {
+        FightcadeDashboard(connectedUsername: session.displayName, welcomeMessage: nil, channels: [])
+    }
+
+    func refreshChannels() async throws {}
+
+    func searchChannels(matching query: String) async throws -> [FightcadeChannel] { [] }
+
+    func loadUpcomingEvents(limit: Int) async throws -> [FightcadeEvent] { [] }
+
+    func loadRecentMatches(for username: String, gameID: String, limit: Int) async throws -> [FightcadeRecentMatch] { [] }
+
+    func setFavorite(_ isFavorite: Bool, for channel: FightcadeChannel) async throws {}
+
+    func join(channel: FightcadeChannel) async throws {}
+
+    func leave(channel: FightcadeChannel) async throws {}
+
+    func sendChat(_ message: String, to channel: FightcadeChannel, from username: String) async throws {}
+
+    func challenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel, ranked: Int) async throws -> FightcadeChallenge {
+        FightcadeChallenge(username: user.name, channelName: channel.name, challengeID: 1, ranked: ranked)
+    }
+
+    func acceptChallenge(_ challenge: FightcadeChallenge) async throws {
+        acceptedChallenges.append(challenge)
+    }
+
+    func rejectChallenge(_ challenge: FightcadeChallenge) async throws {}
+
+    func cancelChallenge(_ challenge: FightcadeChallenge) async throws {}
+
+    func disconnect() async {}
+
+    func waitForAcceptedChallenges(count: Int) async -> [FightcadeChallenge] {
+        for _ in 0..<100 {
+            if acceptedChallenges.count >= count {
+                return acceptedChallenges
+            }
+
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+
+        return acceptedChallenges
     }
 }

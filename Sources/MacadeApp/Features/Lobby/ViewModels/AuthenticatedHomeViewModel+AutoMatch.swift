@@ -16,15 +16,20 @@ extension AuthenticatedHomeViewModel {
     }
 
     func canToggleAutoMatch(for channel: FightcadeChannel) -> Bool {
-        isAutoMatching(in: channel) || isJoinedForAutoMatch(channel)
+        isAutoMatching(in: channel)
+            || (isJoinedForAutoMatch(channel) && canLaunchFightcadeGame(.fightcadeMatch, in: channel))
     }
 
     func autoMatchHelpText(for channel: FightcadeChannel) -> String {
         let configuration = autoMatchConfiguration(for: channel)
         guard isAutoMatching(in: channel) else {
-            return isJoinedForAutoMatch(channel)
+            guard isJoinedForAutoMatch(channel) else {
+                return "Join this room to enable auto match"
+            }
+
+            return canLaunchFightcadeGame(.fightcadeMatch, in: channel)
                 ? "Auto match within \(configuration.rankTolerance) rank, same country or under \(configuration.maximumPing) ms"
-                : "Join this room to enable auto match"
+                : unavailableFightcadeLaunchMessage(for: channel)
         }
 
         switch autoMatchStatesByChannel[channel.name]?.status ?? .searching {
@@ -171,7 +176,9 @@ extension AuthenticatedHomeViewModel {
     }
 
     private func startAutoMatch(for channel: FightcadeChannel) {
-        guard isJoinedForAutoMatch(channel), autoMatchTasksByChannel[channel.name] == nil else {
+        guard isJoinedForAutoMatch(channel),
+              canLaunchFightcadeGame(.fightcadeMatch, in: channel),
+              autoMatchTasksByChannel[channel.name] == nil else {
             return
         }
 
@@ -205,6 +212,11 @@ extension AuthenticatedHomeViewModel {
         while !Task.isCancelled, autoMatchStatesByChannel[channelName]?.isEnabled == true {
             guard isJoinedForAutoMatch(channel) else {
                 stopAutoMatch(in: channelName, reason: "Auto match stopped because you left the room.", cancelsOutstandingChallenges: true)
+                return
+            }
+
+            guard canLaunchFightcadeGame(.fightcadeMatch, in: channel) else {
+                stopAutoMatch(in: channelName, reason: unavailableFightcadeLaunchMessage(for: channel), cancelsOutstandingChallenges: true)
                 return
             }
 
@@ -390,6 +402,7 @@ extension AuthenticatedHomeViewModel {
 
     private func canAutoMatchChallenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel) -> Bool {
         isJoinedForAutoMatch(channel)
+            && canLaunchFightcadeGame(.fightcadeMatch, in: channel)
             && user.name.caseInsensitiveCompare(session.displayName) != .orderedSame
             && user.name.caseInsensitiveCompare(session.username) != .orderedSame
             && !user.isAway

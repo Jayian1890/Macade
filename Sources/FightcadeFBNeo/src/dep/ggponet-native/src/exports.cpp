@@ -117,7 +117,11 @@ GGPOSession *__cdecl ggpo_start_session(GGPOSessionCallbacks *callbacks, char *g
    if (session == nullptr) {
       return nullptr;
    }
-   ggponet::reconstructed::peer_session_connect(session, remote_ip, remote_port, player_num != 0);
+   if (!ggponet::reconstructed::peer_session_connect(session, remote_ip, remote_port, player_num != 0)) {
+      ggponet::reconstructed::peer_backend_teardown(session);
+      delete session;
+      return nullptr;
+   }
    return &session->base;
 }
 

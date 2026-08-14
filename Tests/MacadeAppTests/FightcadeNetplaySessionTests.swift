@@ -24,7 +24,6 @@ final class FightcadeNetplaySessionTests: XCTestCase {
         XCTAssertEqual(plan.acknowledgePayload, "ok")
         XCTAssertEqual(plan.usePortsPayload, "useports/1234567890-42.1")
         XCTAssertEqual(plan.localBindPort, 6006)
-        XCTAssertEqual(plan.restrictedNATFallbackPort, 442)
         XCTAssertEqual(plan.fixedFallbackPort, 6004)
     }
 
@@ -51,40 +50,61 @@ final class FightcadeNetplaySessionTests: XCTestCase {
         XCTAssertEqual(initial.payload, "0.123 _")
         XCTAssertEqual(acknowledged.payload, "0.123 0.456 ok")
         XCTAssertEqual(FightcadeHolePunchMessage.parse(Data("0.456 _".utf8))?.remoteToken, "0.456")
-        XCTAssertEqual(FightcadeHolePunchMessage.parse(Data("0.456 0.123 ok".utf8))?.remoteKnowsLocalToken, true)
+        let parsed = FightcadeHolePunchMessage.parse(Data("0.456 0.123 ok".utf8))
+        XCTAssertEqual(parsed?.remoteKnowsLocalToken, true)
+        XCTAssertEqual(parsed?.acknowledgedToken, "0.123")
     }
 
-    func testNormalNATFallbackCandidatesTryPlusThenMinusPorts() {
-        XCTAssertEqual(
-            FightcadePortFallbacks.normalNATCandidates(around: 7000, radius: 3),
-            [7001, 6999, 7002, 6998, 7003, 6997]
-        )
+    func testHolePuncherRejectsAcknowledgmentForAnotherToken() async throws {
+        let peer = FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6006)
+        let transport = ScriptedUDPTransport(receives: [
+            (Data("0.456 0.999 ok".utf8), peer)
+        ])
+        let puncher = FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
+
+        let result = try await puncher.punch(transport: transport, peer: peer, attempts: 1, sleep: 0)
+
+        XCTAssertFalse(result.punched)
+        XCTAssertNil(result.keepalivePayload)
+        XCTAssertEqual(transport.sent.map(\.0), [Data("0.123 0.456 ok".utf8)])
     }
 
-    func testPrioritizedFallbackCandidatesTryObservedAndKnownPortsBeforeWideScan() {
-        let plan = FightcadeQuarkSessionPlan(match: makeMatch(quarkID: "1234567890-6042"))
+    func testHolePuncherIgnoresMasterPacketsDuringPeerExchange() async throws {
+        let master = FightcadeNetplayEndpoint(host: "203.0.113.1", port: 7000)
+        let peer = FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6006)
+        let transport = ScriptedUDPTransport(receives: [
+            (Data("0.456 0.123 ok".utf8), master),
+            (Data("0.456 0.123 ok".utf8), peer)
+        ])
+        let puncher = FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
 
-        let candidates = FightcadePortFallbacks.prioritizedCandidates(
-            observedPort: 6200,
-            basePort: 7004,
-            plan: plan,
-            radius: 1,
-            includeBasePort: true
+        let result = try await puncher.punch(
+            transport: transport,
+            peer: peer,
+            attempts: 2,
+            sleep: 0,
+            ignoredEndpoint: master
         )
 
-        XCTAssertEqual(Array(candidates.prefix(7)), [6200, 7004, 6000, 6004, 46042, 7005, 7003])
+        XCTAssertTrue(result.punched)
+        XCTAssertEqual(result.peer, peer)
+        XCTAssertEqual(transport.sent.map(\.0), [
+            Data("0.123 _".utf8),
+            Data("0.123 0.456 ok".utf8)
+        ])
     }
 
     func testHolePuncherSendsTokenExchangeAndUpdatesSymmetricPort() async throws {
         let transport = ScriptedUDPTransport(receives: [
-            (Data("0.456 _".utf8), FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200))
+            (Data("0.456 _".utf8), FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)),
+            (Data("0.456 0.123 ok".utf8), FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200))
         ])
         let puncher = FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
 
         let result = try await puncher.punch(
             transport: transport,
             peer: FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6006),
-            attempts: 1,
+            attempts: 2,
             sleep: 0
         )
 
@@ -93,11 +113,17 @@ final class FightcadeNetplaySessionTests: XCTestCase {
             peer: FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200),
             keepalivePayload: Data("0.123 0.456 ok".utf8)
         ))
-        XCTAssertEqual(transport.sent.map(\.0).map { String(data: $0, encoding: .utf8) }, ["0.123 0.456 ok"])
-        XCTAssertEqual(transport.sent.map(\.1), [FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200)])
+        XCTAssertEqual(transport.sent.map(\.0).map { String(data: $0, encoding: .utf8) }, [
+            "0.123 0.456 ok",
+            "0.123 0.456 ok"
+        ])
+        XCTAssertEqual(transport.sent.map(\.1), Array(
+            repeating: FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6200),
+            count: 2
+        ))
     }
 
-    func testMasterClientSendsUsePortsAndFailsWhenPunchingFails() async throws {
+    func testMasterClientSendsUsePortsAndSelectsNativeRouteWhenPunchingFails() async throws {
         let match = FightcadeMatchLaunch(
             emulator: "fbneo",
             gameID: "sfiii3n",
@@ -113,27 +139,58 @@ final class FightcadeNetplaySessionTests: XCTestCase {
             (Data(plan.expectedOKPayload.utf8), plan.master),
             (Data([203, 0, 113, 8, 0x76, 0x17]), FightcadeNetplayEndpoint(host: "203.0.113.8", port: 6006))
         ])
-        let factory = ScriptedUDPTransportFactory(transport: transport)
+        let fixed = ScriptedUDPTransport(receives: [])
+        let factory = QueueingUDPTransportFactory(transports: [transport, fixed])
         let client = FightcadeMasterClient(
             transportFactory: factory,
-            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in }),
-            fallbackRadius: 0
+            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
         )
 
-        do {
-            _ = try await client.establish(plan: plan)
-            XCTFail("Expected UDP punch failure")
-        } catch {
-            XCTAssertEqual(error as? FightcadeMasterClientError, .udpPunchFailed)
+        let outcome = try await client.establishProxySession(plan: plan)
+        guard case .nativeUsePorts(let reason) = outcome else {
+            return XCTFail("Expected native useports route")
         }
+        XCTAssertEqual(reason, .udpPunchFailed)
 
         let expectedPayloads = [plan.registrationPayload, plan.acknowledgePayload]
-            + Array(repeating: "0.123 _", count: 20)
+            + Array(repeating: "0.123 _", count: 10)
             + [plan.usePortsPayload]
         XCTAssertEqual(transport.sent.map(\.0).compactMap { String(data: $0, encoding: .utf8) }, expectedPayloads)
+        XCTAssertEqual(fixed.sent.map(\.0).compactMap { String(data: $0, encoding: .utf8) }, Array(repeating: "0.123 _", count: 10))
+        XCTAssertEqual(factory.bindPorts, [plan.localBindPort, plan.fixedFallbackPort])
     }
 
-    func testMasterClientTriesBoundFallbackPortsBeforeUsePorts() async throws {
+    func testMasterClientRetriesRegistrationOnceAfterTimeout() async throws {
+        let plan = FightcadeQuarkSessionPlan(match: makeMatch(quarkID: "1234567890-42"))
+        let peer = FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6006)
+        let transport = ScriptedUDPTransport(
+            receives: [
+                (Data(plan.expectedOKPayload.utf8), plan.master),
+                (Data([198, 51, 100, 7, 0x76, 0x17]), plan.master),
+                (Data("0.456 _".utf8), peer),
+                (Data("0.456 0.123 ok".utf8), peer)
+            ],
+            timeoutReceiveCalls: [1]
+        )
+        let client = FightcadeMasterClient(
+            transportFactory: ScriptedUDPTransportFactory(transport: transport),
+            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
+        )
+
+        let outcome = try await client.establishProxySession(plan: plan)
+        guard case .proxied(let session) = outcome else {
+            return XCTFail("Expected proxied session")
+        }
+        defer { session.close() }
+
+        XCTAssertEqual(transport.sent.prefix(2).map(\.0), [
+            Data(plan.registrationPayload.utf8),
+            Data(plan.registrationPayload.utf8)
+        ])
+        XCTAssertEqual(session.peer, peer)
+    }
+
+    func testMasterClientFreshSocketFallbackUsesLocalAndRemotePort6004() async throws {
         let match = FightcadeMatchLaunch(
             emulator: "fbneo",
             gameID: "sfiii3n",
@@ -149,36 +206,26 @@ final class FightcadeNetplaySessionTests: XCTestCase {
             (Data(plan.expectedOKPayload.utf8), plan.master),
             (Data([198, 51, 100, 7, 0x5c, 0x1b]), FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6006))
         ])
-        let restricted = ScriptedUDPTransport(receives: [])
         let fixed = ScriptedUDPTransport(receives: [])
-        let factory = QueueingUDPTransportFactory(transports: [initial, restricted, fixed])
+        let factory = QueueingUDPTransportFactory(transports: [initial, fixed])
         let client = FightcadeMasterClient(
             transportFactory: factory,
-            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in }),
-            fallbackRadius: 1
+            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
         )
 
-        do {
-            _ = try await client.establish(plan: plan)
-            XCTFail("Expected UDP punch failure")
-        } catch {
-            XCTAssertEqual(error as? FightcadeMasterClientError, .udpPunchFailed)
+        let outcome = try await client.establishProxySession(plan: plan)
+        guard case .nativeUsePorts(let reason) = outcome else {
+            return XCTFail("Expected native useports route")
         }
+        XCTAssertEqual(reason, .udpPunchFailed)
 
-        XCTAssertEqual(factory.bindPorts, [plan.localBindPort, plan.restrictedNATFallbackPort, plan.fixedFallbackPort])
+        XCTAssertEqual(factory.bindPorts, [plan.localBindPort, plan.fixedFallbackPort])
         XCTAssertEqual(initial.sent.map(\.1).suffix(1), [plan.master])
-        XCTAssertTrue(initial.sent.map(\.1).contains(FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6000)))
-        XCTAssertTrue(initial.sent.map(\.1).contains(FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6004)))
         XCTAssertEqual(String(data: initial.sent.last?.0 ?? Data(), encoding: .utf8), plan.usePortsPayload)
-        XCTAssertEqual(restricted.sent.map(\.1).prefix(2), [
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.restrictedNATFallbackPort),
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.restrictedNATFallbackPort)
-        ])
-        XCTAssertTrue(restricted.sent.map(\.1).contains(FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6000)))
-        XCTAssertEqual(fixed.sent.map(\.1).prefix(2), [
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort),
-            FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort)
-        ])
+        XCTAssertEqual(fixed.sent.count, 10)
+        XCTAssertTrue(fixed.sent.allSatisfy {
+            $0.1 == FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort)
+        })
     }
 
     func testUDPProxyForwardsLocalAndPeerPackets() async throws {
@@ -307,10 +354,16 @@ final class FightcadeNetplaySessionTests: XCTestCase {
 
 private final class ScriptedUDPTransport: FightcadeUDPTransporting, @unchecked Sendable {
     private var receives: [(Data, FightcadeNetplayEndpoint)]
+    private let timeoutReceiveCalls: Set<Int>
+    private var receiveCallCount = 0
     private(set) var sent: [(Data, FightcadeNetplayEndpoint)] = []
 
-    init(receives: [(Data, FightcadeNetplayEndpoint)]) {
+    init(
+        receives: [(Data, FightcadeNetplayEndpoint)],
+        timeoutReceiveCalls: Set<Int> = []
+    ) {
         self.receives = receives
+        self.timeoutReceiveCalls = timeoutReceiveCalls
     }
 
     func send(_ data: Data, to endpoint: FightcadeNetplayEndpoint) async throws {
@@ -318,6 +371,10 @@ private final class ScriptedUDPTransport: FightcadeUDPTransporting, @unchecked S
     }
 
     func receive(maximumBytes: Int, timeout: TimeInterval) async throws -> (Data, FightcadeNetplayEndpoint) {
+        receiveCallCount += 1
+        if timeoutReceiveCalls.contains(receiveCallCount) {
+            throw POSIXError(.ETIMEDOUT)
+        }
         guard !receives.isEmpty else {
             throw POSIXError(.ETIMEDOUT)
         }

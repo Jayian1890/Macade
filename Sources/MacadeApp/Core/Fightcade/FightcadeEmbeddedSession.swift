@@ -87,15 +87,27 @@ final class FightcadeEmbeddedSession {
         }
     }
 
-    func attach(process: Process, proxyTask: Task<Void, Never>? = nil) {
+    func attach(process: Process) {
         self.process = process
-        self.proxyTask = proxyTask
         sleepAssertion = FightcadeEmbeddedSleepAssertion(reason: "Macade is running \(emulator.uppercased()) for \(gameID)")
         status = .running(processID: process.processIdentifier)
     }
 
+    func attachProxyTask(_ task: Task<Void, Never>) {
+        guard isActive else {
+            task.cancel()
+            return
+        }
+        proxyTask?.cancel()
+        proxyTask = task
+    }
+
     func markTerminated(status terminationStatus: Int32) {
-        status = .terminated(status: terminationStatus)
+        if case .failed = status {
+            // Preserve the connection failure that caused process termination.
+        } else {
+            status = .terminated(status: terminationStatus)
+        }
         process = nil
         sleepAssertion?.release()
         sleepAssertion = nil
@@ -108,8 +120,13 @@ final class FightcadeEmbeddedSession {
     }
 
     func markFailed(_ message: String) {
+        failAndTerminate(message)
+    }
+
+    func failAndTerminate(_ message: String) {
+        if case .failed = status { return }
+        let runningProcess = process
         status = .failed(message)
-        process = nil
         sleepAssertion?.release()
         sleepAssertion = nil
         forceKillTask?.cancel()
@@ -118,6 +135,13 @@ final class FightcadeEmbeddedSession {
         proxyTask = nil
         videoStream.close()
         inputClient.close()
+
+        guard let runningProcess, runningProcess.isRunning else {
+            process = nil
+            return
+        }
+        runningProcess.terminate()
+        scheduleForceKill(processID: runningProcess.processIdentifier)
     }
 
     func stop() {
@@ -137,14 +161,16 @@ final class FightcadeEmbeddedSession {
         proxyTask?.cancel()
         proxyTask = nil
         process.terminate()
-        let processID = process.processIdentifier
+        scheduleForceKill(processID: process.processIdentifier)
+    }
+
+    private func scheduleForceKill(processID: Int32) {
         forceKillTask?.cancel()
         forceKillTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled,
-                  self?.process?.processIdentifier == processID,
-                  self?.process?.isRunning == true else { return }
+            guard !Task.isCancelled, kill(processID, 0) == 0 else { return }
             kill(processID, SIGKILL)
+            self?.forceKillTask = nil
         }
     }
 }

@@ -1,8 +1,8 @@
 #include "client_backend_internal.hpp"
 
 #include "logging.hpp"
+#include "tcp_framing.hpp"
 
-#include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
 #include <cstring>
@@ -15,28 +15,29 @@
 namespace ggponet::reconstructed {
 namespace {
 
-void append_be32(std::vector<unsigned char> *buffer, uint32_t value)
+void disconnect_socket(ClientBackend *client)
 {
-   const uint32_t be = htonl(value);
-   const auto *bytes = reinterpret_cast<const unsigned char *>(&be);
-   buffer->insert(buffer->end(), bytes, bytes + sizeof(be));
-}
-
-void append_string(std::vector<unsigned char> *payload, const std::string &value)
-{
-   append_be32(payload, static_cast<uint32_t>(value.size()));
-   payload->insert(payload->end(), value.begin(), value.end());
+   if (client->socket_fd >= 0) {
+      close(client->socket_fd);
+      client->socket_fd = -1;
+   }
+   if (!client->disconnected) {
+      client->disconnected = true;
+      client->events.push_back({10});
+   }
 }
 
 void send_command(ClientBackend *client, int command, const std::vector<unsigned char> &payload)
 {
    quark_log("Sending command %d to server.\n", command);
-   const unsigned int sequence = client->next_sequence++;
+   const unsigned int sequence = client->next_sequence;
+   if (!tcp_append_command(&client->send_buffer, sequence, command, payload)) {
+      quark_log("TcpProtocol rejected oversized command %d (%zu bytes).\n", command, payload.size());
+      disconnect_socket(client);
+      return;
+   }
+   ++client->next_sequence;
    client->pending_commands[sequence] = command;
-   append_be32(&client->send_buffer, static_cast<uint32_t>(payload.size() + 8));
-   append_be32(&client->send_buffer, sequence);
-   append_be32(&client->send_buffer, static_cast<uint32_t>(command));
-   client->send_buffer.insert(client->send_buffer.end(), payload.begin(), payload.end());
 }
 
 void flush_socket(ClientBackend *client)
@@ -46,10 +47,12 @@ void flush_socket(ClientBackend *client)
                                 client->send_buffer.size() - client->send_offset, 0);
       if (sent > 0) {
          client->send_offset += static_cast<size_t>(sent);
+      } else if (sent < 0 && errno == EINTR) {
+         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
          return;
       } else {
-         client->events.push_back({10});
+         disconnect_socket(client);
          return;
       }
    }
@@ -108,9 +111,9 @@ void send_spectator_inputs(ClientBackend *client)
       return;
    }
    std::vector<unsigned char> payload;
-   append_string(&payload, client->match_id);
-   append_be32(&payload, static_cast<uint32_t>(client->spectator_inputs.size()));
-   append_be32(&payload, static_cast<uint32_t>(client->spectator_inputs.front().size));
+   tcp_append_string(&payload, client->match_id);
+   tcp_append_be32(&payload, static_cast<uint32_t>(client->spectator_inputs.size()));
+   tcp_append_be32(&payload, static_cast<uint32_t>(client->spectator_inputs.front().size));
    for (const GameInput &input : client->spectator_inputs) {
       char text[1024];
       game_input_to_string(&input, text, sizeof(text), true);
@@ -133,9 +136,9 @@ void send_state_upload(ClientBackend *client, const GameInput *input)
       return;
    }
    std::vector<unsigned char> payload;
-   append_string(&payload, client->match_id);
-   append_be32(&payload, static_cast<uint32_t>(compressed.size()));
-   append_be32(&payload, static_cast<uint32_t>(state_size));
+   tcp_append_string(&payload, client->match_id);
+   tcp_append_be32(&payload, static_cast<uint32_t>(compressed.size()));
+   tcp_append_be32(&payload, static_cast<uint32_t>(state_size));
    payload.insert(payload.end(), compressed.begin(), compressed.end());
    send_command(client, 0x12, payload);
 }
@@ -185,7 +188,7 @@ void send_replay_upload(ClientBackend *client)
    std::vector<unsigned char> header;
    append_replay_header(client, replay_payload.size(), compressed.size(), &header);
    std::vector<unsigned char> payload;
-   append_string(&payload, client->match_id);
+   tcp_append_string(&payload, client->match_id);
    payload.insert(payload.end(), header.begin(), header.end());
    payload.insert(payload.end(), compressed.begin(), compressed.end());
    quark_log("Sending Replay...");

@@ -46,6 +46,8 @@
 		BF00000B00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift */; };
 		BF00000B00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift */; };
 		BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000011 /* FightcadeLauncher.swift */; };
+		BF00000B00000000000000F0 /* FightcadeLauncher+Embedded.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000F0 /* FightcadeLauncher+Embedded.swift */; };
+		BF00000B00000000000000F1 /* FightcadeLobbyPayloadParser+Channels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000F1 /* FightcadeLobbyPayloadParser+Channels.swift */; };
 		BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000012 /* FightcadeChallenge.swift */; };
 		BF00000B00000000000000E4 /* FightcadeAutoMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E4 /* FightcadeAutoMatch.swift */; };
 		BF00000B00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift */; };
@@ -80,7 +82,6 @@
 		BF00000B0000000000000028 /* FightcadeLobbyDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */; };
 		BF00000B0000000000000029 /* FightcadeNetplaySession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000029 /* FightcadeNetplaySession.swift */; };
 		BF00000B000000000000002A /* FightcadeUDPProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000002A /* FightcadeUDPProxy.swift */; };
-		BF00000B00000000000000DE /* FightcadeNetplayFallbacks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DE /* FightcadeNetplayFallbacks.swift */; };
 		BF00000B00000000000000DF /* FightcadeMasterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000DF /* FightcadeMasterClient.swift */; };
 		BF00000B00000000000000E0 /* FightcadeLaunchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E0 /* FightcadeLaunchModels.swift */; };
 		BF00000B00000000000000E1 /* FightcadeNetplayPreflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000E1 /* FightcadeNetplayPreflight.swift */; };
@@ -171,6 +172,7 @@
 		BF10000B000000000000000F /* FightcadeLobbyPayloadParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C000000000000000F /* FightcadeLobbyPayloadParserTests.swift */; };
 		BF10000B0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift */; };
 		BF10000B0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */; };
+		BF10000B0000000000000012 /* FightcadeNetplayLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000012 /* FightcadeNetplayLifecycleTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -226,6 +228,8 @@
 		BF00000C00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+Motd.swift"; sourceTree = "<group>"; };
 		BF00000C00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+Welcome.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000011 /* FightcadeLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLauncher.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000F0 /* FightcadeLauncher+Embedded.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLauncher+Embedded.swift"; sourceTree = "<group>"; };
+		BF00000C00000000000000F1 /* FightcadeLobbyPayloadParser+Channels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FightcadeLobbyPayloadParser+Channels.swift"; sourceTree = "<group>"; };
 		BF00000C0000000000000012 /* FightcadeChallenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChallenge.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000E4 /* FightcadeAutoMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeAutoMatch.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeAutoMatchConfigurationStore.swift; sourceTree = "<group>"; };
@@ -260,7 +264,6 @@
 		BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyDiagnostics.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000029 /* FightcadeNetplaySession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplaySession.swift; sourceTree = "<group>"; };
 		BF00000C000000000000002A /* FightcadeUDPProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeUDPProxy.swift; sourceTree = "<group>"; };
-		BF00000C00000000000000DE /* FightcadeNetplayFallbacks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplayFallbacks.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000DF /* FightcadeMasterClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeMasterClient.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000E0 /* FightcadeLaunchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLaunchModels.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000E1 /* FightcadeNetplayPreflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplayPreflight.swift; sourceTree = "<group>"; };
@@ -352,6 +355,7 @@
 		BF10000C000000000000000F /* FightcadeLobbyPayloadParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeLobbyPayloadParserTests.swift; sourceTree = "<group>"; };
 		BF10000C0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOServedHandshakeTests.swift; sourceTree = "<group>"; };
 		BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsPreferencesStoreTests.swift; sourceTree = "<group>"; };
+		BF10000C0000000000000012 /* FightcadeNetplayLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplayLifecycleTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -524,6 +528,7 @@
 				BF10000C000000000000000F /* FightcadeLobbyPayloadParserTests.swift */,
 				BF10000C0000000000000001 /* FightcadeMatchLaunchTests.swift */,
 				BF10000C0000000000000007 /* FightcadeNetplaySessionTests.swift */,
+				BF10000C0000000000000012 /* FightcadeNetplayLifecycleTests.swift */,
 				BF10000C000000000000000B /* FightcadePreviewURLTests.swift */,
 				BF10000C0000000000000002 /* FightcadeRecentMatchTests.swift */,
 				BF10000C0000000000000009 /* FightcadeROMIndexTests.swift */,
@@ -563,13 +568,13 @@
 				BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */,
 				BF00000C00000000000000D5 /* FightcadeRuntimeManifest.swift */,
 				BF00000C0000000000000011 /* FightcadeLauncher.swift */,
+				BF00000C00000000000000F0 /* FightcadeLauncher+Embedded.swift */,
 				BF00000C00000000000000E0 /* FightcadeLaunchModels.swift */,
 				BF00000C000000000000001E /* FightcadeLaunchSupport.swift */,
 				BF00000C000000000000002B /* FightcadeGGPOProtocol.swift */,
 				BF00000C000000000000002C /* FightcadeGGPOServedHandshake.swift */,
 				BF00000C000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift */,
 				BF00000C0000000000000029 /* FightcadeNetplaySession.swift */,
-				BF00000C00000000000000DE /* FightcadeNetplayFallbacks.swift */,
 				BF00000C00000000000000DF /* FightcadeMasterClient.swift */,
 				BF00000C00000000000000E1 /* FightcadeNetplayPreflight.swift */,
 				BF00000C00000000000000E2 /* FightcadePortMapping.swift */,
@@ -626,6 +631,7 @@
 				BF00000C00000000000000E8 /* FightcadeLobbyService+RecentMatches.swift */,
 				BF00000C00000000000000EC /* FightcadeAutoMatchConfigurationStore.swift */,
 				BF00000C0000000000000010 /* FightcadeLobbyPayloadParser.swift */,
+				BF00000C00000000000000F1 /* FightcadeLobbyPayloadParser+Channels.swift */,
 				BF00000C0000000000000034 /* FightcadeLobbyPayloadParser+ChallengeWarning.swift */,
 				BF00000C00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift */,
 				BF00000C0000000000000037 /* FightcadeLobbyPayloadParser+Streams.swift */,
@@ -902,6 +908,7 @@
 				BF00000B0000000000000027 /* FightcadeUserStatusReporter.swift in Sources */,
 				BF00000B00000000000000B0 /* FightcadeLaunchRoutes.swift in Sources */,
 				BF00000B0000000000000011 /* FightcadeLauncher.swift in Sources */,
+				BF00000B00000000000000F0 /* FightcadeLauncher+Embedded.swift in Sources */,
 				BF00000B00000000000000E0 /* FightcadeLaunchModels.swift in Sources */,
 				BF00000B0000000000000005 /* FightcadeChannel.swift in Sources */,
 				BF00000B0000000000000006 /* FightcadeDashboard.swift in Sources */,
@@ -942,6 +949,7 @@
 				BF00000B00000000000000E7 /* FightcadeRecentMatch.swift in Sources */,
 				BF00000B000000000000000F /* FightcadeLobbyEvent.swift in Sources */,
 				BF00000B0000000000000010 /* FightcadeLobbyPayloadParser.swift in Sources */,
+				BF00000B00000000000000F1 /* FightcadeLobbyPayloadParser+Channels.swift in Sources */,
 				BF00000B00000000000000B3 /* FightcadeLobbyPayloadParser+Motd.swift in Sources */,
 				BF00000B00000000000000D2 /* FightcadeLobbyPayloadParser+Welcome.swift in Sources */,
 				BF00000B0000000000000012 /* FightcadeChallenge.swift in Sources */,
@@ -1002,7 +1010,6 @@
 				BF00000B000000000000002C /* FightcadeGGPOServedHandshake.swift in Sources */,
 				BF00000B000000000000002D /* FightcadeGGPOPeerUDPProtocol.swift in Sources */,
 				BF00000B0000000000000029 /* FightcadeNetplaySession.swift in Sources */,
-				BF00000B00000000000000DE /* FightcadeNetplayFallbacks.swift in Sources */,
 				BF00000B00000000000000DF /* FightcadeMasterClient.swift in Sources */,
 				BF00000B00000000000000E1 /* FightcadeNetplayPreflight.swift in Sources */,
 				BF00000B00000000000000E2 /* FightcadePortMapping.swift in Sources */,
@@ -1040,6 +1047,7 @@
 				BF10000B000000000000000F /* FightcadeLobbyPayloadParserTests.swift in Sources */,
 				BF10000B0000000000000001 /* FightcadeMatchLaunchTests.swift in Sources */,
 				BF10000B0000000000000007 /* FightcadeNetplaySessionTests.swift in Sources */,
+				BF10000B0000000000000012 /* FightcadeNetplayLifecycleTests.swift in Sources */,
 				BF10000B000000000000000B /* FightcadePreviewURLTests.swift in Sources */,
 				BF10000B0000000000000002 /* FightcadeRecentMatchTests.swift in Sources */,
 				BF10000B0000000000000009 /* FightcadeROMIndexTests.swift in Sources */,
@@ -1182,7 +1190,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1196,7 +1204,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.4.3;
+				MARKETING_VERSION = 0.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -1211,7 +1219,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1225,7 +1233,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.4.3;
+				MARKETING_VERSION = 0.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;

@@ -345,10 +345,17 @@ int16_t inputState(unsigned port, unsigned device, unsigned, unsigned id)
 
 void configureDirectories()
 {
+    const char *dataDirectory = std::getenv("MACADE_EMULATOR_DATA_DIR");
+    if (dataDirectory && dataDirectory[0]) {
+        systemDirectory = dataDirectory;
+        saveDirectory = dataDirectory;
+        std::fprintf(stderr, "Snes9x writable data directory: %s\n", dataDirectory);
+        return;
+    }
+
     const char *runtime = std::getenv("MACADE_FIGHTCADE_RUNTIME");
     if (runtime && runtime[0]) {
         systemDirectory = runtime;
-        saveDirectory = runtime;
     }
 }
 

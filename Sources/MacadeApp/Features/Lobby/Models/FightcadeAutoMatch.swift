@@ -1,7 +1,5 @@
 import Foundation
 
-import Foundation
-
 struct FightcadeAutoMatchConfiguration: Codable, Equatable, Sendable {
     static let `default` = FightcadeAutoMatchConfiguration()
 
@@ -136,6 +134,32 @@ struct FightcadeAutoMatchPlanner: Sendable {
 
         let selected = Array(untriedCandidates.shuffled().prefix(configuration.maxChallengesPerAttempt))
         return FightcadeAutoMatchAttempt(users: selected, status: .searching)
+    }
+
+    func isEligibleIncomingChallenge(
+        _ challenge: FightcadeChallenge,
+        users: [FightcadeChannelUser],
+        session: AuthSession
+    ) -> Bool {
+        let sessionUsernames = [session.username, session.displayName]
+            .map(normalizedUsername)
+            .filter { !$0.isEmpty }
+        guard let currentUser = users.first(where: { sessionUsernames.contains(normalizedUsername($0.name)) }),
+              let currentRank = currentUser.rank,
+              currentRank > 0,
+              let challenger = users.first(where: {
+                  normalizedUsername($0.name) == normalizedUsername(challenge.username)
+              }) else {
+            return false
+        }
+
+        return isEligible(
+            challenger,
+            currentRank: currentRank,
+            currentCountry: normalizedCountryCode(currentUser.countryCode),
+            sessionUsernames: sessionUsernames,
+            activeChallengeUsernames: []
+        )
     }
 
     private func isEligible(

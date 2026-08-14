@@ -26,6 +26,7 @@ struct ClientEvent {
 struct ClientBackend {
    PeerBackend peer;
    int socket_fd;
+   bool disconnected;
    unsigned int next_sequence;
    std::vector<unsigned char> receive_buffer;
    std::vector<unsigned char> send_buffer;

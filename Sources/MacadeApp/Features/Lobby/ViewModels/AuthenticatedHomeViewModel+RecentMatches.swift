@@ -63,7 +63,11 @@ extension AuthenticatedHomeViewModel {
     }
 
     func canOpenRecentMatchReplay(_ match: FightcadeRecentMatch) -> Bool {
-        match.replayLink != nil && launcher.canLaunchFightcadeReplay(emulator: match.emulator)
+        guard let link = match.replayLink else {
+            return false
+        }
+
+        return canOpenFightcadeReplay(link)
     }
 
     func openRecentMatchReplay(_ match: FightcadeRecentMatch, in channel: FightcadeChannel) {

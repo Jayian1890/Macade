@@ -22,6 +22,7 @@ struct AudioState {
     size_t readIndex = 0;
     size_t writeIndex = 0;
     size_t available = 0;
+    Float32 volume = 1.0f;
     bool started = false;
 };
 
@@ -149,6 +150,7 @@ bool MacadeSnes9xAudioStart(double sampleRate)
         }
 
         audio.started = true;
+        AudioQueueSetParameter(audio.queue, kAudioQueueParam_Volume, audio.volume);
         queueToStart = audio.queue;
     }
 
@@ -177,6 +179,16 @@ void MacadeSnes9xAudioStop()
 
     std::lock_guard<std::mutex> lock(audio.mutex);
     resetStateNoLock();
+}
+
+void MacadeSnes9xAudioSetVolume(int volume)
+{
+    const Float32 normalized = static_cast<Float32>(std::clamp(volume, 0, 100)) / 100.0f;
+    std::lock_guard<std::mutex> lock(audio.mutex);
+    audio.volume = normalized;
+    if (audio.queue != nullptr) {
+        AudioQueueSetParameter(audio.queue, kAudioQueueParam_Volume, normalized);
+    }
 }
 
 void MacadeSnes9xAudioWriteSample(int16_t left, int16_t right)

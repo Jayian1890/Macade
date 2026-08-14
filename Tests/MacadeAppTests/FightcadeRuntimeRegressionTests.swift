@@ -32,6 +32,19 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
         XCTAssertEqual(found, romURL)
     }
 
+    func testSnes9xDataDirectoryIsWritableApplicationSupportStorage() throws {
+        let supportURL = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: supportURL) }
+        let runtime = FightcadeRuntime(applicationSupportURL: supportURL)
+
+        let dataDirectory = try runtime.dataDirectory(emulator: "snes9x")
+        let probeURL = dataDirectory.appendingPathComponent("write-probe.srm")
+        try Data([0x01]).write(to: probeURL)
+
+        XCTAssertTrue(dataDirectory.path.hasSuffix("/Macade/FightcadeRuntime/data/snes9x"))
+        XCTAssertEqual(try Data(contentsOf: probeURL), Data([0x01]))
+    }
+
     func testLegacyEmulatorAliasesResolveToNativeRuntimeIDs() throws {
         XCTAssertEqual(FightcadeEmulatorID.runtimeID(for: "FC1"), "ggpofba")
         XCTAssertEqual(FightcadeEmulatorID.runtimeID(for: "nulldc"), "flycast")
@@ -46,12 +59,13 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
 
     func testRuntimeManifestSeparatesEmbeddedAndQuarkSupport() throws {
         let data = Data(
-            #"{"emulators":{"fbneo":{"supportsQuark":true},"snes9x":{"supportsQuark":false,"supportsEmbedded":true,"supportsFightcadeMatch":false},"flycast":{"supportsQuark":false,"supportsEmbedded":true,"supportsFightcadeMatch":false,"supportsFightcadeDirect":false,"supportsFightcadeSpectate":false,"supportsFightcadeTraining":false}}}"#.utf8
+            #"{"emulators":{"fbneo":{"supportsQuark":true},"snes9x":{"supportsQuark":false,"supportsEmbedded":true,"supportsFightcadeMatch":false,"supportsFightcadeReplay":false},"flycast":{"supportsQuark":false,"supportsEmbedded":true,"supportsFightcadeMatch":false,"supportsFightcadeDirect":false,"supportsFightcadeSpectate":false,"supportsFightcadeTraining":false,"supportsFightcadeReplay":false}}}"#.utf8
         )
         let manifest = try JSONDecoder().decode(FightcadeRuntimeManifest.self, from: data)
 
         XCTAssertTrue(manifest.supportsQuark(emulator: "fbneo"))
         XCTAssertTrue(manifest.supportsEmbedded(emulator: "fbneo"))
+        XCTAssertTrue(manifest.supports(.fightcadeReplay, emulator: "fbneo"))
         XCTAssertFalse(manifest.supportsQuark(emulator: "snes9x"))
         XCTAssertTrue(manifest.supportsEmbedded(emulator: "snes9x"))
         XCTAssertFalse(manifest.supports(.fightcadeMatch, emulator: "snes9x"))
@@ -59,19 +73,49 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
         XCTAssertFalse(manifest.supports(.fightcadeMatch, emulator: "flycast"))
         XCTAssertFalse(manifest.supports(.fightcadeDirect, emulator: "flycast"))
         XCTAssertFalse(manifest.supports(.fightcadeTraining, emulator: "flycast"))
+        XCTAssertFalse(manifest.supports(.fightcadeReplay, emulator: "flycast"))
     }
 
     func testFlycastROMCandidatesCoverDiscAndArcadeContent() throws {
         let supportURL = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: supportURL) }
-        let runtime = FightcadeRuntime(applicationSupportURL: supportURL)
+        let catalogURL = supportURL.appendingPathComponent("flycast_roms.json")
+        try FileManager.default.createDirectory(at: supportURL, withIntermediateDirectories: true)
+        try Data(#"{"flycast_dc_mvsc2":{"filename":"Marvel vs. Capcom 2 (USA).chd"},"flycast_dc_kenju":{"filename":"KenJu.gdi","dir":"KenJu"},"cvs2_chd":{"filename":"/cvs2/gdl-0008.chd"}}"#.utf8)
+            .write(to: catalogURL)
+        let runtime = FightcadeRuntime(
+            applicationSupportURL: supportURL,
+            flycastROMCatalogURL: catalogURL
+        )
 
-        let candidates = try runtime.romCandidateURLs(emulator: "flycast", gameID: "flycast_dc_mvsc2")
-            .map(\.lastPathComponent)
+        let humanReadable = try runtime.romCandidateURLs(emulator: "flycast", gameID: "flycast_dc_mvsc2")
+        let nested = try runtime.romCandidateURLs(emulator: "flycast", gameID: "flycast_dc_kenju")
+        let leadingSlash = try runtime.romCandidateURLs(emulator: "flycast", gameID: "cvs2_chd")
 
-        XCTAssertTrue(candidates.contains("flycast_dc_mvsc2.chd"))
-        XCTAssertTrue(candidates.contains("dc_mvsc2.gdi"))
-        XCTAssertTrue(candidates.contains("dc_mvsc2.zip"))
+        XCTAssertEqual(humanReadable.first?.lastPathComponent, "Marvel vs. Capcom 2 (USA).chd")
+        XCTAssertTrue(humanReadable.map(\.lastPathComponent).contains("dc_mvsc2.zip"))
+        XCTAssertTrue(nested.first?.path.hasSuffix("/roms/flycast/KenJu/KenJu.gdi") == true)
+        XCTAssertTrue(leadingSlash.first?.path.hasSuffix("/roms/flycast/cvs2/gdl-0008.chd") == true)
+    }
+
+    func testFlycastExistingROMResolvesCatalogFilenameBeforeHeuristics() throws {
+        let supportURL = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: supportURL) }
+        let catalogURL = supportURL.appendingPathComponent("flycast_roms.json")
+        try FileManager.default.createDirectory(at: supportURL, withIntermediateDirectories: true)
+        try Data(#"{"flycast_dc_mvsc2":{"filename":"Marvel vs. Capcom 2 (USA).chd"}}"#.utf8)
+            .write(to: catalogURL)
+        let runtime = FightcadeRuntime(
+            applicationSupportURL: supportURL,
+            flycastROMCatalogURL: catalogURL
+        )
+        let romURL = try runtime.romFileURL(
+            emulator: "flycast",
+            fileName: "Marvel vs. Capcom 2 (USA).chd"
+        )
+        try Data([0x01]).write(to: romURL)
+
+        XCTAssertEqual(try runtime.existingROMURL(emulator: "flycast", gameID: "flycast_dc_mvsc2"), romURL)
     }
 
     func testFlycastLocalLaunchUsesResolvedROMPath() throws {
@@ -104,6 +148,29 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
             port: 7000,
             delay: 2
         )).requiresQuark)
+    }
+
+    func testLocalReplayAndWebReplayStreamRequireDistinctCapabilities() {
+        let localReplay = FightcadeEmbeddedLaunch.replay(
+            channelID: "sfiii3n",
+            launch: FightcadeReplayLaunch(
+                emulator: "fbneo",
+                gameID: "sfiii3n",
+                replayPath: "/tmp/replay.fcreplay"
+            )
+        )
+        let webReplay = FightcadeEmbeddedLaunch.replayStream(
+            channelID: "sfiii3n",
+            launch: FightcadeReplayStreamLaunch(
+                emulator: "fbneo",
+                gameID: "sfiii3n",
+                quarkID: "1785591363134-2108.7",
+                port: 7100
+            )
+        )
+
+        XCTAssertEqual(localReplay.requiredRuntimeCapability, .fightcadeReplay)
+        XCTAssertEqual(webReplay.requiredRuntimeCapability, .fightcadeSpectate)
     }
 
     func testPairPlayQuarkCommandsCoverBothPlayerSides() {
@@ -181,26 +248,29 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
             (Data(plan.expectedOKPayload.utf8), plan.master),
             (Data([198, 51, 100, 7, 0x5c, 0x1b]), FightcadeNetplayEndpoint(host: "198.51.100.7", port: 6006))
         ])
-        let restricted = CloseTrackingUDPTransport(receives: [
-            (Data("0.456 _".utf8), FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.restrictedNATFallbackPort))
+        let fixed = CloseTrackingUDPTransport(receives: [
+            (Data("0.456 _".utf8), FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort)),
+            (Data("0.456 0.123 ok".utf8), FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort))
         ])
-        let factory = CloseTrackingUDPTransportFactory(transports: [initial, restricted])
+        let factory = CloseTrackingUDPTransportFactory(transports: [initial, fixed])
         let client = FightcadeMasterClient(
             transportFactory: factory,
-            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in }),
-            fallbackRadius: 0
+            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
         )
 
-        let session = try await client.establishProxySession(plan: plan)
+        let outcome = try await client.establishProxySession(plan: plan)
+        guard case .proxied(let session) = outcome else {
+            return XCTFail("Expected proxied session")
+        }
 
-        XCTAssertEqual(factory.bindPorts, [plan.localBindPort, plan.restrictedNATFallbackPort])
+        XCTAssertEqual(factory.bindPorts, [plan.localBindPort, plan.fixedFallbackPort])
         XCTAssertEqual(initial.closeCount, 1)
-        XCTAssertEqual(restricted.closeCount, 0)
-        XCTAssertEqual(session.peer, FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.restrictedNATFallbackPort))
-        XCTAssertEqual(String(data: restricted.sent.last?.0 ?? Data(), encoding: .utf8), "0.123 0.456 ok")
+        XCTAssertEqual(fixed.closeCount, 0)
+        XCTAssertEqual(session.peer, FightcadeNetplayEndpoint(host: "198.51.100.7", port: plan.fixedFallbackPort))
+        XCTAssertEqual(String(data: fixed.sent.last?.0 ?? Data(), encoding: .utf8), "0.123 0.456 ok")
 
         session.close()
-        XCTAssertEqual(restricted.closeCount, 1)
+        XCTAssertEqual(fixed.closeCount, 1)
     }
 
     func testMasterClientBadMasterResponseSendsUsePortsAndClosesTransport() async {
@@ -211,13 +281,14 @@ final class FightcadeRuntimeRegressionTests: XCTestCase {
         let factory = CloseTrackingUDPTransportFactory(transports: [transport])
         let client = FightcadeMasterClient(
             transportFactory: factory,
-            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in }),
-            fallbackRadius: 0
+            holePuncher: FightcadeUDPHolePuncher(tokenProvider: { "0.123" }, sleeper: { _ in })
         )
 
-        await XCTAssertThrowsErrorAsync(try await client.establishProxySession(plan: plan)) { error in
-            XCTAssertEqual(error as? FightcadeMasterClientError, .unexpectedMasterResponse)
+        let outcome = try? await client.establishProxySession(plan: plan)
+        guard case .nativeUsePorts(let reason) = outcome else {
+            return XCTFail("Expected native useports route")
         }
+        XCTAssertEqual(reason, .unexpectedMasterResponse)
 
         XCTAssertEqual(transport.sent.compactMap { String(data: $0.0, encoding: .utf8) }, [
             plan.registrationPayload,

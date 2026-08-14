@@ -218,4 +218,96 @@ final class FightcadeLobbyPayloadParserTests: XCTestCase {
         XCTAssertEqual(update.players, ["Mahaloz", "yulanxl"])
         XCTAssertEqual(update.stream, FightcadeSpectatorStream(gameID: nil, quarkID: "1785073071864-8625", port: 7001))
     }
+
+    func testRequestCorrelationUsesRequestIdxAndNeverIdx() {
+        let parser = FightcadeLobbyPayloadParser()
+        let capturedJoinResponse: [String: Any] = [
+            "req": "join",
+            "requestIdx": 2,
+            "idx": -1,
+            "channelname": "sfiii3n"
+        ]
+
+        XCTAssertEqual(parser.requestIndex(in: capturedJoinResponse), 2)
+        XCTAssertNil(parser.requestIndex(in: ["req": "join", "idx": 2]))
+    }
+
+    func testCapturedJoinResponseKeepsCorrelationSeparateFromRoster() {
+        let parser = FightcadeLobbyPayloadParser()
+        let payload: [String: Any] = [
+            "req": "join",
+            "requestIdx": 2,
+            "idx": -1,
+            "channelname": "Street Fighter III 3rd Strike",
+            "gameid": "sfiii3n",
+            "users": [[
+                "name": "opponent",
+                "gameid": "sfiii3n",
+                "playing": false
+            ]]
+        ]
+
+        XCTAssertEqual(parser.requestIndex(in: payload), 2)
+        XCTAssertEqual(parser.channelName(in: payload), "Street Fighter III 3rd Strike")
+        XCTAssertEqual(parser.users(in: payload).map(\.name), ["opponent"])
+        XCTAssertTrue(parser.channels(in: payload).isEmpty)
+    }
+
+    func testChannelParserSupportsDirectAndSectionedResultsOnly() {
+        let parser = FightcadeLobbyPayloadParser()
+        let direct: [String: Any] = [
+            "results": [[
+                "name": "The King of Fighters '98",
+                "gameid": "kof98",
+                "clients": 291,
+                "emulator": "fbneo"
+            ]]
+        ]
+        let sectioned: [String: Any] = [
+            "results": [[
+                "title": "Popular",
+                "channels": [[
+                    "name": "Street Fighter III 3rd Strike",
+                    "gameid": "sfiii3n",
+                    "clients": 100,
+                    "emulator": "fbneo"
+                ]],
+                "events": [[
+                    "name": "Not a channel",
+                    "gameid": "event-game"
+                ]]
+            ]]
+        ]
+
+        XCTAssertEqual(parser.channels(in: direct).map(\.gameID), ["kof98"])
+        XCTAssertEqual(parser.channels(in: sectioned).map(\.gameID), ["sfiii3n"])
+    }
+
+    func testAutologinRecognitionRequiresAutologinEnvelope() {
+        let parser = FightcadeLobbyPayloadParser()
+        let login: [String: Any] = [
+            "req": "autologin",
+            "requestIdx": -1,
+            "result": 200,
+            "user": ["name": "player", "token": "token"]
+        ]
+        let unsolicited: [String: Any] = [
+            "req": "join",
+            "user": ["name": "opponent"]
+        ]
+
+        XCTAssertTrue(parser.isAutologinResponse(login))
+        XCTAssertTrue(parser.hasLoggedInUser(in: login))
+        XCTAssertFalse(parser.isAutologinResponse(unsolicited))
+    }
+
+    func testAutologinBufferDropsOldestAndDrainsOnce() {
+        var buffer = FightcadeLobbyPayloadBuffer(limit: 2)
+
+        XCTAssertFalse(buffer.append(["sequence": 1]))
+        XCTAssertFalse(buffer.append(["sequence": 2]))
+        XCTAssertTrue(buffer.append(["sequence": 3]))
+        XCTAssertEqual(buffer.drain().compactMap { $0["sequence"] as? Int }, [2, 3])
+        XCTAssertTrue(buffer.drain().isEmpty)
+    }
 }

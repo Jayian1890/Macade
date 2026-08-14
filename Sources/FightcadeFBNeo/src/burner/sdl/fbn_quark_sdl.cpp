@@ -1,6 +1,7 @@
 #include "burner.h"
 #include "ggpoclient.h"
 #include "ggponet.h"
+#include "fbn_quark_command.h"
 #include "luaengine.h"
 #include "macade_embedded.h"
 #include "sdl_quark_detector.h"
@@ -341,15 +342,13 @@ void __cdecl ggpo_free_buffer_callback(void *buffer)
 
 bool QuarkInit(const char *connect)
 {
-   char game[128] = {};
-   char quark_id[128] = {};
-   char server[128] = {};
-   int port = 0;
-   int delay = 0;
-   int ranked = 0;
-   int player = 0;
-   int local_port = 0;
-   int remote_port = 0;
+   QuarkCommand command;
+   std::string parse_error;
+   if (!ParseQuarkCommand(connect, &command, &parse_error)) {
+      kNetGame = 0;
+      printf("Macade quark: rejected command (%s): %s\n", parse_error.c_str(), connect != NULL ? connect : "<null>");
+      return false;
+   }
 
    kNetVersion = NET_VERSION;
    kNetGame = 1;
@@ -374,42 +373,40 @@ bool QuarkInit(const char *connect)
    cb.advance_frame = ggpo_advance_frame_callback;
    cb.on_event = ggpo_on_event_callback;
 
-   if (strncmp(connect, "quark:served", strlen("quark:served")) == 0) {
-      sscanf(connect, "quark:served,%127[^,],%127[^,],%d,%d,%d", game, quark_id, &port, &delay, &ranked);
-      ranked_match = ranked;
-      local_player = atoi(&quark_id[strlen(quark_id) - 1]);
-      frame_delay = delay;
-      game_seed = hash_quark_id(quark_id, static_cast<int>(strlen(quark_id)) - 2);
-      ggpo = ggpo_client_connect(&cb, game, quark_id, port);
-      snprintf(kNetQuarkId, sizeof(kNetQuarkId), "%s", quark_id);
-   } else if (strncmp(connect, "quark:training", strlen("quark:training")) == 0) {
-      sscanf(connect, "quark:training,%127[^,],%127[^,],%d,%d", game, quark_id, &port, &delay);
-      local_player = atoi(&quark_id[strlen(quark_id) - 1]);
-      frame_delay = delay;
-      game_seed = hash_quark_id(quark_id, static_cast<int>(strlen(quark_id)) - 2);
-      ggpo = ggpo_client_connect(&cb, game, quark_id, port);
-      snprintf(kNetQuarkId, sizeof(kNetQuarkId), "%s", quark_id);
+   if (command.type == QuarkCommandType::served) {
+      ranked_match = command.ranked;
+      local_player = command.player;
+      frame_delay = command.delay;
+      game_seed = hash_quark_id(command.quark_id.c_str(), static_cast<int>(command.quark_id.size()) - 2);
+      ggpo = ggpo_client_connect(&cb, command.game.data(), command.quark_id.data(), command.port);
+      snprintf(kNetQuarkId, sizeof(kNetQuarkId), "%s", command.quark_id.c_str());
+   } else if (command.type == QuarkCommandType::training) {
+      local_player = command.player;
+      frame_delay = command.delay;
+      game_seed = hash_quark_id(command.quark_id.c_str(), static_cast<int>(command.quark_id.size()) - 2);
+      ggpo = ggpo_client_connect(&cb, command.game.data(), command.quark_id.data(), command.port);
+      snprintf(kNetQuarkId, sizeof(kNetQuarkId), "%s", command.quark_id.c_str());
       kNetLua = 1;
       FBA_LoadLuaCode("fbneo-training-mode/fbneo-training-mode.lua");
-   } else if (strncmp(connect, "quark:direct", strlen("quark:direct")) == 0) {
-      sscanf(connect, "quark:direct,%127[^,],%d,%127[^,],%d,%d,%d,%d", game, &local_port, server,
-             &remote_port, &player, &delay, &ranked);
+   } else if (command.type == QuarkCommandType::direct) {
       kNetLua = 1;
-      ranked_match = ranked;
-      local_player = player;
-      frame_delay = delay;
+      ranked_match = command.ranked;
+      local_player = command.player;
+      frame_delay = command.delay;
       game_seed = 0;
-      ggpo = ggpo_start_session(&cb, game, local_port, server, remote_port, player);
-   } else if (strncmp(connect, "quark:stream", strlen("quark:stream")) == 0) {
-      sscanf(connect, "quark:stream,%127[^,],%127[^,],%d", game, quark_id, &remote_port);
+      ggpo = ggpo_start_session(&cb, command.game.data(), command.local_port, command.host.data(),
+                                command.remote_port, command.player);
+   } else if (command.type == QuarkCommandType::stream) {
       kNetSpectator = 1;
       kNetLua = 1;
-      ggpo = ggpo_start_streaming(&cb, game, quark_id, remote_port);
-      snprintf(kNetQuarkId, sizeof(kNetQuarkId), "%s", quark_id);
-   } else if (strncmp(connect, "quark:replay", strlen("quark:replay")) == 0) {
+      game_seed = 0;
+      ggpo = ggpo_start_streaming(&cb, command.game.data(), command.quark_id.data(), command.remote_port);
+      snprintf(kNetQuarkId, sizeof(kNetQuarkId), "%s", command.quark_id.c_str());
+   } else if (command.type == QuarkCommandType::replay) {
       kNetSpectator = 1;
       kNetLua = 1;
-      ggpo = ggpo_start_replay(&cb, const_cast<char *>(connect + strlen("quark:replay,")));
+      game_seed = 0;
+      ggpo = ggpo_start_replay(&cb, command.replay_path.data());
    }
 
    if (ggpo == NULL) {
@@ -417,7 +414,13 @@ bool QuarkInit(const char *connect)
       printf("Macade quark: failed to create native GGPO session for %s\n", connect);
       return false;
    }
-   ggpo_set_frame_delay(ggpo, frame_delay);
+   if (!ggpo_set_frame_delay(ggpo, frame_delay)) {
+      ggpo_close_session(ggpo);
+      ggpo = NULL;
+      kNetGame = 0;
+      printf("Macade quark: failed to configure frame delay for %s\n", connect);
+      return false;
+   }
    printf("Macade quark: native GGPO session started for %s\n", connect);
    return true;
 }

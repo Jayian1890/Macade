@@ -44,8 +44,9 @@ extension AuthenticatedHomeViewModel {
     func canSpectate(_ user: FightcadeChannelUser, in channel: FightcadeChannel) -> Bool {
         guard user.isPlaying,
               !user.isCurrentUser(session: session),
-              user.stream != nil,
-              channel.launchEmulator != nil else {
+              let stream = user.stream,
+              let emulator = channel.launchEmulator,
+              let gameID = stream.gameID?.nonEmpty ?? channel.launchGameID else {
             return false
         }
 
@@ -55,7 +56,7 @@ extension AuthenticatedHomeViewModel {
             return false
         }
 
-        return user.stream?.gameID?.nonEmpty != nil || channel.launchGameID != nil
+        return canLaunchFightcadeGame(.fightcadeSpectate, emulator: emulator, gameID: gameID)
     }
 
     func spectate(_ user: FightcadeChannelUser, in channel: FightcadeChannel) {

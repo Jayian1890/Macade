@@ -59,8 +59,12 @@ final class FightcadeFriendTests: XCTestCase {
             isFavorite: false,
             supportsTraining: true
         )
+        let launcher = RouteGatedFightcadeLauncher()
+        launcher.capabilities = [.fightcadeMatch, .fightcadeSpectate]
+        launcher.roms = [launcher.romKey(emulator: "fbneo", gameID: "sfiii3n")]
         let viewModel = AuthenticatedHomeViewModel(
             session: AuthSession(username: "me", displayName: "Me"),
+            launcher: launcher,
             friendStore: InMemoryFriendStore()
         )
         viewModel.dashboard = FightcadeDashboard(connectedUsername: "Me", welcomeMessage: nil, channels: [channel])

@@ -28,12 +28,16 @@ static bool gChatInputActive = false;
 
 static void EnsureVideo();
 extern int MacadeEmbeddedVideoScale;
+#ifdef MACADE_EMBEDDED_SNES9X
+extern void MacadeSnes9xAudioSetVolume(int volume);
+#else
 extern int nAudVolume;
 extern int AudSoundSetVolume();
 extern void QuarkReplaySetPaused(int paused);
 extern void QuarkReplaySetFastForward(int enabled);
 extern void QuarkReplaySeek(int frame);
 extern void QuarkReplayStep(int delta);
+#endif
 
 static int ClampVideoScale(int scale)
 {
@@ -260,8 +264,13 @@ void MacadeEmbeddedPumpInput()
 		} else if (sscanf(buffer, "videoScale %d", &videoScale) == 1) {
 			MacadeEmbeddedVideoScale = ClampVideoScale(videoScale);
 		} else if (sscanf(buffer, "volume %d", &volume) == 1) {
+#ifdef MACADE_EMBEDDED_SNES9X
+			MacadeSnes9xAudioSetVolume(ClampVolume(volume));
+#else
 			nAudVolume = ClampVolume(volume) * 100;
 			AudSoundSetVolume();
+#endif
+#ifndef MACADE_EMBEDDED_SNES9X
 		} else if (sscanf(buffer, "replayPause %d", &replayValue) == 1) {
 			QuarkReplaySetPaused(replayValue);
 		} else if (sscanf(buffer, "replayFastForward %d", &replayValue) == 1) {
@@ -270,6 +279,7 @@ void MacadeEmbeddedPumpInput()
 			QuarkReplaySeek(replayValue);
 		} else if (sscanf(buffer, "replayStep %d", &replayValue) == 1) {
 			QuarkReplayStep(replayValue);
+#endif
 		} else if (strcmp(buffer, "chatBegin") == 0) {
 			gChatInputActive = true;
 			gChatInput[0] = 0;

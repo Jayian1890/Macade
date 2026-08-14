@@ -1,6 +1,8 @@
 extension AuthenticatedHomeViewModel {
     var fightcadeTVChannels: [FightcadeChannel] {
-        channelTVChannels(from: joinedChannels)
+        channelTVChannels(from: joinedChannels.filter {
+            canLaunchFightcadeGame(.fightcadeSpectate, in: $0)
+        })
     }
 
     var channelTVCurrentChannel: FightcadeChannel? {
@@ -306,7 +308,8 @@ extension AuthenticatedHomeViewModel {
     }
 
     private func launchChannelTV(_ candidate: ChannelTVMatchCandidate, in channel: FightcadeChannel) async {
-        guard let emulator = channel.launchEmulator else {
+        guard let emulator = channel.launchEmulator,
+              canLaunchFightcadeGame(.fightcadeSpectate, emulator: emulator, gameID: candidate.gameID) else {
             channelTVStatusText = FightcadeLaunchError.missingGame.localizedDescription
             channelTVBlockedStreamIDs.insert(candidate.id)
             return

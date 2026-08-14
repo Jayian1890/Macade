@@ -53,16 +53,16 @@ struct UdpProtocol {
 
 void udp_protocol_construct(UdpProtocol *protocol);
 void udp_protocol_destroy(UdpProtocol *protocol);
-void udp_protocol_bind(UdpProtocol *protocol, int local_port);
-void udp_protocol_set_remote_endpoint(UdpProtocol *protocol, const char *host, int port, PollBackend *poller);
+bool udp_protocol_bind(UdpProtocol *protocol, int local_port);
+bool udp_protocol_set_remote_endpoint(UdpProtocol *protocol, const char *host, int port, PollBackend *poller);
 void udp_protocol_enqueue_event(UdpProtocol *protocol, int type);
 void udp_protocol_start_sync(UdpProtocol *protocol);
 bool udp_protocol_on_timer(UdpProtocol *protocol);
-void udp_protocol_handle_packet(UdpProtocol *protocol, const unsigned char *data, int size);
+bool udp_protocol_handle_packet(UdpProtocol *protocol, const unsigned char *data, int size);
 void udp_protocol_update_local_connect_status(UdpProtocol *protocol, int current_frame);
-void udp_protocol_send_message(UdpProtocol *protocol, const std::vector<unsigned char> &message);
+bool udp_protocol_send_message(UdpProtocol *protocol, const std::vector<unsigned char> &message);
 void udp_protocol_send_compressed_input(UdpProtocol *protocol);
-void udp_protocol_handle_compressed_input(UdpProtocol *protocol, const unsigned char *message);
+bool udp_protocol_handle_compressed_input(UdpProtocol *protocol, const unsigned char *message, int size);
 void udp_protocol_send_input(UdpProtocol *protocol, const GameInput *input);
 void udp_protocol_log(const char *format, ...);
 int udp_protocol_now_ms();

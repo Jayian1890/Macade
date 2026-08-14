@@ -40,6 +40,11 @@ struct FightcadeUDPProxyStepResult: Equatable, Sendable {
     var forwardedPeerPackets = 0
 }
 
+enum FightcadeUDPProxyExit: Equatable, Sendable {
+    case cancelled
+    case transportFailure(String)
+}
+
 final class FightcadeUDPProxy: @unchecked Sendable {
     private let peerTransport: any FightcadeUDPTransporting
     private let localTransport: any FightcadeUDPTransporting
@@ -58,6 +63,7 @@ final class FightcadeUDPProxy: @unchecked Sendable {
     private var sawPeerGGPO = false
     private var keepaliveStopped = false
     private var lastKeepaliveSentAt: Date?
+    private var isClosed = false
 
     init(
         peerTransport: any FightcadeUDPTransporting,
@@ -72,7 +78,7 @@ final class FightcadeUDPProxy: @unchecked Sendable {
         emulatorEndpoint = configuration.initialEmulatorEndpoint
     }
 
-    func run(maxConsecutiveFailures: Int = 4) async {
+    func run(maxConsecutiveFailures: Int = 4) async -> FightcadeUDPProxyExit {
         diagnostics?.write("proxy run start peer=\(configuration.peer.host):\(configuration.peer.port) localPort=\(configuration.localEmulatorPort)")
         var failures = 0
         while !Task.isCancelled {
@@ -80,17 +86,23 @@ final class FightcadeUDPProxy: @unchecked Sendable {
                 _ = try await step()
                 failures = 0
             } catch {
+                if Task.isCancelled {
+                    diagnostics?.write("proxy task cancelled")
+                    close()
+                    return .cancelled
+                }
                 failures += 1
                 diagnostics?.write("proxy step failed failures=\(failures) error=\(error)")
                 if failures >= maxConsecutiveFailures {
                     diagnostics?.write("proxy closing after repeated failures")
                     close()
-                    return
+                    return .transportFailure(error.localizedDescription)
                 }
             }
         }
         diagnostics?.write("proxy task cancelled")
         close()
+        return .cancelled
     }
 
     func step() async throws -> FightcadeUDPProxyStepResult {
@@ -102,6 +114,12 @@ final class FightcadeUDPProxy: @unchecked Sendable {
     }
 
     func close() {
+        let shouldClose = lock.withLock {
+            guard !isClosed else { return false }
+            isClosed = true
+            return true
+        }
+        guard shouldClose else { return }
         diagnostics?.write("proxy close localForwarded=\(localForwardLogCount) peerForwarded=\(peerForwardLogCount) localFiltered=\(localFilterLogCount) peerFiltered=\(peerFilterLogCount) keepalives=\(keepaliveLogCount) localTypes=\(localPacketTypeCounts) peerTypes=\(peerPacketTypeCounts)")
         peerTransport.close()
         localTransport.close()
@@ -111,10 +129,15 @@ final class FightcadeUDPProxy: @unchecked Sendable {
     private func drainLocalPackets() async throws -> Int {
         var forwarded = 0
         for index in 0..<configuration.maxPacketsPerStep {
-            guard let packet = try? await localTransport.receive(
-                maximumBytes: configuration.maximumPacketBytes,
-                timeout: index == 0 ? configuration.pollTimeout : 0
-            ) else { break }
+            let packet: (Data, FightcadeNetplayEndpoint)
+            do {
+                packet = try await localTransport.receive(
+                    maximumBytes: configuration.maximumPacketBytes,
+                    timeout: index == 0 ? configuration.pollTimeout : 0
+                )
+            } catch where isReceiveTimeout(error) {
+                break
+            }
 
             if shouldForward(packet.0) {
                 setEmulatorEndpoint(packet.1)
@@ -134,10 +157,15 @@ final class FightcadeUDPProxy: @unchecked Sendable {
     private func drainPeerPackets() async throws -> Int {
         var forwarded = 0
         for index in 0..<configuration.maxPacketsPerStep {
-            guard let packet = try? await peerTransport.receive(
-                maximumBytes: configuration.maximumPacketBytes,
-                timeout: index == 0 ? configuration.pollTimeout : 0
-            ) else { break }
+            let packet: (Data, FightcadeNetplayEndpoint)
+            do {
+                packet = try await peerTransport.receive(
+                    maximumBytes: configuration.maximumPacketBytes,
+                    timeout: index == 0 ? configuration.pollTimeout : 0
+                )
+            } catch where isReceiveTimeout(error) {
+                break
+            }
 
             if packet.1.host == configuration.peer.host, shouldForward(packet.0) {
                 recordPacket(packet.0, fromPeer: true)
@@ -176,6 +204,11 @@ final class FightcadeUDPProxy: @unchecked Sendable {
 
     private func currentEmulatorEndpoint() -> FightcadeNetplayEndpoint {
         lock.withLock { emulatorEndpoint }
+    }
+
+    private func isReceiveTimeout(_ error: Error) -> Bool {
+        guard let code = (error as? POSIXError)?.code else { return false }
+        return code == .ETIMEDOUT || code == .EAGAIN || code == .EWOULDBLOCK
     }
 
     private func shouldForward(_ data: Data) -> Bool {

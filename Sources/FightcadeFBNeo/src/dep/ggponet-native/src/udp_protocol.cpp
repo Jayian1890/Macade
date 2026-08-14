@@ -13,18 +13,6 @@
 namespace ggponet::reconstructed {
 namespace {
 
-void invalid_message()
-{
-   std::fprintf(stderr, "Assertion: FALSE && \"Invalid msg in UdpProtocol\" @ ..\\source\\network\\udp_proto.cpp:304\n");
-   std::exit(1);
-}
-
-void unknown_message()
-{
-   std::fprintf(stderr, "Assertion: FALSE && \"Unknown UdpMsg type.\" @ ..\\source\\network\\udp_proto.cpp:287\n");
-   std::exit(1);
-}
-
 int env_clamped(const char *name, int default_value, int max_value)
 {
    const char *text = std::getenv(name);
@@ -120,26 +108,35 @@ void write_i32(std::vector<unsigned char> *data, size_t offset, int value)
    std::memcpy(data->data() + offset, &value, sizeof(value));
 }
 
-int message_payload_size(const unsigned char *message)
+bool checked_message_size(const unsigned char *message, size_t available, int *result)
 {
+   if (message == nullptr || result == nullptr || available < 1) {
+      return false;
+   }
+   int size = 0;
    switch (message[0]) {
    case 1:
    case 2:
    case 5:
-      return 4;
+      size = 5;
+      break;
    case 3:
-      return 11 + ((static_cast<int>(read_u16(message + 9)) + 7) >> 3);
+      if (available < 12) {
+         return false;
+      }
+      size = 12 + ((static_cast<int>(read_u16(message + 9)) + 7) >> 3);
+      break;
    case 4:
-      return 5;
+      size = 6;
+      break;
    default:
-      unknown_message();
+      return false;
    }
-   return 0;
-}
-
-int message_size(const unsigned char *message)
-{
-   return message_payload_size(message) + 1;
+   if (size > kUdpPayloadMax || static_cast<size_t>(size) > available) {
+      return false;
+   }
+   *result = size;
+   return true;
 }
 
 std::vector<unsigned char> message_with_i32(unsigned char type, int value)
@@ -159,26 +156,26 @@ std::vector<unsigned char> quality_report_message(int local_status)
    return message;
 }
 
-void log_message(UdpProtocol *, const char *prefix, const unsigned char *message)
+bool log_message(UdpProtocol *, const char *prefix, const unsigned char *message)
 {
    switch (message[0]) {
    case 1:
       udp_protocol_log("%s sync-request (%d).\n", prefix, read_i32(message + 1));
-      break;
+      return true;
    case 2:
       udp_protocol_log("%s sync-reply (%d).\n", prefix, read_i32(message + 1));
-      break;
+      return true;
    case 3:
       udp_protocol_log("%s game-compressed-input %d (+compressed).\n", prefix, read_i32(message + 1));
-      break;
+      return true;
    case 4:
       udp_protocol_log("%s quality report.\n", prefix);
-      break;
+      return true;
    case 5:
       udp_protocol_log("%s quality reply.\n", prefix);
-      break;
+      return true;
    default:
-      unknown_message();
+      return false;
    }
 }
 
@@ -275,17 +272,18 @@ void udp_protocol_destroy(UdpProtocol *protocol)
    udp_socket_destroy(&protocol->udp);
 }
 
-void udp_protocol_bind(UdpProtocol *protocol, int local_port)
+bool udp_protocol_bind(UdpProtocol *protocol, int local_port)
 {
-   udp_socket_init(&protocol->udp, local_port, &protocol->receiver.base);
+   return udp_socket_init(&protocol->udp, local_port, &protocol->receiver.base);
 }
 
-void udp_protocol_set_remote_endpoint(UdpProtocol *protocol, const char *host, int port, PollBackend *poller)
+bool udp_protocol_set_remote_endpoint(UdpProtocol *protocol, const char *host, int port, PollBackend *poller)
 {
-   udp_socket_set_remote_endpoint(&protocol->udp, host, port, poller);
-   if (poller != nullptr) {
-      poll_backend_add_timer(poller, &protocol->poll_target, kUdpProtocolDefaultRetryIntervalMs, protocol);
+   if (!udp_socket_set_remote_endpoint(&protocol->udp, host, port, poller)) {
+      return false;
    }
+   poll_backend_add_timer(poller, &protocol->poll_target, kUdpProtocolDefaultRetryIntervalMs, protocol);
+   return true;
 }
 
 void udp_protocol_enqueue_event(UdpProtocol *protocol, int type)
@@ -327,43 +325,31 @@ bool udp_protocol_on_timer(UdpProtocol *protocol)
    return true;
 }
 
-void udp_protocol_handle_packet(UdpProtocol *protocol, const unsigned char *data, int size)
+bool udp_protocol_handle_packet(UdpProtocol *protocol, const unsigned char *data, int size)
 {
-   if (size <= 0) {
-      invalid_message();
-   }
-   if ((data[0] == 1 || data[0] == 2 || data[0] == 5) && size < 5) {
-      invalid_message();
-   }
-   if (data[0] == 4 && size < 6) {
-      invalid_message();
-   }
-   if (data[0] == 3 && size < 11) {
-      invalid_message();
-   }
-   const int expected = message_size(data);
-   if (size < expected) {
-      invalid_message();
+   int expected = 0;
+   if (size <= 0 || !checked_message_size(data, static_cast<size_t>(size), &expected)) {
+      udp_protocol_log("Dropped malformed UDP message (%d bytes).\n", size);
+      return false;
    }
    log_message(protocol, "recv", data);
    switch (data[0]) {
    case 1:
       send_sync_reply(protocol, data);
-      break;
+      return true;
    case 2:
       handle_sync_reply(protocol, data);
-      break;
+      return true;
    case 3:
-      udp_protocol_handle_compressed_input(protocol, data);
-      break;
+      return udp_protocol_handle_compressed_input(protocol, data, expected);
    case 4:
       send_quality_reply(protocol, data);
-      break;
+      return true;
    case 5:
       handle_quality_reply(protocol, data);
-      break;
+      return true;
    default:
-      invalid_message();
+      return false;
    }
 }
 
@@ -377,10 +363,15 @@ void udp_protocol_update_local_connect_status(UdpProtocol *protocol, int current
       protocol->last_received_input.frame + round_trip_frames + frame_age - current_frame;
 }
 
-void udp_protocol_send_message(UdpProtocol *protocol, const std::vector<unsigned char> &message)
+bool udp_protocol_send_message(UdpProtocol *protocol, const std::vector<unsigned char> &message)
 {
-   log_message(protocol, "send", message.data());
-   udp_socket_queue_send(&protocol->udp, message.data(), message_size(message.data()));
+   int expected = 0;
+   if (!checked_message_size(message.data(), message.size(), &expected) ||
+       static_cast<size_t>(expected) != message.size() || !log_message(protocol, "send", message.data())) {
+      udp_protocol_log("Dropped invalid outgoing UDP message (%zu bytes).\n", message.size());
+      return false;
+   }
+   return udp_socket_queue_send(&protocol->udp, message.data(), expected);
 }
 
 void udp_protocol_log(const char *format, ...)

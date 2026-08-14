@@ -10,9 +10,8 @@ struct FightcadeLobbyPayloadParser: Sendable {
     }
 
     func hasLoggedInUser(in payload: [String: Any]) -> Bool {
-        dictionaries(in: payload).contains { dictionary in
-            stringValue(in: dictionary, keys: ["name", "username", "user"]) != nil
-        }
+        guard let user = payload["user"] as? [String: Any] else { return false }
+        return stringValue(in: user, keys: ["name", "username"]) != nil
     }
 
     func launcherToken(in payload: [String: Any]) -> String? {
@@ -79,14 +78,6 @@ struct FightcadeLobbyPayloadParser: Sendable {
         return nil
     }
 
-    func channels(in payload: [String: Any]) -> [FightcadeChannel] {
-        channelArrays(in: payload)
-            .flatMap { $0.compactMap { $0 as? [String: Any] } }
-            .compactMap(channel)
-            .uniquedByID()
-            .sorted(by: sortChannels)
-    }
-
     func channelName(in payload: [String: Any]) -> String? {
         stringValue(in: payload, keys: ["channelname", "channel", "name", "gameid"])
             ?? (payload["game"] as? [String: Any]).flatMap { stringValue(in: $0, keys: ["channelname", "channel", "name", "gameid"]) }
@@ -104,7 +95,12 @@ struct FightcadeLobbyPayloadParser: Sendable {
     }
 
     func requestIndex(in payload: [String: Any]) -> Int? {
-        intValue(in: payload, keys: ["requestIdx", "idx"])
+        intValue(in: payload, keys: ["requestIdx"])
+    }
+
+    func isAutologinResponse(_ payload: [String: Any]) -> Bool {
+        stringValue(in: payload, keys: ["req"])?.lowercased() == "autologin"
+            || (requestIndex(in: payload) == -1 && payload["user"] is [String: Any])
     }
 
     func event(in payload: [String: Any], currentChannelName: String?) -> FightcadeLobbyEvent? {
@@ -289,73 +285,6 @@ struct FightcadeLobbyPayloadParser: Sendable {
         )
     }
 
-    private func channel(from dictionary: [String: Any]) -> FightcadeChannel? {
-        guard let name = stringValue(in: dictionary, keys: ["channelname", "name", "id", "gameid"]),
-              looksLikeChannel(dictionary) else {
-            return nil
-        }
-
-        let title = stringValue(in: dictionary, keys: ["channelname", "name", "title", "gamename", "description", "longname"])
-            ?? name
-
-        return FightcadeChannel(
-            id: name,
-            name: name,
-            title: title,
-            gameID: stringValue(in: dictionary, keys: ["gameid"]),
-            system: stringValue(in: dictionary, keys: ["system", "platform", "console"]),
-            emulator: stringValue(in: dictionary, keys: ["emulator", "emu"]),
-            playerCount: intValue(in: dictionary, keys: ["clients", "users", "players", "numplayers", "num_players", "numusers", "num_users", "online", "nplayers", "usercount", "player_count"]),
-            spectatorCount: intValue(in: dictionary, keys: ["spectators", "streams", "watching", "numspectators", "num_spectators", "spectator_count"]),
-            isRanked: boolValue(in: dictionary, keys: ["ranked"]),
-            isFavorite: boolValue(in: dictionary, keys: ["fav", "favorite", "isFavorite"]),
-            supportsTraining: boolValue(in: dictionary, keys: ["training"])
-        )
-    }
-
-    private func sortChannels(_ lhs: FightcadeChannel, _ rhs: FightcadeChannel) -> Bool {
-        let leftPlayers = lhs.playerCount ?? 0
-        let rightPlayers = rhs.playerCount ?? 0
-        if leftPlayers != rightPlayers {
-            return leftPlayers > rightPlayers
-        }
-
-        return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
-    }
-
-    private func looksLikeChannel(_ dictionary: [String: Any]) -> Bool {
-        let channelKeys = ["channelname", "gameid", "gamename", "emulator", "system", "ranked", "clients", "available_for"]
-        return channelKeys.contains { dictionary[$0] != nil }
-    }
-
-    private func channelArrays(in payload: [String: Any]) -> [[Any]] {
-        if let channels = payload["channels"] as? [Any] {
-            return [channels]
-        }
-
-        if let results = payload["results"] as? [Any] {
-            return results.compactMap { result in
-                (result as? [String: Any])?["channels"] as? [Any]
-            }
-        }
-
-        return arrays(in: payload)
-    }
-
-    private func arrays(in payload: [String: Any]) -> [[Any]] {
-        var found: [[Any]] = []
-
-        for value in payload.values {
-            if let array = value as? [Any] {
-                found.append(array)
-            } else if let dictionary = value as? [String: Any] {
-                found.append(contentsOf: arrays(in: dictionary))
-            }
-        }
-
-        return found
-    }
-
     private func username(in payload: [String: Any]) -> String? {
         if let username = stringValue(in: payload, keys: ["username", "name"]) {
             return username
@@ -430,7 +359,7 @@ struct FightcadeLobbyPayloadParser: Sendable {
         return found
     }
 
-    private func stringValue(in dictionary: [String: Any], keys: [String]) -> String? {
+    func stringValue(in dictionary: [String: Any], keys: [String]) -> String? {
         for key in keys {
             if let value = dictionary[key] as? String {
                 return value
@@ -444,7 +373,7 @@ struct FightcadeLobbyPayloadParser: Sendable {
         return nil
     }
 
-    private func intValue(in dictionary: [String: Any], keys: [String]) -> Int? {
+    func intValue(in dictionary: [String: Any], keys: [String]) -> Int? {
         for key in keys {
             if let value = dictionary[key] as? Int {
                 return value
@@ -466,7 +395,7 @@ struct FightcadeLobbyPayloadParser: Sendable {
         return nil
     }
 
-    private func boolValue(in dictionary: [String: Any], keys: [String]) -> Bool {
+    func boolValue(in dictionary: [String: Any], keys: [String]) -> Bool {
         for key in keys {
             if let value = dictionary[key] as? Bool {
                 return value
@@ -482,18 +411,5 @@ struct FightcadeLobbyPayloadParser: Sendable {
         }
 
         return false
-    }
-}
-
-private extension Array where Element == FightcadeChannel {
-    func uniquedByID() -> [FightcadeChannel] {
-        var seen = Set<String>()
-        var unique: [FightcadeChannel] = []
-
-        for channel in self where seen.insert(channel.id).inserted {
-            unique.append(channel)
-        }
-
-        return unique
     }
 }

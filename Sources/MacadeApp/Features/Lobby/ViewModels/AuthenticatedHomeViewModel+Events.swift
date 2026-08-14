@@ -65,8 +65,12 @@ extension AuthenticatedHomeViewModel {
                 break
             }
 
-            playIncomingChallengeSound()
             rememberIncomingChallenge(challenge)
+            guard !autoAcceptIncomingChallengeIfEligible(challenge) else {
+                break
+            }
+
+            playIncomingChallengeSound()
         case .challengeCanceled(let challenge):
             let isAutoMatchChallenge = recordAutoMatchChallengeCanceled(challenge)
             clearChallenge(challenge)
@@ -110,5 +114,26 @@ extension AuthenticatedHomeViewModel {
         }
 
         return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+    }
+
+    private func autoAcceptIncomingChallengeIfEligible(_ challenge: FightcadeChallenge) -> Bool {
+        guard autoMatchStatesByChannel[challenge.channelName]?.isEnabled == true,
+              !isSendingChallenge,
+              canAcceptIncomingChallenge(challenge) else {
+            return false
+        }
+
+        let configuration = autoMatchConfiguration(for: challenge.channelName)
+        let users = usersByChannel[challenge.channelName] ?? []
+        guard FightcadeAutoMatchPlanner(configuration: configuration).isEligibleIncomingChallenge(
+            challenge,
+            users: users,
+            session: session
+        ) else {
+            return false
+        }
+
+        acceptIncomingChallenge(challenge)
+        return true
     }
 }

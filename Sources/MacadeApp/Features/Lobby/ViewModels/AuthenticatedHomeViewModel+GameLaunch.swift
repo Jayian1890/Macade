@@ -2,6 +2,11 @@ import Foundation
 
 extension AuthenticatedHomeViewModel {
     func openFightcadeReplay(_ link: FightcadeReplayLink, in channel: FightcadeChannel) {
+        guard canOpenFightcadeReplay(link) else {
+            errorMessage = unavailableFightcadeLaunchMessage(for: channel)
+            return
+        }
+
         if let activeEmulationSession,
            activeEmulationSession.mode == .match,
            activeEmulationSession.isActive {
@@ -76,6 +81,11 @@ extension AuthenticatedHomeViewModel {
             return
         }
 
+        guard canLaunchFightcadeGame(.fightcadeMatch, emulator: emulator, gameID: gameID) else {
+            errorMessage = unavailableFightcadeLaunchMessage(for: channel)
+            return
+        }
+
         Task { @MainActor in
             isLaunchingGame = true
             defer { isLaunchingGame = false }
@@ -111,6 +121,13 @@ extension AuthenticatedHomeViewModel {
         defer {
             isLaunchingGame = false
             channelTVTask = nil
+        }
+
+        guard canOpenFightcadeReplay(link) else {
+            let message = unavailableFightcadeLaunchMessage(for: channel)
+            errorMessage = message
+            channelTVStatusText = message
+            return
         }
 
         do {

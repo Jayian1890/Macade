@@ -107,6 +107,84 @@ final class ChannelTVTests: XCTestCase {
         XCTAssertTrue(FightcadeEmbeddedLaunch.replayStream(channelID: "sfiii3nr1", launch: launch).requiresQuark)
     }
 
+    @MainActor
+    func testChallengeAndAutoMatchRequireMatchCapabilityAndROM() {
+        let launcher = RouteGatedFightcadeLauncher()
+        let channel = makeChannel(gameID: "sfiii3n")
+        let user = makeIdleUser("Opponent")
+        let viewModel = makeViewModel(channel: channel, launcher: launcher)
+        viewModel.joinedChannelIDs = [channel.id]
+
+        XCTAssertFalse(viewModel.canChallenge(user, in: channel))
+        XCTAssertFalse(viewModel.canToggleAutoMatch(for: channel))
+
+        launcher.capabilities = [.fightcadeMatch]
+        XCTAssertFalse(viewModel.canChallenge(user, in: channel))
+        XCTAssertFalse(viewModel.canToggleAutoMatch(for: channel))
+
+        launcher.roms = [launcher.romKey(emulator: "fbneo", gameID: "sfiii3n")]
+        XCTAssertTrue(viewModel.canChallenge(user, in: channel))
+        XCTAssertTrue(viewModel.canToggleAutoMatch(for: channel))
+
+        let challenge = FightcadeChallenge(
+            username: user.name,
+            channelName: channel.name,
+            challengeID: 1,
+            ranked: FightcadeChallenge.defaultRankedValue
+        )
+        XCTAssertTrue(viewModel.canAcceptIncomingChallenge(challenge))
+
+        launcher.roms.removeAll()
+        XCTAssertFalse(viewModel.canAcceptIncomingChallenge(challenge))
+    }
+
+    @MainActor
+    func testSpectateWebReplayAndTVRequireSpectateCapabilityAndROM() throws {
+        let launcher = RouteGatedFightcadeLauncher()
+        let channel = makeChannel(gameID: "sfiii3n")
+        let stream = FightcadeSpectatorStream(gameID: channel.gameID, quarkID: "1785013981484-4901", port: 7001)
+        let user = makeUser("Opponent", stream: stream)
+        let link = FightcadeReplayLink(
+            url: try XCTUnwrap(URL(string: "https://replay.fightcade.com/fbneo/sfiii3n/1785013981484-4901")),
+            emulator: "fbneo",
+            gameID: "sfiii3n",
+            replayID: "1785013981484-4901"
+        )
+        let viewModel = makeViewModel(channel: channel, launcher: launcher)
+        viewModel.joinedChannelIDs = [channel.id]
+
+        XCTAssertFalse(viewModel.canSpectate(user, in: channel))
+        XCTAssertFalse(viewModel.canOpenFightcadeReplay(link))
+        XCTAssertTrue(viewModel.fightcadeTVChannels.isEmpty)
+
+        launcher.capabilities = [.fightcadeSpectate]
+        XCTAssertFalse(viewModel.canSpectate(user, in: channel))
+        XCTAssertFalse(viewModel.canOpenFightcadeReplay(link))
+        XCTAssertTrue(viewModel.fightcadeTVChannels.isEmpty)
+
+        launcher.roms = [launcher.romKey(emulator: "fbneo", gameID: "sfiii3n")]
+        XCTAssertTrue(viewModel.canSpectate(user, in: channel))
+        XCTAssertTrue(viewModel.canOpenFightcadeReplay(link))
+        XCTAssertEqual(viewModel.fightcadeTVChannels.map(\.id), [channel.id])
+    }
+
+    @MainActor
+    private func makeViewModel(
+        channel: FightcadeChannel,
+        launcher: RouteGatedFightcadeLauncher
+    ) -> AuthenticatedHomeViewModel {
+        let viewModel = AuthenticatedHomeViewModel(
+            session: AuthSession(username: "me", displayName: "Me"),
+            launcher: launcher
+        )
+        viewModel.dashboard = FightcadeDashboard(
+            connectedUsername: "Me",
+            welcomeMessage: nil,
+            channels: [channel]
+        )
+        return viewModel
+    }
+
     private func makeChannel(
         gameID: String,
         title: String = "Street Fighter III",
@@ -150,9 +228,65 @@ final class ChannelTVTests: XCTestCase {
         )
     }
 
+    private func makeIdleUser(_ name: String) -> FightcadeChannelUser {
+        FightcadeChannelUser(
+            id: name,
+            name: name,
+            gravatarHash: nil,
+            countryCode: nil,
+            ping: nil,
+            virtualPing: nil,
+            rank: nil,
+            matchCount: nil,
+            rankedSetting: nil,
+            region: nil,
+            isAway: false,
+            isPlaying: false,
+            isUsingWifi: false,
+            isUsingProxy: false,
+            preventsBadChallenges: false,
+            preventsWifiChallenges: false,
+            stream: nil
+        )
+    }
+
     private struct FixedRandomNumberGenerator: RandomNumberGenerator {
         mutating func next() -> UInt64 {
             0
         }
+    }
+}
+
+@MainActor
+final class RouteGatedFightcadeLauncher: FightcadeLaunching {
+    var capabilities = Set<FightcadeRuntimeCapability>()
+    var roms = Set<String>()
+
+    func canLaunchLocalGame(emulator: String) -> Bool {
+        true
+    }
+
+    func canLaunchFightcadeRoute(_ capability: FightcadeRuntimeCapability, emulator: String) -> Bool {
+        capabilities.contains(capability)
+    }
+
+    func hasLocalROM(emulator: String, gameID: String) -> Bool {
+        roms.contains(romKey(emulator: emulator, gameID: gameID))
+    }
+
+    func open(_ route: FightcadeLaunchRoute) async throws {
+        throw StubError.unexpectedLaunch
+    }
+
+    func openEmbedded(_ launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedSession {
+        throw StubError.unexpectedLaunch
+    }
+
+    func romKey(emulator: String, gameID: String) -> String {
+        "\(emulator.lowercased()):\(gameID.lowercased())"
+    }
+
+    private enum StubError: Error {
+        case unexpectedLaunch
     }
 }

@@ -83,6 +83,7 @@ struct ChallengeSidebarSection: View {
                     accent: accent,
                     mode: mode,
                     isBusy: viewModel.isSendingChallenge,
+                    canAccept: viewModel.canAcceptIncomingChallenge(challenge),
                     openAction: { viewModel.openChallengeChannel(challenge) },
                     acceptAction: { viewModel.acceptIncomingChallenge(challenge) },
                     rejectAction: { viewModel.rejectIncomingChallenge(challenge) },
@@ -104,6 +105,7 @@ private struct ChallengeSidebarCard: View {
     let accent: Color
     let mode: Mode
     let isBusy: Bool
+    let canAccept: Bool
     let openAction: () -> Void
     let acceptAction: () -> Void
     let rejectAction: () -> Void
@@ -151,7 +153,7 @@ private struct ChallengeSidebarCard: View {
         switch mode {
         case .incoming:
             iconButton("xmark", help: "Reject", action: rejectAction)
-            iconButton("checkmark", help: "Accept", action: acceptAction, prominent: true)
+            iconButton("checkmark", help: "Accept", action: acceptAction, prominent: true, isEnabled: canAccept)
         case .outgoing:
             iconButton("xmark", help: "Cancel", action: cancelAction, prominent: true)
         }
@@ -168,7 +170,8 @@ private struct ChallengeSidebarCard: View {
         _ icon: String,
         help: String,
         action: @escaping () -> Void,
-        prominent: Bool = false
+        prominent: Bool = false,
+        isEnabled: Bool = true
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
@@ -178,7 +181,7 @@ private struct ChallengeSidebarCard: View {
                 .background(prominent ? accent.opacity(0.95) : MacadeColor.panel, in: Circle())
         }
         .buttonStyle(.plain)
-        .disabled(isBusy)
+        .disabled(isBusy || !isEnabled)
         .help(help)
     }
 }
@@ -193,6 +196,7 @@ struct ChallengeChatRow: View {
     let user: FightcadeChannelUser?
     let mode: Mode
     let isBusy: Bool
+    let canAccept: Bool
     let acceptAction: () -> Void
     let rejectAction: () -> Void
     let cancelAction: () -> Void
@@ -245,7 +249,7 @@ struct ChallengeChatRow: View {
             Button("Accept", action: acceptAction)
                 .buttonStyle(.borderedProminent)
                 .tint(MacadeColor.warning)
-                .disabled(isBusy)
+                .disabled(isBusy || !canAccept)
         case .outgoing:
             Button("Cancel", action: cancelAction)
                 .buttonStyle(.borderless)

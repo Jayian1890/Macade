@@ -3,6 +3,7 @@
 #include "client_backend_internal.hpp"
 #include "logging.hpp"
 #include "macade_proxy_config.hpp"
+#include "tcp_framing.hpp"
 
 #include <algorithm>
 #include <arpa/inet.h>
@@ -21,41 +22,6 @@
 
 namespace ggponet::reconstructed {
 namespace {
-
-uint32_t read_be32(const unsigned char *bytes)
-{
-   uint32_t value = 0;
-   std::memcpy(&value, bytes, sizeof(value));
-   return ntohl(value);
-}
-
-void append_be32(std::vector<unsigned char> *buffer, uint32_t value)
-{
-   const uint32_t be = htonl(value);
-   const auto *bytes = reinterpret_cast<const unsigned char *>(&be);
-   buffer->insert(buffer->end(), bytes, bytes + sizeof(be));
-}
-
-bool read_string(const unsigned char *payload, size_t size, size_t *offset, std::string *value)
-{
-   if (*offset + 4 > size) {
-      return false;
-   }
-   const uint32_t length = read_be32(payload + *offset);
-   *offset += 4;
-   if (*offset + length > size) {
-      return false;
-   }
-   value->assign(reinterpret_cast<const char *>(payload + *offset), length);
-   *offset += length;
-   return true;
-}
-
-void append_string(std::vector<unsigned char> *payload, const std::string &value)
-{
-   append_be32(payload, static_cast<uint32_t>(value.size()));
-   payload->insert(payload->end(), value.begin(), value.end());
-}
 
 bool set_nonblocking(int fd)
 {
@@ -114,23 +80,37 @@ int connect_client_socket(int server_port)
    return connected;
 }
 
+void queue_disconnect(ClientBackend *client)
+{
+   if (client->socket_fd >= 0) {
+      close(client->socket_fd);
+      client->socket_fd = -1;
+   }
+   if (!client->disconnected) {
+      client->disconnected = true;
+      client->events.push_back({10});
+   }
+}
+
 void send_command(ClientBackend *client, int command, const std::vector<unsigned char> &payload)
 {
    quark_log("Sending command %d to server.\n", command);
-   const unsigned int sequence = client->next_sequence++;
+   const unsigned int sequence = client->next_sequence;
+   if (!tcp_append_command(&client->send_buffer, sequence, command, payload)) {
+      quark_log("TcpProtocol rejected oversized command %d (%zu bytes).\n", command, payload.size());
+      queue_disconnect(client);
+      return;
+   }
+   ++client->next_sequence;
    client->pending_commands[sequence] = command;
-   append_be32(&client->send_buffer, static_cast<uint32_t>(payload.size() + 8));
-   append_be32(&client->send_buffer, sequence);
-   append_be32(&client->send_buffer, static_cast<uint32_t>(command));
-   client->send_buffer.insert(client->send_buffer.end(), payload.begin(), payload.end());
 }
 
 void send_version(ClientBackend *client)
 {
    std::vector<unsigned char> payload;
-   append_be32(&payload, 0);
-   append_be32(&payload, 0x1d);
-   append_be32(&payload, 1);
+   tcp_append_be32(&payload, 0);
+   tcp_append_be32(&payload, 0x1d);
+   tcp_append_be32(&payload, 1);
    send_command(client, 0, payload);
 }
 
@@ -141,10 +121,12 @@ void flush_socket(ClientBackend *client)
                                 client->send_buffer.size() - client->send_offset, 0);
       if (sent > 0) {
          client->send_offset += static_cast<size_t>(sent);
+      } else if (sent < 0 && errno == EINTR) {
+         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
          return;
       } else {
-         client->events.push_back({10});
+         queue_disconnect(client);
          return;
       }
    }
@@ -159,9 +141,9 @@ void parse_matchinfo(ClientBackend *client, const unsigned char *payload, size_t
    size_t offset = 0;
    ClientEvent event{};
    event.type = 0xb;
-   if (read_string(payload, size, &offset, &event.p1) && read_string(payload, size, &offset, &event.p2) &&
-       read_string(payload, size, &offset, &event.blurb) && offset + 4 <= size) {
-      event.count = static_cast<int>(read_be32(payload + offset));
+   if (tcp_read_string(payload, size, &offset, &event.p1) && tcp_read_string(payload, size, &offset, &event.p2) &&
+       tcp_read_string(payload, size, &offset, &event.blurb) && offset <= size && size - offset >= 4) {
+      event.count = static_cast<int>(tcp_read_be32(payload + offset));
       client->events.push_back(std::move(event));
    } else {
       quark_log("TcpProtocol dropped malformed matchinfo response (%zu bytes).\n", size);
@@ -175,9 +157,14 @@ void parse_server_event(ClientBackend *client, int code, const unsigned char *pa
       size_t offset = 0;
       ClientEvent event{};
       event.type = 8;
-      if (read_string(payload, size, &offset, &event.p1) && offset + 8 <= size) {
-         event.remote_port = static_cast<int>(read_be32(payload + offset));
-         event.player_side = static_cast<int>(read_be32(payload + offset + 4));
+      if (tcp_read_string(payload, size, &offset, &event.p1) && offset <= size && size - offset >= 8) {
+         event.remote_port = static_cast<int>(tcp_read_be32(payload + offset));
+         event.player_side = static_cast<int>(tcp_read_be32(payload + offset + 4));
+         if (event.p1.empty() || event.remote_port <= 0 || event.remote_port > 65535 ||
+             (event.player_side != 0 && event.player_side != 1)) {
+            quark_log("TcpProtocol dropped invalid match endpoint event.\n");
+            return;
+         }
          quark_log("Starting match %s (port %d).\n", event.p1.c_str(), event.remote_port);
          client->events.push_back(std::move(event));
       } else {
@@ -187,14 +174,14 @@ void parse_server_event(ClientBackend *client, int code, const unsigned char *pa
       size_t offset = 0;
       ClientEvent event{};
       event.type = 0xc;
-      if (read_string(payload, size, &offset, &event.match_id) && read_string(payload, size, &offset, &event.p1) &&
-          read_string(payload, size, &offset, &event.p2)) {
+      if (tcp_read_string(payload, size, &offset, &event.match_id) && tcp_read_string(payload, size, &offset, &event.p1) &&
+          tcp_read_string(payload, size, &offset, &event.p2)) {
          client->events.push_back(std::move(event));
       }
    } else if (code == 9) {
       client->events.push_back({10});
    } else if (code == 10 && size >= 4) {
-      client->events.push_back({0x10, static_cast<int>(read_be32(payload))});
+      client->events.push_back({0x10, static_cast<int>(tcp_read_be32(payload))});
    } else if (code == 11) {
       client->events.push_back({0x11});
    }
@@ -219,25 +206,30 @@ void parse_response(ClientBackend *client, unsigned int sequence, int response, 
 
 void parse_packets(ClientBackend *client)
 {
-   while (client->receive_buffer.size() >= 4) {
-      const uint32_t length = read_be32(client->receive_buffer.data());
-      if (client->receive_buffer.size() < static_cast<size_t>(length + 4)) {
+   while (true) {
+      std::vector<unsigned char> frame;
+      const TcpFrameStatus status = tcp_take_frame(&client->receive_buffer, &frame);
+      if (status == TcpFrameStatus::incomplete) {
          return;
       }
-      if (length < 4) {
-         quark_log("TcpProtocol dropped short packet length %u.\n", length);
-         client->receive_buffer.erase(client->receive_buffer.begin(), client->receive_buffer.begin() + length + 4);
+      if (status == TcpFrameStatus::invalid) {
+         quark_log("TcpProtocol rejected oversized frame.\n");
+         client->receive_buffer.clear();
+         queue_disconnect(client);
+         return;
+      }
+      if (frame.size() < 4) {
+         quark_log("TcpProtocol dropped short packet length %zu.\n", frame.size());
          continue;
       }
-      const unsigned char *packet = client->receive_buffer.data() + 4;
-      const int sequence_or_event = static_cast<int>(read_be32(packet));
+      const unsigned char *packet = frame.data();
+      const int sequence_or_event = static_cast<int>(tcp_read_be32(packet));
       if (sequence_or_event < 0) {
-         parse_server_event(client, -sequence_or_event, packet + 4, length - 4);
-      } else if (length >= 8) {
-         parse_response(client, static_cast<unsigned int>(sequence_or_event), static_cast<int>(read_be32(packet + 4)),
-                        packet + 8, length - 8);
+         parse_server_event(client, -sequence_or_event, packet + 4, frame.size() - 4);
+      } else if (frame.size() >= 8) {
+         parse_response(client, static_cast<unsigned int>(sequence_or_event),
+                        static_cast<int>(tcp_read_be32(packet + 4)), packet + 8, frame.size() - 8);
       }
-      client->receive_buffer.erase(client->receive_buffer.begin(), client->receive_buffer.begin() + length + 4);
    }
 }
 
@@ -255,20 +247,40 @@ void poll_socket(ClientBackend *client)
       FD_SET(client->socket_fd, &writes);
    }
    timeval timeout{0, 0};
-   if (select(client->socket_fd + 1, &reads, &writes, nullptr, &timeout) <= 0) {
+   const int selected = select(client->socket_fd + 1, &reads, &writes, nullptr, &timeout);
+   if (selected < 0) {
+      if (errno != EINTR) {
+         queue_disconnect(client);
+      }
+      return;
+   }
+   if (selected == 0) {
       return;
    }
    if (FD_ISSET(client->socket_fd, &writes)) {
       flush_socket(client);
    }
-   if (FD_ISSET(client->socket_fd, &reads)) {
+   if (client->socket_fd >= 0 && FD_ISSET(client->socket_fd, &reads)) {
       unsigned char bytes[4096];
-      const ssize_t received = recv(client->socket_fd, bytes, sizeof(bytes), 0);
-      if (received > 0) {
-         client->receive_buffer.insert(client->receive_buffer.end(), bytes, bytes + received);
-         parse_packets(client);
-      } else if (received == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
-         client->events.push_back({10});
+      while (client->socket_fd >= 0) {
+         const ssize_t received = recv(client->socket_fd, bytes, sizeof(bytes), 0);
+         if (received > 0) {
+            client->receive_buffer.insert(client->receive_buffer.end(), bytes, bytes + received);
+            parse_packets(client);
+            if (client->socket_fd < 0) {
+               break;
+            }
+         } else if (received == 0) {
+            queue_disconnect(client);
+            break;
+         } else if (errno == EINTR) {
+            continue;
+         } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            break;
+         } else {
+            queue_disconnect(client);
+            break;
+         }
       }
    }
 }
@@ -281,23 +293,23 @@ void emit_client_event(ClientBackend *client, GGPOClientEvent *event)
 void send_string_command(ClientBackend *client, int command, const std::string &text)
 {
    std::vector<unsigned char> payload;
-   append_string(&payload, text);
+   tcp_append_string(&payload, text);
    send_command(client, command, payload);
 }
 
 void send_connect_command(ClientBackend *client)
 {
    std::vector<unsigned char> payload;
-   append_string(&payload, client->match_id);
-   append_be32(&payload, static_cast<uint32_t>(macade_proxy_register_port(client->peer.udp.udp.local_port)));
+   tcp_append_string(&payload, client->match_id);
+   tcp_append_be32(&payload, static_cast<uint32_t>(macade_proxy_register_port(client->peer.udp.udp.local_port)));
    send_command(client, 0xb, payload);
 }
 
 void send_chat_command(ClientBackend *client, const char *text)
 {
    std::vector<unsigned char> payload;
-   append_string(&payload, client->match_id);
-   append_string(&payload, text != nullptr ? text : "");
+   tcp_append_string(&payload, client->match_id);
+   tcp_append_string(&payload, text != nullptr ? text : "");
    send_command(client, 0xf, payload);
 }
 
@@ -319,7 +331,11 @@ void process_events(ClientBackend *client)
             quark_log("Using Macade GGPO proxy endpoint %s:%d for served match peer UDP.\n", remote_host.c_str(),
                       remote_port);
          }
-         peer_session_connect(&client->peer, remote_host.data(), remote_port, event.player_side == 0);
+         if (!peer_session_connect(&client->peer, remote_host.data(), remote_port, event.player_side == 0)) {
+            quark_log("Could not configure served match peer UDP endpoint %s:%d.\n", remote_host.c_str(), remote_port);
+            queue_disconnect(client);
+            continue;
+         }
          client->spectator_source = event.player_side == 0;
          client->replay_source = event.player_side == 0;
          send_string_command(client, 0xc, client->match_id);
@@ -456,6 +472,7 @@ GGPOSession *create_client_session(GGPOSessionCallbacks *callbacks, char *game, 
    }
    backend->peer.confirmed_input_hook = client_confirmed_input_hook;
    backend->socket_fd = connect_client_socket(server_port);
+   backend->disconnected = backend->socket_fd < 0;
    backend->next_sequence = 0;
    backend->send_offset = 0;
    backend->spectator_count = 0;

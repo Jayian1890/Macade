@@ -53,9 +53,10 @@ struct UdpSocket {
 void udp_socket_construct(UdpSocket *udp);
 void udp_socket_destroy(UdpSocket *udp);
 bool udp_socket_bind(UdpSocket *udp, int port, int port_range);
-void udp_socket_init(UdpSocket *udp, int port, UdpReceiver *receiver);
-void udp_socket_set_remote_endpoint(UdpSocket *udp, const char *host, int port, PollBackend *poller);
-void udp_socket_queue_send(UdpSocket *udp, const unsigned char *data, int size);
+bool udp_socket_init(UdpSocket *udp, int port, UdpReceiver *receiver);
+bool udp_socket_set_remote_endpoint(UdpSocket *udp, const char *host, int port, PollBackend *poller);
+bool udp_socket_source_matches(const UdpSocket *udp, const sockaddr_in &source);
+bool udp_socket_queue_send(UdpSocket *udp, const unsigned char *data, int size);
 bool udp_socket_flush_send_queue(UdpSocket *udp);
 bool udp_socket_poll_receive(UdpSocket *udp);
 bool udp_socket_update_stats(UdpSocket *udp);

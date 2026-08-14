@@ -1,5 +1,4 @@
 #include "udp_socket.hpp"
-
 #include "logging.hpp"
 
 #include <algorithm>
@@ -11,6 +10,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <netdb.h>
+#include <string>
 #include <sys/socket.h>
 #include <utility>
 #include <unistd.h>
@@ -35,20 +36,10 @@ void udp_log(const char *format, ...)
    va_end(args);
 }
 
-void assert_or_exit(bool condition, const char *expression, int line)
-{
-   if (!condition) {
-      std::fprintf(stderr, "Assertion: %s @ ..\\source\\network\\udp.cpp:%d\n", expression, line);
-      std::exit(1);
-   }
-}
-
-void set_nonblocking(int fd)
+bool set_nonblocking(int fd)
 {
    const int flags = fcntl(fd, F_GETFL, 0);
-   if (flags >= 0) {
-      fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-   }
+   return flags >= 0 && fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0;
 }
 
 void close_socket(UdpSocket *udp)
@@ -59,15 +50,45 @@ void close_socket(UdpSocket *udp)
    }
 }
 
+void notify_peer_disconnected(UdpSocket *udp)
+{
+   if (udp->received_first_packet && udp->receiver != nullptr) {
+      udp->receiver->vtable->on_peer_disconnected(udp->receiver);
+   }
+   udp->received_first_packet = false;
+}
+
+bool resolve_remote_endpoint(const char *host, int port, sockaddr_in *endpoint)
+{
+   if (host == nullptr || host[0] == '\0' || port <= 0 || port > 65535 || endpoint == nullptr) {
+      return false;
+   }
+   addrinfo hints{};
+   hints.ai_family = AF_INET;
+   hints.ai_socktype = SOCK_DGRAM;
+   addrinfo *results = nullptr;
+   const std::string service = std::to_string(port);
+   if (getaddrinfo(host, service.c_str(), &hints, &results) != 0) {
+      return false;
+   }
+   bool resolved = false;
+   for (addrinfo *item = results; item != nullptr; item = item->ai_next) {
+      if (item->ai_family == AF_INET && item->ai_addrlen >= sizeof(sockaddr_in)) {
+         std::memcpy(endpoint, item->ai_addr, sizeof(sockaddr_in));
+         resolved = true;
+         break;
+      }
+   }
+   freeaddrinfo(results);
+   return resolved;
+}
+
 bool on_handle(void *, void *context)
 {
    return udp_socket_poll_receive(static_cast<UdpSocket *>(context));
 }
 
-bool pre_idle(void *, void *)
-{
-   return true;
-}
+bool pre_idle(void *, void *) { return true; }
 
 bool on_timer(void *, void *context, int)
 {
@@ -119,11 +140,14 @@ void udp_socket_destroy(UdpSocket *udp)
 
 bool udp_socket_bind(UdpSocket *udp, int port, int port_range)
 {
+   if (udp == nullptr || port < 0 || port > 65535 || port_range < 0) {
+      return false;
+   }
    udp->receive_pending = false;
    close_socket(udp);
+   const int last_port = static_cast<int>(std::min<long long>(65535, static_cast<long long>(port) + port_range));
 
-   bool bound = false;
-   for (int candidate = port; candidate <= port + port_range; ++candidate) {
+   for (int candidate = port; candidate <= last_port; ++candidate) {
       const int fd = socket(AF_INET, SOCK_DGRAM, 0);
       if (fd == -1) {
          continue;
@@ -132,100 +156,142 @@ bool udp_socket_bind(UdpSocket *udp, int port, int port_range)
       local.sin_family = AF_INET;
       local.sin_addr.s_addr = htonl(INADDR_ANY);
       local.sin_port = htons(static_cast<uint16_t>(candidate));
-      if (bind(fd, reinterpret_cast<sockaddr *>(&local), sizeof(local)) == 0) {
-         set_nonblocking(fd);
+      if (bind(fd, reinterpret_cast<sockaddr *>(&local), sizeof(local)) == 0 && set_nonblocking(fd)) {
          udp->socket_fd = fd;
          udp->local_port = candidate;
-         bound = true;
+         if (candidate == 0) {
+            socklen_t length = sizeof(local);
+            if (getsockname(fd, reinterpret_cast<sockaddr *>(&local), &length) == 0) {
+               udp->local_port = ntohs(local.sin_port);
+            }
+         }
          udp_log("Udp bound to port: %d.\n", udp->local_port);
-         break;
+         if (udp->has_remote_addr && udp->poller != nullptr) {
+            bool replaced = false;
+            for (size_t index = 1; index < udp->poller->handle_callbacks.size(); ++index) {
+               if (udp->poller->handle_callbacks[index].context == udp) {
+                  udp->poller->handles[index] = fd;
+                  replaced = true;
+                  break;
+               }
+            }
+            if (!replaced) {
+               poll_backend_add_handle(udp->poller, &udp->poll_target, fd, udp);
+            }
+            udp_log("Re-priming socket for port %d.\n", udp->local_port);
+            poll_backend_signal(udp->poller);
+         }
+         return true;
       }
       udp_log("Could not bind to port %d.  Retrying.\n", candidate);
       close(fd);
    }
 
-   if (!bound) {
-      udp->socket_fd = -1;
+   udp->socket_fd = -1;
+   udp->local_port = -1;
+   return false;
+}
+
+bool udp_socket_init(UdpSocket *udp, int port, UdpReceiver *receiver)
+{
+   const char *delay = std::getenv("ggpo.network.delay");
+   udp->network_delay_ms = delay == nullptr ? 0 : std::max(0, static_cast<int>(std::atol(delay)));
+   udp->receiver = receiver;
+   return udp_socket_bind(udp, port, 10);
+}
+
+bool udp_socket_set_remote_endpoint(UdpSocket *udp, const char *host, int port, PollBackend *poller)
+{
+   sockaddr_in endpoint{};
+   if (udp == nullptr || poller == nullptr || udp->socket_fd == -1 ||
+       !resolve_remote_endpoint(host, port, &endpoint)) {
+      if (udp != nullptr) {
+         udp->has_remote_addr = false;
+      }
       return false;
    }
-   if (udp->has_remote_addr && udp->poller != nullptr) {
-      udp_log("Re-priming socket for port %d.\n", udp->local_port);
-      poll_backend_signal(udp->poller);
-   }
+   udp->remote_addr = endpoint;
+   udp->has_remote_addr = true;
+   udp->poller = poller;
+   poll_backend_add_handle(poller, &udp->poll_target, udp->socket_fd, udp);
+   poll_backend_add_timer(poller, &udp->poll_target, 1000, udp);
+   poll_backend_add_idle(poller, &udp->poll_target, udp);
+   udp_log("Priming socket for port %d.\n", udp->local_port);
+   udp_log("Remote endpoint is %s:%d.\n", host, port);
+   poll_backend_signal(poller);
    return true;
 }
 
-void udp_socket_init(UdpSocket *udp, int port, UdpReceiver *receiver)
+bool udp_socket_source_matches(const UdpSocket *udp, const sockaddr_in &source)
 {
-   const char *delay = std::getenv("ggpo.network.delay");
-   udp->network_delay_ms = delay == nullptr ? 0 : static_cast<int>(std::atol(delay));
-   udp->local_port = port;
-   udp->receiver = receiver;
-   udp_socket_bind(udp, port, 10);
+   return udp != nullptr && udp->has_remote_addr && source.sin_family == AF_INET &&
+          source.sin_addr.s_addr == udp->remote_addr.sin_addr.s_addr && source.sin_port == udp->remote_addr.sin_port;
 }
 
-void udp_socket_set_remote_endpoint(UdpSocket *udp, const char *host, int port, PollBackend *poller)
+bool udp_socket_queue_send(UdpSocket *udp, const unsigned char *data, int size)
 {
-   udp->remote_addr = {};
-   udp->remote_addr.sin_family = AF_INET;
-   udp->remote_addr.sin_addr.s_addr = inet_addr(host);
-   udp->remote_addr.sin_port = htons(static_cast<uint16_t>(port));
-   udp->has_remote_addr = true;
-   udp->poller = poller;
-
-   if (poller != nullptr && udp->socket_fd != -1) {
-      poll_backend_add_handle(poller, &udp->poll_target, udp->socket_fd, udp);
-      poll_backend_add_timer(poller, &udp->poll_target, 1000, udp);
-      poll_backend_add_idle(poller, &udp->poll_target, udp);
-      udp_log("Priming socket for port %d.\n", udp->local_port);
-      udp_log("Remote endpoint is %s:%d.\n", host, port);
-      poll_backend_signal(poller);
+   if (udp == nullptr || size < 0 || size > kUdpPayloadMax || (size > 0 && data == nullptr) ||
+       udp->socket_fd == -1 || !udp->has_remote_addr) {
+      udp_log("Dropped invalid UDP send request (%d bytes).\n", size);
+      return false;
    }
-}
-
-void udp_socket_queue_send(UdpSocket *udp, const unsigned char *data, int size)
-{
-   assert_or_exit(size >= 0 && size <= kUdpPayloadMax, "size <= MAX_UDP_PACKET_SIZE", 0xb0);
    UdpQueuedPacket packet;
    if (size > 0) {
       packet.bytes.assign(data, data + size);
    }
    packet.timestamp_ms = now_ms();
    udp->send_queue.push_back(std::move(packet));
-   udp_socket_flush_send_queue(udp);
+   return udp_socket_flush_send_queue(udp);
 }
 
 bool udp_socket_flush_send_queue(UdpSocket *udp)
 {
+   if (udp == nullptr || udp->socket_fd == -1 || !udp->has_remote_addr) {
+      return false;
+   }
    const int current_ms = now_ms();
    while (!udp->send_queue.empty()) {
       const UdpQueuedPacket &packet = udp->send_queue.front();
       if (udp->network_delay_ms != 0 && current_ms < packet.timestamp_ms + udp->network_delay_ms) {
          break;
       }
-      assert_or_exit(udp->has_remote_addr, "_peer_addr.sin_addr.s_addr", 0xb8);
-      const ssize_t sent = sendto(udp->socket_fd,
-                                  packet.bytes.data(),
-                                  packet.bytes.size(),
-                                  0,
-                                  reinterpret_cast<const sockaddr *>(&udp->remote_addr),
-                                  sizeof(udp->remote_addr));
-      assert_or_exit(sent != -1, "FALSE && \"Unknown error in sendto\"", 0xc0);
-      udp->bytes_sent_total += static_cast<int>(sent);
-      udp->send_queue.pop_front();
+      const ssize_t sent = sendto(udp->socket_fd, packet.bytes.data(), packet.bytes.size(), 0,
+                                  reinterpret_cast<const sockaddr *>(&udp->remote_addr), sizeof(udp->remote_addr));
+      if (sent == static_cast<ssize_t>(packet.bytes.size())) {
+         udp->bytes_sent_total += static_cast<int>(sent);
+         udp->send_queue.pop_front();
+         continue;
+      }
+      if (sent < 0 && errno == EINTR) {
+         continue;
+      }
+      if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+         return true;
+      }
+      udp_log("Permanent sendto failure on port %d: %s.\n", udp->local_port, std::strerror(errno));
+      notify_peer_disconnected(udp);
+      udp->send_queue.clear();
+      return false;
    }
    return true;
 }
 
 bool udp_socket_poll_receive(UdpSocket *udp)
 {
-   if (!udp->has_remote_addr || udp->socket_fd == -1) {
-      return true;
+   if (udp == nullptr || !udp->has_remote_addr || udp->socket_fd == -1) {
+      return false;
    }
 
    while (true) {
-      const ssize_t count = recv(udp->socket_fd, udp->receive_buffer, sizeof(udp->receive_buffer), 0);
+      sockaddr_in source{};
+      socklen_t source_length = sizeof(source);
+      const ssize_t count = recvfrom(udp->socket_fd, udp->receive_buffer, sizeof(udp->receive_buffer), 0,
+                                     reinterpret_cast<sockaddr *>(&source), &source_length);
       if (count >= 0) {
+         if (source_length < sizeof(sockaddr_in) || !udp_socket_source_matches(udp, source)) {
+            udp_log("Dropped UDP packet from unexpected endpoint.\n");
+            continue;
+         }
          if (!udp->received_first_packet && udp->receiver != nullptr) {
             udp->receiver->vtable->on_first_packet(udp->receiver);
             udp->received_first_packet = true;
@@ -237,20 +303,21 @@ bool udp_socket_poll_receive(UdpSocket *udp)
          udp->packet_stats.push_back({static_cast<int>(count), now_ms()});
          continue;
       }
+      if (errno == EINTR) {
+         continue;
+      }
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
          udp->receive_pending = true;
          return true;
       }
       if (errno == ECONNRESET) {
-         if (udp->received_first_packet && udp->receiver != nullptr) {
-            udp->receiver->vtable->on_peer_disconnected(udp->receiver);
-            udp->received_first_packet = false;
-         }
-         udp_log("Got WSAECONNRESET while polling old port %d.  Reconnecting\n", udp->local_port);
-         udp_socket_bind(udp, udp->local_port, 0);
-         return true;
+         notify_peer_disconnected(udp);
+         udp_log("Got ECONNRESET while polling old port %d.  Reconnecting.\n", udp->local_port);
+         return udp_socket_bind(udp, udp->local_port, 0);
       }
-      assert_or_exit(false, "FALSE && \"Unknown return value from WSARecv\"", 0x94);
+      udp_log("Permanent recvfrom failure on port %d: %s.\n", udp->local_port, std::strerror(errno));
+      notify_peer_disconnected(udp);
+      return false;
    }
 }
 
@@ -276,11 +343,9 @@ bool udp_socket_update_stats(UdpSocket *udp)
    const double overhead = static_cast<double>(udp->packet_count * 0x2a) * 100.0 / static_cast<double>(bytes);
    udp->kbps = static_cast<float>((8.0 * bytes_per_second) / 1024.0);
    udp_log("Network Stats -- Bandwidth: %.2f KBps   Packets Sent: %5d (%.2f pps)   KB Sent: %.2f   Overhead: %.2f %%.\n",
-           static_cast<double>(udp->kbps),
-           udp->packet_count,
+           static_cast<double>(udp->kbps), udp->packet_count,
            static_cast<double>(udp->packet_count) * 1000.0 / 3000.0,
-           static_cast<double>(bytes) / 1024.0,
-           overhead);
+           static_cast<double>(bytes) / 1024.0, overhead);
    return true;
 }
 

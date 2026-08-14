@@ -3,10 +3,16 @@ import Foundation
 struct FightcadeRuntime {
     private let fileManager: FileManager
     private let applicationSupportURL: URL?
+    private let flycastROMCatalogURL: URL?
 
-    init(fileManager: FileManager = .default, applicationSupportURL: URL? = nil) {
+    init(
+        fileManager: FileManager = .default,
+        applicationSupportURL: URL? = nil,
+        flycastROMCatalogURL: URL? = nil
+    ) {
         self.fileManager = fileManager
         self.applicationSupportURL = applicationSupportURL
+        self.flycastROMCatalogURL = flycastROMCatalogURL
     }
 
     func root() throws -> URL {
@@ -73,6 +79,15 @@ struct FightcadeRuntime {
         return directory
     }
 
+    func dataDirectory(emulator: String) throws -> URL {
+        let emulatorID = try safePathComponent(FightcadeEmulatorID.runtimeID(for: emulator))
+        let directory = try applicationSupportRuntimeRoot()
+            .appendingPathComponent("data")
+            .appendingPathComponent(emulatorID)
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
     func launchArguments(emulator: String, arguments: [String], expectedROM: URL?) -> [String] {
         guard FightcadeEmulatorID.runtimeID(for: emulator) == "flycast",
               let expectedROM,
@@ -110,6 +125,10 @@ struct FightcadeRuntime {
     }
 
     private func applicationSupportROMRoot() throws -> URL {
+        try applicationSupportRuntimeRoot().appendingPathComponent("roms")
+    }
+
+    private func applicationSupportRuntimeRoot() throws -> URL {
         guard let supportURL = applicationSupportURL ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw FightcadeLaunchError.missingRuntime([])
         }
@@ -117,14 +136,14 @@ struct FightcadeRuntime {
         return supportURL
             .appendingPathComponent("Macade")
             .appendingPathComponent("FightcadeRuntime")
-            .appendingPathComponent("roms")
     }
 
     private func romFileNameCandidates(emulator: String, gameID: String) throws -> [String] {
-        let normalizedEmulator = emulator.lowercased()
+        let normalizedEmulator = FightcadeEmulatorID.runtimeID(for: emulator)
         var stems = [try safePathComponent(gameID)]
         let prefixes = ["\(normalizedEmulator)_", "snes_", "flycast_", "nulldc_"]
         let extensions = romFileExtensions(emulator: normalizedEmulator)
+        var fileNames = flycastCatalogRelativePath(emulator: normalizedEmulator, gameID: gameID).map { [$0] } ?? []
 
         for prefix in prefixes where gameID.lowercased().hasPrefix(prefix) {
             let stripped = String(gameID.dropFirst(prefix.count))
@@ -133,7 +152,6 @@ struct FightcadeRuntime {
             }
         }
 
-        var fileNames: [String] = []
         for stem in stems {
             if hasKnownROMExtension(stem, extensions: extensions) {
                 if !fileNames.contains(stem) {
@@ -151,6 +169,45 @@ struct FightcadeRuntime {
         }
 
         return fileNames
+    }
+
+    private func flycastCatalogRelativePath(emulator: String, gameID: String) -> String? {
+        guard emulator == "flycast",
+              let catalogURL = flycastROMCatalogURL ?? bundledFlycastROMCatalogURL(),
+              let data = try? Data(contentsOf: catalogURL),
+              let catalog = try? JSONDecoder().decode([String: FlycastROMCatalogEntry].self, from: data),
+              let entry = catalog[gameID.lowercased()] else {
+            return nil
+        }
+
+        var filename = entry.filename.replacingOccurrences(of: "\\", with: "/")
+        while filename.hasPrefix("/") {
+            filename.removeFirst()
+        }
+
+        let relativePath: String
+        if let directory = entry.directory?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !directory.isEmpty {
+            relativePath = "\(directory)/\(filename)"
+        } else {
+            relativePath = filename
+        }
+
+        guard let components = try? safeROMPathComponents(relativePath) else {
+            return nil
+        }
+        return components.joined(separator: "/")
+    }
+
+    private func bundledFlycastROMCatalogURL() -> URL? {
+        bundledRoot()?
+            .appendingPathComponent("emulators")
+            .appendingPathComponent("flycast")
+            .appendingPathComponent("Flycast Dojo.app")
+            .appendingPathComponent("Contents")
+            .appendingPathComponent("Resources")
+            .appendingPathComponent("data")
+            .appendingPathComponent("flycast_roms.json")
     }
 
     private func romFileExtensions(emulator: String) -> [String] {
@@ -194,5 +251,15 @@ struct FightcadeRuntime {
     private func directoryExists(_ url: URL) -> Bool {
         var isDirectory: ObjCBool = false
         return fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
+    }
+
+    private struct FlycastROMCatalogEntry: Decodable {
+        let filename: String
+        let directory: String?
+
+        private enum CodingKeys: String, CodingKey {
+            case filename
+            case directory = "dir"
+        }
     }
 }

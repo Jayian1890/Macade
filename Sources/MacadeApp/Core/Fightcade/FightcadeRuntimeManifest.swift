@@ -10,6 +10,7 @@ struct FightcadeRuntimeManifest: Decodable {
             || supports(.fightcadeDirect, emulator: emulator)
             || supports(.fightcadeSpectate, emulator: emulator)
             || supports(.fightcadeTraining, emulator: emulator)
+            || supports(.fightcadeReplay, emulator: emulator)
     }
 
     func supportsEmbedded(emulator: String) -> Bool {
@@ -32,6 +33,8 @@ struct FightcadeRuntimeManifest: Decodable {
             return emulator.supportsFightcadeSpectate ?? emulator.supportsQuark
         case .fightcadeTraining:
             return emulator.supportsFightcadeTraining ?? emulator.supportsQuark
+        case .fightcadeReplay:
+            return emulator.supportsFightcadeReplay ?? emulator.supportsQuark
         }
     }
 
@@ -47,15 +50,17 @@ struct FightcadeRuntimeManifest: Decodable {
         let supportsFightcadeDirect: Bool?
         let supportsFightcadeSpectate: Bool?
         let supportsFightcadeTraining: Bool?
+        let supportsFightcadeReplay: Bool?
     }
 }
 
-enum FightcadeRuntimeCapability {
+enum FightcadeRuntimeCapability: Hashable, Sendable {
     case embedded
     case fightcadeMatch
     case fightcadeDirect
     case fightcadeSpectate
     case fightcadeTraining
+    case fightcadeReplay
 }
 
 enum FightcadeEmulatorID {
@@ -86,11 +91,21 @@ extension FightcadeEmbeddedLaunch {
             .fightcadeMatch
         case .direct:
             .fightcadeDirect
-        case .spectate, .replay:
+        case .spectate:
             .fightcadeSpectate
+        case .replay:
+            replayCapability
         case .test, .training:
             quarkArgumentCapability
         }
+    }
+
+    private var replayCapability: FightcadeRuntimeCapability {
+        if arguments.contains(where: { $0.hasPrefix("quark:stream") }) {
+            return .fightcadeSpectate
+        }
+
+        return .fightcadeReplay
     }
 
     private var quarkArgumentCapability: FightcadeRuntimeCapability? {

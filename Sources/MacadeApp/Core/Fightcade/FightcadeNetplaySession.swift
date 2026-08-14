@@ -13,7 +13,6 @@ struct FightcadeQuarkSessionPlan: Equatable, Sendable {
     let master: FightcadeNetplayEndpoint
     let localBindPort: Int
     let emulatorProxyPort: Int
-    let restrictedNATFallbackPort: Int
     let fixedFallbackPort: Int
 
     init(match: FightcadeMatchLaunch, localBindPort: Int = 6006, emulatorProxyPort: Int = 7001) {
@@ -21,7 +20,6 @@ struct FightcadeQuarkSessionPlan: Equatable, Sendable {
         master = FightcadeNetplayEndpoint(host: Self.masterHost, port: match.port)
         self.localBindPort = localBindPort
         self.emulatorProxyPort = emulatorProxyPort
-        restrictedNATFallbackPort = Self.restrictedNATFallbackPort(quark: quark)
         fixedFallbackPort = 6004
     }
 
@@ -29,15 +27,6 @@ struct FightcadeQuarkSessionPlan: Equatable, Sendable {
     var expectedOKPayload: String { "ok \(quark)" }
     var acknowledgePayload: String { "ok" }
     var usePortsPayload: String { "useports/\(quark)" }
-
-    static func restrictedNATFallbackPort(quark: String) -> Int {
-        let suffix = quark.split(separator: "-", maxSplits: 1).dropFirst().first?
-            .split(separator: ".", maxSplits: 1).first
-        guard let suffix, let port = Int("4" + suffix) else {
-            return 26004
-        }
-        return port
-    }
 }
 
 struct FightcadeMasterAddressParser {
@@ -74,6 +63,19 @@ struct FightcadeHolePunchMessage: Equatable, Sendable {
     let localToken: String
     let remoteToken: String?
     let remoteKnowsLocalToken: Bool
+    let acknowledgedToken: String?
+
+    init(
+        localToken: String,
+        remoteToken: String?,
+        remoteKnowsLocalToken: Bool,
+        acknowledgedToken: String? = nil
+    ) {
+        self.localToken = localToken
+        self.remoteToken = remoteToken
+        self.remoteKnowsLocalToken = remoteKnowsLocalToken
+        self.acknowledgedToken = acknowledgedToken
+    }
 
     var payload: String {
         var parts = [localToken, remoteToken ?? "_"]
@@ -99,7 +101,8 @@ struct FightcadeHolePunchMessage: Equatable, Sendable {
         return FightcadeHolePunchMessage(
             localToken: parts[0],
             remoteToken: parts[0],
-            remoteKnowsLocalToken: parts.count == 3 && parts[1].hasPrefix("0.")
+            remoteKnowsLocalToken: parts.count == 3 && parts[1].hasPrefix("0."),
+            acknowledgedToken: parts.count == 3 ? parts[1] : nil
         )
     }
 
@@ -135,7 +138,7 @@ struct FightcadeUDPHolePuncher: Sendable {
     private let sleeper: @Sendable (TimeInterval) async -> Void
 
     init(
-        tokenProvider: @escaping @Sendable () -> String = { String(Double.random(in: 0..<1)) },
+        tokenProvider: @escaping @Sendable () -> String = { "0.\(UInt64.random(in: .min ... .max))" },
         sleeper: @escaping @Sendable (TimeInterval) async -> Void = { interval in
             try? await Task.sleep(for: .seconds(interval))
         }
@@ -148,15 +151,20 @@ struct FightcadeUDPHolePuncher: Sendable {
         transport: any FightcadeUDPTransporting,
         peer: FightcadeNetplayEndpoint,
         attempts: Int,
-        sleep: TimeInterval = 0.5
+        sleep: TimeInterval = 0.5,
+        ignoredEndpoint: FightcadeNetplayEndpoint? = nil
     ) async throws -> FightcadeHolePunchResult {
         let localToken = tokenProvider()
+        guard localToken.hasPrefix("0.") else {
+            throw FightcadeHolePunchError.invalidLocalToken
+        }
         var remoteToken: String?
         var remoteKnowsLocalToken = false
         var target = peer
         var lastPayload: Data?
 
         for _ in 0..<attempts {
+            try Task.checkCancellation()
             if remoteToken != nil && remoteKnowsLocalToken {
                 break
             }
@@ -164,13 +172,16 @@ struct FightcadeUDPHolePuncher: Sendable {
             if let received = try? await transport.receive(maximumBytes: 1024, timeout: 0.01) {
                 if received.1.host == target.host,
                    received.1.port != target.port,
-                   ![7000, 7001, 7002].contains(received.1.port) {
+                   received.1 != ignoredEndpoint {
                     target = received.1
                 }
 
-                if let message = FightcadeHolePunchMessage.parse(received.0) {
+                if received.1.host == target.host,
+                   received.1 != ignoredEndpoint,
+                   let message = FightcadeHolePunchMessage.parse(received.0) {
                     remoteToken = message.remoteToken ?? remoteToken
                     remoteKnowsLocalToken = message.remoteKnowsLocalToken
+                        && message.acknowledgedToken == localToken
                 }
             }
 
@@ -182,10 +193,20 @@ struct FightcadeUDPHolePuncher: Sendable {
             lastPayload = Data(payload.utf8)
             try await transport.send(lastPayload ?? Data(), to: target)
             await sleeper(sleep)
+            try Task.checkCancellation()
         }
 
-        return FightcadeHolePunchResult(punched: remoteToken != nil, peer: target, keepalivePayload: lastPayload)
+        let punched = remoteToken != nil && remoteKnowsLocalToken
+        return FightcadeHolePunchResult(
+            punched: punched,
+            peer: target,
+            keepalivePayload: punched ? lastPayload : nil
+        )
     }
+}
+
+enum FightcadeHolePunchError: Error, Equatable {
+    case invalidLocalToken
 }
 
 protocol FightcadeUDPTransporting: Sendable {

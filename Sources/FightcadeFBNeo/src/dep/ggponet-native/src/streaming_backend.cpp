@@ -1,6 +1,7 @@
 #include "streaming_backend.hpp"
 
 #include "logging.hpp"
+#include "tcp_framing.hpp"
 
 #include <algorithm>
 #include <arpa/inet.h>
@@ -65,41 +66,6 @@ struct StreamingBackend {
    int spectator_count;
 };
 
-uint32_t read_be32(const unsigned char *bytes)
-{
-   uint32_t value;
-   std::memcpy(&value, bytes, sizeof(value));
-   return ntohl(value);
-}
-
-void append_be32(std::vector<unsigned char> *buffer, uint32_t value)
-{
-   const uint32_t be = htonl(value);
-   const auto *bytes = reinterpret_cast<const unsigned char *>(&be);
-   buffer->insert(buffer->end(), bytes, bytes + sizeof(be));
-}
-
-bool read_string(const unsigned char *payload, size_t size, size_t *offset, std::string *value)
-{
-   if (*offset + 4 > size) {
-      return false;
-   }
-   const uint32_t length = read_be32(payload + *offset);
-   *offset += 4;
-   if (*offset + length > size) {
-      return false;
-   }
-   value->assign(reinterpret_cast<const char *>(payload + *offset), length);
-   *offset += length;
-   return true;
-}
-
-void append_string(std::vector<unsigned char> *payload, const std::string &value)
-{
-   append_be32(payload, static_cast<uint32_t>(value.size()));
-   payload->insert(payload->end(), value.begin(), value.end());
-}
-
 void queue_event(StreamingBackend *backend, TcpEvent event)
 {
    backend->events.push_back(std::move(event));
@@ -107,6 +73,10 @@ void queue_event(StreamingBackend *backend, TcpEvent event)
 
 void queue_disconnect(StreamingBackend *backend)
 {
+   if (backend->socket_fd >= 0) {
+      close(backend->socket_fd);
+      backend->socket_fd = -1;
+   }
    if (!backend->disconnected) {
       backend->disconnected = true;
       queue_event(backend, TcpEvent{2});
@@ -178,27 +148,28 @@ int connect_socket(int server_port)
 
 void send_command(StreamingBackend *backend, int command, const std::vector<unsigned char> &payload)
 {
-   const unsigned int sequence = backend->next_sequence++;
+   const unsigned int sequence = backend->next_sequence;
+   if (!tcp_append_command(&backend->send_buffer, sequence, command, payload)) {
+      queue_disconnect(backend);
+      return;
+   }
+   ++backend->next_sequence;
    backend->pending_commands[sequence] = command;
-   append_be32(&backend->send_buffer, static_cast<uint32_t>(payload.size() + 8));
-   append_be32(&backend->send_buffer, sequence);
-   append_be32(&backend->send_buffer, static_cast<uint32_t>(command));
-   backend->send_buffer.insert(backend->send_buffer.end(), payload.begin(), payload.end());
 }
 
 void send_version(StreamingBackend *backend)
 {
    std::vector<unsigned char> payload;
-   append_be32(&payload, 0);
-   append_be32(&payload, 0x1d);
-   append_be32(&payload, 1);
+   tcp_append_be32(&payload, 0);
+   tcp_append_be32(&payload, 0x1d);
+   tcp_append_be32(&payload, 1);
    send_command(backend, 0, payload);
 }
 
 void send_match_string(StreamingBackend *backend, int command)
 {
    std::vector<unsigned char> payload;
-   append_string(&payload, backend->match_id);
+   tcp_append_string(&payload, backend->match_id);
    send_command(backend, command, payload);
 }
 
@@ -207,11 +178,11 @@ void parse_matchinfo(StreamingBackend *backend, const unsigned char *payload, si
    size_t offset = 0;
    TcpEvent event = {};
    event.type = 0xb;
-   if (!read_string(payload, size, &offset, &event.p1) || !read_string(payload, size, &offset, &event.p2) ||
-       !read_string(payload, size, &offset, &event.blurb) || offset + 4 > size) {
+   if (!tcp_read_string(payload, size, &offset, &event.p1) || !tcp_read_string(payload, size, &offset, &event.p2) ||
+       !tcp_read_string(payload, size, &offset, &event.blurb) || offset > size || size - offset < 4) {
       return;
    }
-   event.count = static_cast<int>(read_be32(payload + offset));
+   event.count = static_cast<int>(tcp_read_be32(payload + offset));
    queue_event(backend, std::move(event));
 }
 
@@ -222,18 +193,21 @@ void parse_server_event(StreamingBackend *backend, int event_code, const unsigne
    } else if (event_code == 10 && size >= 4) {
       TcpEvent event = {};
       event.type = 0x10;
-      event.count = static_cast<int>(read_be32(payload));
+      event.count = static_cast<int>(tcp_read_be32(payload));
       queue_event(backend, std::move(event));
    } else if (event_code == 12 && size >= 4) {
-      const uint32_t state_size = read_be32(payload);
+      const uint32_t state_size = tcp_read_be32(payload);
+      if (state_size == 0 || state_size > kTcpMaximumFrameBytes || size == 4) {
+         return;
+      }
       TcpEvent event = {};
       event.type = 0xf;
       event.state_size = static_cast<int>(state_size);
       event.compressed_state.assign(payload + 4, payload + size);
       queue_event(backend, std::move(event));
    } else if (event_code == 13 && size >= 8) {
-      const int input_size = static_cast<int>(read_be32(payload));
-      const int count = static_cast<int>(read_be32(payload + 4));
+      const int input_size = static_cast<int>(tcp_read_be32(payload));
+      const int count = static_cast<int>(tcp_read_be32(payload + 4));
       if (input_size <= 0 || input_size > kGameInputMaxBytes || count < 0 ||
           static_cast<size_t>(count) > (size - 8) / static_cast<size_t>(input_size)) {
          return;
@@ -267,24 +241,28 @@ void parse_response(StreamingBackend *backend, unsigned int sequence, int respon
 
 void parse_packets(StreamingBackend *backend)
 {
-   while (backend->receive_buffer.size() >= 4) {
-      const uint32_t length = read_be32(backend->receive_buffer.data());
-      if (backend->receive_buffer.size() < static_cast<size_t>(length + 4)) {
+   while (true) {
+      std::vector<unsigned char> frame;
+      const TcpFrameStatus status = tcp_take_frame(&backend->receive_buffer, &frame);
+      if (status == TcpFrameStatus::incomplete) {
          return;
       }
-      if (length < 4) {
-         backend->receive_buffer.erase(backend->receive_buffer.begin(), backend->receive_buffer.begin() + length + 4);
+      if (status == TcpFrameStatus::invalid) {
+         backend->receive_buffer.clear();
+         queue_disconnect(backend);
+         return;
+      }
+      if (frame.size() < 4) {
          continue;
       }
-      const unsigned char *packet = backend->receive_buffer.data() + 4;
-      const int sequence_or_event = static_cast<int>(read_be32(packet));
+      const unsigned char *packet = frame.data();
+      const int sequence_or_event = static_cast<int>(tcp_read_be32(packet));
       if (sequence_or_event < 0) {
-         parse_server_event(backend, -sequence_or_event, packet + 4, length - 4);
-      } else if (length >= 8) {
-         parse_response(backend, static_cast<unsigned int>(sequence_or_event), static_cast<int>(read_be32(packet + 4)),
-                        packet + 8, length - 8);
+         parse_server_event(backend, -sequence_or_event, packet + 4, frame.size() - 4);
+      } else if (frame.size() >= 8) {
+         parse_response(backend, static_cast<unsigned int>(sequence_or_event),
+                        static_cast<int>(tcp_read_be32(packet + 4)), packet + 8, frame.size() - 8);
       }
-      backend->receive_buffer.erase(backend->receive_buffer.begin(), backend->receive_buffer.begin() + length + 4);
    }
 }
 
@@ -295,6 +273,8 @@ void flush_socket(StreamingBackend *backend)
                                 backend->send_buffer.size() - backend->send_offset, 0);
       if (sent > 0) {
          backend->send_offset += static_cast<size_t>(sent);
+      } else if (sent < 0 && errno == EINTR) {
+         continue;
       } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
          return;
       } else {
@@ -333,15 +313,21 @@ void poll_socket(StreamingBackend *backend, int timeout)
    if (FD_ISSET(backend->socket_fd, &writes)) {
       flush_socket(backend);
    }
-   if (FD_ISSET(backend->socket_fd, &reads)) {
+   if (backend->socket_fd >= 0 && FD_ISSET(backend->socket_fd, &reads)) {
       unsigned char bytes[4096];
       while (true) {
          const ssize_t received = recv(backend->socket_fd, bytes, sizeof(bytes), 0);
          if (received > 0) {
             backend->receive_buffer.insert(backend->receive_buffer.end(), bytes, bytes + received);
+            parse_packets(backend);
+            if (backend->socket_fd < 0) {
+               break;
+            }
          } else if (received == 0) {
             queue_disconnect(backend);
             break;
+         } else if (errno == EINTR) {
+            continue;
          } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
             break;
          } else {
@@ -349,7 +335,6 @@ void poll_socket(StreamingBackend *backend, int timeout)
             break;
          }
       }
-      parse_packets(backend);
    }
 }
 
@@ -417,11 +402,14 @@ bool __cdecl streaming_idle(GGPOSession *session, int timeout)
 bool __cdecl streaming_synchronize_input(GGPOSession *session, void *values, int size, int players)
 {
    auto *backend = reinterpret_cast<StreamingBackend *>(session);
-   if (backend->input_cursor >= backend->inputs.size()) {
+   if (values == nullptr || size <= 0 || players <= 0 || backend->input_cursor >= backend->inputs.size()) {
       return false;
    }
    const int copied_players = players < 3 ? players : 2;
-   const size_t copied_size = static_cast<size_t>(size * copied_players);
+   const size_t copied_size = static_cast<size_t>(size) * static_cast<size_t>(copied_players);
+   if (copied_size > sizeof(backend->inputs[backend->input_cursor].bits)) {
+      return false;
+   }
    std::memcpy(values, backend->inputs[backend->input_cursor++].bits, copied_size);
    return true;
 }
@@ -460,7 +448,7 @@ GGPOSession *create_streaming_session(GGPOSessionCallbacks *callbacks, const cha
    backend->vtable = &streaming_vtable;
    std::memcpy(&backend->callbacks, callbacks, sizeof(backend->callbacks));
    backend->socket_fd = connect_socket(server_port);
-   backend->disconnected = backend->socket_fd < 0;
+   backend->disconnected = false;
    backend->next_sequence = 0;
    backend->game = game != nullptr ? game : "";
    backend->match_id = match_id != nullptr ? match_id : "";

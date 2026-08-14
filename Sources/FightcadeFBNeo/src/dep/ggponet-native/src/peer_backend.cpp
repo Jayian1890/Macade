@@ -243,7 +243,11 @@ bool peer_backend_construct(PeerBackend *session, const GGPOSessionVTable *vtabl
    config.frame_delay = 1;
    config.max_prediction_frames = 20;
    sync_init(&session->sync, &config);
-   udp_protocol_bind(&session->udp, local_port);
+   if (!udp_protocol_bind(&session->udp, local_port)) {
+      quark_log("Could not bind GGPO UDP socket near port %d.\n", local_port);
+      peer_backend_teardown(session);
+      return false;
+   }
    if (!session->callbacks.begin_game(game)) {
       quark_log("begin_game failed for %s.\n", game != nullptr ? game : "");
       peer_backend_teardown(session);
@@ -290,13 +294,16 @@ bool peer_backend_set_frame_delay(PeerBackend *session, int frame_delay)
    return peer_set_frame_delay(&session->base, frame_delay);
 }
 
-void peer_session_connect(PeerBackend *session, char *remote_ip, int remote_port, bool player2)
+bool peer_session_connect(PeerBackend *session, char *remote_ip, int remote_port, bool player2)
 {
-   udp_protocol_set_remote_endpoint(&session->udp, remote_ip, remote_port, &session->poller);
+   if (session == nullptr || !udp_protocol_set_remote_endpoint(&session->udp, remote_ip, remote_port, &session->poller)) {
+      return false;
+   }
    session->in_poll = false;
    session->synchronizing = true;
    session->local_player_is_player2 = player2;
    udp_protocol_start_sync(&session->udp);
+   return true;
 }
 
 }

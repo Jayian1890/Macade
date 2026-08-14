@@ -13,6 +13,7 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
     private var eventContinuations: [UUID: AsyncStream<FightcadeLobbyEvent>.Continuation] = [:]
     var pendingRequestIDs = Set<Int>()
     var pendingResponses: [Int: [String: Any]] = [:]
+    var autologinBuffer = FightcadeLobbyPayloadBuffer()
     var joinedChannelNames = Set<String>()
     var canonicalChannelNames: [String: String] = [:]
     var currentChannelName: String?
@@ -66,6 +67,7 @@ actor FightcadeLobbyService: FightcadeLobbyServicing {
 
             startReceiveLoop(for: socket)
             startHeartbeat(for: socket)
+            replayAutologinBuffer()
 
             let welcomePayload = try? await sendRequest(
                 ["req": "welcome"],

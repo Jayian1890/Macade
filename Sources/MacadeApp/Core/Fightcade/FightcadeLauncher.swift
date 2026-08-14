@@ -5,25 +5,44 @@ import AppKit
 @MainActor
 protocol FightcadeLaunching: Sendable {
     func canLaunchLocalGame(emulator: String) -> Bool
+    func canLaunchFightcadeRoute(_ capability: FightcadeRuntimeCapability, emulator: String) -> Bool
     func canLaunchFightcadeReplay(emulator: String) -> Bool
     func hasLocalROM(emulator: String, gameID: String) -> Bool
     func open(_ route: FightcadeLaunchRoute) async throws
     func openEmbedded(_ launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedSession
 }
 
+extension FightcadeLaunching {
+    func canLaunchFightcadeReplay(emulator: String) -> Bool {
+        canLaunchFightcadeRoute(.fightcadeReplay, emulator: emulator)
+    }
+
+    func canLaunchFightcadeGame(
+        _ capability: FightcadeRuntimeCapability,
+        emulator: String,
+        gameID: String
+    ) -> Bool {
+        canLaunchFightcadeRoute(capability, emulator: emulator)
+            && hasLocalROM(emulator: emulator, gameID: gameID)
+    }
+}
+
 struct FightcadeLauncher: FightcadeLaunching {
-    private let runtime: FightcadeRuntime
-    private let fileManager: FileManager
-    private let processRegistry: FightcadeProcessRegistry
+    let runtime: FightcadeRuntime
+    let fileManager: FileManager
+    let processRegistry: FightcadeProcessRegistry
+    let netplayPreparer: any FightcadeEmbeddedNetplayPreparing
 
     init(
         runtime: FightcadeRuntime = FightcadeRuntime(),
         fileManager: FileManager = .default,
-        processRegistry: FightcadeProcessRegistry = .shared
+        processRegistry: FightcadeProcessRegistry = .shared,
+        netplayPreparer: any FightcadeEmbeddedNetplayPreparing = FightcadeEmbeddedProxyBootstrap()
     ) {
         self.runtime = runtime
         self.fileManager = fileManager
         self.processRegistry = processRegistry
+        self.netplayPreparer = netplayPreparer
     }
 
     func canLaunchLocalGame(emulator: String) -> Bool {
@@ -37,8 +56,12 @@ struct FightcadeLauncher: FightcadeLaunching {
     }
 
     func canLaunchFightcadeReplay(emulator: String) -> Bool {
+        canLaunchFightcadeRoute(.fightcadeReplay, emulator: emulator)
+    }
+
+    func canLaunchFightcadeRoute(_ capability: FightcadeRuntimeCapability, emulator: String) -> Bool {
         guard let runtimeRoot = try? runtime.root(),
-              runtimeManifest(in: runtimeRoot).supports(.fightcadeSpectate, emulator: emulator),
+              runtimeManifest(in: runtimeRoot).supports(capability, emulator: emulator),
               (try? emulatorExecutable(emulator: emulator, runtime: runtimeRoot)) != nil else {
             return false
         }
@@ -72,12 +95,13 @@ struct FightcadeLauncher: FightcadeLaunching {
                     "native \(training.emulator) training. The runtime emulator must implement Fightcade quark/GGPO support."
                 )
             }
+            let romURL = try ensureROMExists(emulator: training.emulator, gameID: training.gameID)
 
             try launch(
                 emulator: training.emulator,
                 arguments: [training.quarkCommand],
                 runtime: runtimeRoot,
-                expectedROM: nil
+                expectedROM: romURL
             )
 
         case .match(let match):
@@ -92,12 +116,13 @@ struct FightcadeLauncher: FightcadeLaunching {
                     "native \(match.emulator) netplay. The runtime emulator must implement Fightcade quark/GGPO support."
                 )
             }
+            let romURL = try ensureROMExists(emulator: match.emulator, gameID: match.gameID)
 
             try launch(
                 emulator: match.emulator,
                 arguments: [match.quarkCommand],
                 runtime: runtimeRoot,
-                expectedROM: nil
+                expectedROM: romURL
             )
 
         case .direct(let direct):
@@ -106,12 +131,13 @@ struct FightcadeLauncher: FightcadeLaunching {
                     "native \(direct.emulator) direct play. The runtime emulator must implement Fightcade quark/GGPO support."
                 )
             }
+            let romURL = try ensureROMExists(emulator: direct.emulator, gameID: direct.gameID)
 
             try launch(
                 emulator: direct.emulator,
                 arguments: [direct.quarkCommand],
                 runtime: runtimeRoot,
-                expectedROM: nil
+                expectedROM: romURL
             )
 
         case .spectate(let emulator, let gameID, let quarkID, let port):
@@ -120,12 +146,13 @@ struct FightcadeLauncher: FightcadeLaunching {
                     "native \(emulator) spectating. The runtime emulator must implement Fightcade quark/GGPO support."
                 )
             }
+            let romURL = try ensureROMExists(emulator: emulator, gameID: gameID)
 
             try launch(
                 emulator: emulator,
                 arguments: [FightcadeSpectateLaunch(emulator: emulator, gameID: gameID, quarkID: quarkID, port: port).quarkCommand],
                 runtime: runtimeRoot,
-                expectedROM: nil
+                expectedROM: romURL
             )
 
         case .endMatch:
@@ -133,85 +160,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
     }
 
-    func openEmbedded(_ launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedSession {
-        let runtimeRoot = try runtime.root()
-        let manifest = runtimeManifest(in: runtimeRoot)
-        if let capability = launch.requiredRuntimeCapability {
-            guard manifest.supports(capability, emulator: launch.emulator) else {
-                throw FightcadeLaunchError.unsupportedNativeRoute(
-                    "embedded native \(launch.emulator) \(launch.mode.rawValue.lowercased()). The runtime emulator must implement Fightcade quark/GGPO support."
-                )
-            }
-        } else if !manifest.supportsEmbedded(emulator: launch.emulator) {
-            throw FightcadeLaunchError.unsupportedNativeRoute(
-                "embedded native \(launch.emulator) local launch. The runtime emulator must implement Macade embedded video/input support."
-            )
-        }
-        let expectedROM: URL? = switch launch.mode {
-        case .test, .training:
-            try ensureROMExists(emulator: launch.emulator, gameID: launch.gameID)
-        case .direct, .match, .spectate, .replay:
-            nil
-        }
-
-        let resources = try makeEmbeddedResources(emulator: launch.emulator)
-        let session = FightcadeEmbeddedSession(
-            id: resources.id,
-            channelID: launch.channelID,
-            mode: launch.mode,
-            emulator: launch.emulator,
-            gameID: launch.gameID,
-            title: launch.title,
-            logURL: resources.logURL,
-            videoStream: resources.videoStream,
-            inputClient: resources.inputClient
-        )
-
-        var embeddedEnvironment = [
-            "MACADE_EMBEDDED_SESSION_ID": resources.id.uuidString,
-            "MACADE_EMBEDDED_VIDEO_PATH": resources.videoStream.fileURL.path,
-            "MACADE_EMBEDDED_VIDEO_BYTES": String(resources.videoStream.byteCount),
-            "MACADE_EMBEDDED_INPUT_SOCKET": resources.inputClient.socketPath,
-            "MACADE_EMBEDDED_HIDE_WINDOW": "1",
-            "SDL_MAC_BACKGROUND_APP": "1"
-        ]
-        if launch.mode == .match {
-            embeddedEnvironment["quark.log"] = "1"
-            embeddedEnvironment["quark.log.timestamps"] = "1"
-            embeddedEnvironment["MACADE_QUARK_LOG_DIR"] = resources.launchLog.url.deletingLastPathComponent().path
-        }
-        let proxySetup = try await makeProxySetup(for: launch)
-        embeddedEnvironment.merge(proxySetup?.environment ?? [:]) { _, new in new }
-
-        do {
-            let process = try launchProcess(
-                emulator: launch.emulator,
-                arguments: launch.arguments,
-                runtime: runtimeRoot,
-                expectedROM: expectedROM,
-                launchLog: resources.launchLog,
-                additionalEnvironment: embeddedEnvironment,
-                embeddedSession: session
-            )
-            session.attach(process: process, proxyTask: proxySetup?.startTask())
-            NSApp.activate(ignoringOtherApps: true)
-            return session
-        } catch {
-            proxySetup?.close()
-            session.markFailed(error.localizedDescription)
-            throw error
-        }
-    }
-
-    private func makeProxySetup(for launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedProxySetup? {
-        guard launch.mode == .match else { return nil }
-        guard let match = launch.match else {
-            throw FightcadeLaunchError.embeddedBridgeFailed("Missing Fightcade match metadata for embedded netplay.")
-        }
-        return try await FightcadeEmbeddedProxyBootstrap().makeProxy(for: match)
-    }
-
-    private func runtimeManifest(in runtime: URL) -> FightcadeRuntimeManifest {
+    func runtimeManifest(in runtime: URL) -> FightcadeRuntimeManifest {
         let manifestURL = runtime.appendingPathComponent("manifest.json")
         guard let data = try? Data(contentsOf: manifestURL),
               let manifest = try? JSONDecoder().decode(FightcadeRuntimeManifest.self, from: data) else {
@@ -222,7 +171,7 @@ struct FightcadeLauncher: FightcadeLaunching {
     }
 
     @discardableResult
-    private func ensureROMExists(emulator: String, gameID: String) throws -> URL {
+    func ensureROMExists(emulator: String, gameID: String) throws -> URL {
         guard let romURL = try runtime.existingROMURL(emulator: emulator, gameID: gameID) else {
             let candidates = try runtime.romCandidateURLs(emulator: emulator, gameID: gameID).map(\.path)
             throw FightcadeLaunchError.missingROM(gameID: gameID, emulator: emulator, searchedPaths: candidates)
@@ -245,7 +194,7 @@ struct FightcadeLauncher: FightcadeLaunching {
     }
 
     @discardableResult
-    private func launchProcess(
+    func launchProcess(
         emulator: String,
         arguments: [String],
         runtime: URL,
@@ -257,6 +206,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         let executable = try emulatorExecutable(emulator: emulator, runtime: runtime)
         let processArguments = self.runtime.launchArguments(emulator: emulator, arguments: arguments, expectedROM: expectedROM)
         let romDirectory = try self.runtime.romDirectory(emulator: emulator)
+        let dataDirectory = try self.runtime.dataDirectory(emulator: emulator)
         let configURL = try configureEmulator(emulator: emulator, runtime: runtime, romDirectory: romDirectory)
         let process = Process()
         process.executableURL = executable
@@ -268,6 +218,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         baseEnvironment.removeValue(forKey: "__CFBundleIdentifier")
         let environment = baseEnvironment.merging([
             "MACADE_FIGHTCADE_RUNTIME": runtime.path,
+            "MACADE_EMULATOR_DATA_DIR": dataDirectory.path,
             "MACADE_ROM_DIR": romDirectory.path,
             "FBNEO_ROM_DIR": romDirectory.path,
             "ROMPATH": romDirectory.path,
@@ -351,7 +302,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         return formatter.string(from: Date())
     }
 
-    private func makeEmbeddedResources(emulator: String) throws -> FightcadeEmbeddedResources {
+    func makeEmbeddedResources(emulator: String) throws -> FightcadeEmbeddedResources {
         guard let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             throw FightcadeLaunchError.embeddedBridgeFailed("Could not locate Application Support.")
         }

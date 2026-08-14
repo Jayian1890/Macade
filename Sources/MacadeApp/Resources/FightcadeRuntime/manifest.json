@@ -6,6 +6,7 @@
       "supportsFightcadeDirect": true,
       "supportsFightcadeSpectate": true,
       "supportsFightcadeTraining": true,
+      "supportsFightcadeReplay": true,
       "detectorsRevision": "de9e7a99c494af488ed64155678e9d22d78f7ae6"
     },
     "snes9x": {
@@ -14,7 +15,8 @@
       "supportsFightcadeMatch": false,
       "supportsFightcadeDirect": false,
       "supportsFightcadeSpectate": false,
-      "supportsFightcadeTraining": false
+      "supportsFightcadeTraining": false,
+      "supportsFightcadeReplay": false
     },
     "flycast": {
       "supportsQuark": false,
@@ -22,7 +24,8 @@
       "supportsFightcadeMatch": false,
       "supportsFightcadeDirect": false,
       "supportsFightcadeSpectate": false,
-      "supportsFightcadeTraining": false
+      "supportsFightcadeTraining": false,
+      "supportsFightcadeReplay": false
     }
   }
 }

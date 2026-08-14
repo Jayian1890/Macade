@@ -137,6 +137,7 @@ struct FightcadeLaunchDiagnostics {
             "MACADE_EMBEDDED_SESSION_ID",
             "MACADE_EMBEDDED_VIDEO_BYTES",
             "MACADE_EMBEDDED_VIDEO_PATH",
+            "MACADE_EMULATOR_DATA_DIR",
             "MACADE_FIGHTCADE_RUNTIME",
             "MACADE_ROM_DIR",
             "PATH",
@@ -359,9 +360,10 @@ struct FightcadeNetplayLaunchDiagnostics {
             proxy local listening endpoint: 127.0.0.1:\(plan.emulatorProxyPort)
             proxy max packet bytes: \(proxyConfiguration.maximumPacketBytes)
             proxy filters: hole-punch token packets containing " ok" or " _"
-            normal NAT fallback scan radius: 512
-            restricted NAT fallback port: \(plan.restrictedNATFallbackPort)
+            master registration retries: 1
+            direct punch attempts: 10
             fixed fallback port: \(plan.fixedFallbackPort)
+            terminal fallback payload: \(plan.usePortsPayload), launch without proxy overrides
             runtime: \(runtime.path)
             manifest: \(runtime.appendingPathComponent("manifest.json").path)
             supportsQuark required: true

@@ -206,6 +206,7 @@ struct ChannelChatView: View {
                     user: viewModel.user(for: item.challenge),
                     mode: item.mode,
                     isBusy: viewModel.isSendingChallenge,
+                    canAccept: viewModel.canAcceptIncomingChallenge(item.challenge),
                     acceptAction: { viewModel.acceptIncomingChallenge(item.challenge) },
                     rejectAction: { viewModel.rejectIncomingChallenge(item.challenge) },
                     cancelAction: { viewModel.cancelOutgoingChallenge(item.challenge) }
