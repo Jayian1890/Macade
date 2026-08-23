@@ -303,8 +303,9 @@ struct ChatMessageRow: View {
     }
 }
 
-private struct FightcadeMotdMessageRow: View {
+struct FightcadeMotdMessageRow: View {
     let message: FightcadeChatMessage
+    var showsEvents = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -318,7 +319,7 @@ private struct FightcadeMotdMessageRow: View {
                 }
             }
 
-            if !message.events.isEmpty {
+            if showsEvents, !message.events.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("EVENTS")
                         .font(.system(size: 13, weight: .black, design: .rounded))
@@ -357,7 +358,7 @@ private struct FightcadeMotdMessageRow: View {
     }
 }
 
-private struct FightcadeMotdEventCard: View {
+struct FightcadeMotdEventCard: View {
     let event: FightcadeEvent
     @Environment(\.openURL) private var openURL
 

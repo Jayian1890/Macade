@@ -94,24 +94,61 @@ struct PlayerDetailPane: View {
     @Binding var isMinimized: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            header
-
-            if !isMinimized {
-                LazyVGrid(columns: detailColumns, alignment: .leading, spacing: 6) {
-                    ForEach(detailItems) { item in
-                        detailChip(item)
-                    }
-                }
-
-                PlayerRecentMatchesView(channel: channel, user: user, viewModel: viewModel)
+        slimBar
+            .onTapGesture { isMinimized.toggle() }
+            .onHover { hovering in
+                if hovering { isMinimized = false }
             }
+            .help(statusText)
+            .popover(isPresented: Binding(
+                get: { !isMinimized },
+                set: { isMinimized = !$0 }
+            )) {
+                VStack(alignment: .leading, spacing: MacadeSpacing.small) {
+                    LazyVGrid(columns: detailColumns, alignment: .leading, spacing: 6) {
+                        ForEach(detailItems) { item in
+                            detailChip(item)
+                        }
+                    }
+
+                    PlayerRecentMatchesView(channel: channel, user: user, viewModel: viewModel)
+                }
+                .padding(MacadeSpacing.medium)
+                .frame(width: 280)
+            }
+    }
+
+    private var slimBar: some View {
+        HStack(spacing: MacadeSpacing.small) {
+            PlayerAvatarView(user: user, size: 28, borderColor: headerAccent)
+
+            Text(user.name)
+                .font(.system(size: 13, weight: .black, design: .rounded))
+                .foregroundStyle(MacadeColor.ink)
+                .lineLimit(1)
+
+            if let rank = user.displayRank {
+                Text(rank)
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .foregroundStyle(user.rankAccent)
+                    .padding(.horizontal, 6)
+                    .frame(height: 18)
+                    .background(user.rankAccent.opacity(0.14), in: Capsule())
+            }
+
+            Text(statusText)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(user.statusAccent)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
         }
-        .padding(MacadeSpacing.small)
+        .padding(.horizontal, MacadeSpacing.small)
+        .frame(height: 40)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MacadeColor.panel.opacity(0.96), in: RoundedRectangle(cornerRadius: 14))
+        .background(MacadeColor.panel.opacity(0.96), in: RoundedRectangle(cornerRadius: 12))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(MacadeColor.neonCyan.opacity(0.34), lineWidth: 1)
         )
     }

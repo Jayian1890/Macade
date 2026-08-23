@@ -35,31 +35,9 @@ struct ChannelHeader: View {
 
             Spacer()
 
-            if !viewModel.selectedHasLocalROM {
-                Button(action: viewModel.downloadSelectedROM) {
-                    Label("ROM", systemImage: "arrow.down.circle")
-                }
-                .buttonStyle(ChannelHeaderButtonStyle(isProminent: true))
-                .disabled(viewModel.isLaunchingGame || viewModel.isDownloadingROM)
-                .help("Download ROM")
-            }
-
             autoMatchButton
             autoMatchOutcomePill
             autoMatchSettingsButton
-
-            if viewModel.selectedHasLocalROM {
-                romTools
-            }
-
-            if let unavailable = viewModel.selectedLocalLaunchUnavailableText,
-               viewModel.selectedHasLocalROM {
-                Text(unavailable)
-                    .font(MacadeTypography.caption)
-                    .foregroundStyle(MacadeColor.inkMuted)
-                    .lineLimit(1)
-                    .frame(maxWidth: 180, alignment: .leading)
-            }
 
             if viewModel.isJoining || viewModel.isLaunchingGame || viewModel.isDownloadingROM || viewModel.isDeletingROM {
                 ProgressView()
@@ -117,43 +95,6 @@ struct ChannelHeader: View {
             AutoMatchSettingsView(channel: channel, viewModel: viewModel)
         }
     }
-
-    private var romTools: some View {
-        Menu {
-            Button("Check ROM", systemImage: "externaldrive", action: viewModel.checkROM)
-
-            if viewModel.canLaunchSelectedGameLocally {
-                Button("Test Launch", systemImage: "wrench.and.screwdriver", action: viewModel.launchTestGame)
-
-                if channel.supportsTraining {
-                    Button("Training", systemImage: "figure.run", action: viewModel.launchTraining)
-                }
-            }
-
-            Button("FBNeo Settings", systemImage: "slider.horizontal.3", action: viewModel.showFBNeoSettings)
-
-            Divider()
-
-            Button("Delete ROM", systemImage: "trash", role: .destructive, action: viewModel.deleteSelectedROM)
-                .disabled(viewModel.isDeletingROM)
-        } label: {
-            Image(systemName: "wrench.and.screwdriver")
-                .font(.system(size: 13, weight: .black))
-                .frame(width: 24, height: 24)
-            .foregroundStyle(MacadeColor.ink)
-            .padding(.horizontal, MacadeSpacing.medium)
-            .frame(height: 36)
-            .background(MacadeColor.panelStrong, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(MacadeColor.neonCyan.opacity(0.55), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(viewModel.isLaunchingGame || viewModel.isDownloadingROM || viewModel.isDeletingROM)
-        .help("Tools")
-    }
-
 }
 
 struct ChannelHeaderButtonStyle: ButtonStyle {

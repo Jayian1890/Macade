@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ChannelDetailView: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    @State private var selectedTab: ChannelLobbyTab = .chat
 
     var body: some View {
         if let channel = viewModel.selectedChannel {
@@ -12,7 +13,18 @@ struct ChannelDetailView: View {
                 ChannelErrorBanner(viewModel: viewModel)
 
                 HStack(spacing: 0) {
-                    ChannelChatView(channel: channel, viewModel: viewModel)
+                    VStack(spacing: 0) {
+                        ChannelLobbyTabBar(selectedTab: $selectedTab)
+
+                        switch selectedTab {
+                        case .chat:
+                            ChannelChatView(channel: channel, viewModel: viewModel, showsPreview: false)
+                        case .info:
+                            ChannelInfoPane(channel: channel, viewModel: viewModel)
+                        case .resources:
+                            ChannelResourcesPane(channel: channel, viewModel: viewModel)
+                        }
+                    }
 
                     PlayerListView(channel: channel, users: viewModel.selectedChannelUsers, viewModel: viewModel)
                 }
@@ -86,7 +98,7 @@ struct ChannelChatView: View {
                                     .foregroundStyle(MacadeColor.ink)
                                     .padding(10)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(.black.opacity(0.58))
+                                    .background(MacadeColor.midnight.opacity(0.58))
                             }
                         }
 
@@ -169,7 +181,7 @@ struct ChannelChatView: View {
     }
 
     private var channelMessages: [FightcadeChatMessage] {
-        (viewModel.chatMessagesByChannel[channel.name] ?? []).filter { !$0.isJoinLeaveSystemMessage }
+        (viewModel.chatMessagesByChannel[channel.name] ?? []).filter { !$0.isJoinLeaveSystemMessage && $0.kind != .motd }
     }
 
     private var channelUsers: [FightcadeChannelUser] {
@@ -253,7 +265,7 @@ struct ChannelChatView: View {
                 colors: [
                     MacadeColor.deepPlum.opacity(0.18 * backgroundOpacity),
                     .clear,
-                    .black.opacity(0.25 * backgroundOpacity)
+                    MacadeColor.midnight.opacity(0.25 * backgroundOpacity)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -362,6 +374,54 @@ private struct ChatTranslationSessionHost: View {
             activeSourceLanguageIdentifier = sourceLanguageIdentifier
             activeTargetLanguageIdentifier = targetLanguageIdentifier
             configuration = TranslationSession.Configuration(source: source, target: target)
+        }
+    }
+}
+
+
+private enum ChannelLobbyTab: String, CaseIterable, Identifiable {
+    case chat
+    case info
+    case resources
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .chat: "Chat"
+        case .info: "Info"
+        case .resources: "Resources"
+        }
+    }
+}
+
+private struct ChannelLobbyTabBar: View {
+    @Binding var selectedTab: ChannelLobbyTab
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(ChannelLobbyTab.allCases) { tab in
+                Button {
+                    selectedTab = tab
+                } label: {
+                    Text(tab.title)
+                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .foregroundStyle(selectedTab == tab ? MacadeColor.midnight : MacadeColor.inkMuted)
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
+                        .background(selectedTab == tab ? MacadeColor.neonCyan : MacadeColor.panel.opacity(0.7), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, MacadeSpacing.medium)
+        .frame(height: 40)
+        .background { MacadeFrostedFill(opacity: 0.35) }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(MacadeColor.divider)
+                .frame(height: 1)
         }
     }
 }
