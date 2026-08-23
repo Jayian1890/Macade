@@ -6,8 +6,8 @@ struct MacadeBackground: View {
             LinearGradient(
                 colors: [
                     MacadeColor.midnight,
-                    MacadeColor.deepPlum,
-                    MacadeColor.arcadeBlue.opacity(0.55)
+                    MacadeColor.deepPlum.opacity(0.92),
+                    MacadeColor.arcadeBlue.opacity(0.62)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

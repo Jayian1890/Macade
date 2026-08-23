@@ -24,6 +24,7 @@ struct PlayerRow: View {
 
             Spacer()
 
+            PingQualityIcon(user.ping, size: 10)
             rankBadge(user.displayRank)
         }
         .padding(.horizontal, MacadeSpacing.small)

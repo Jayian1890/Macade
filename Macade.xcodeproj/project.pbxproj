@@ -14,6 +14,7 @@
 		BF0000010000000000000005 /* MacadeColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000005 /* MacadeColor.swift */; };
 		BF0000010000000000000006 /* MacadeSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000006 /* MacadeSpacing.swift */; };
 		BF0000010000000000000007 /* MacadeTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000007 /* MacadeTypography.swift */; };
+		BF0000010000000000000016 /* MacadePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000016 /* MacadePanel.swift */; };
 		BF0000010000000000000008 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000008 /* AuthSession.swift */; };
 		BF0000010000000000000009 /* LoginCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000020000000000000009 /* LoginCredentials.swift */; };
 		BF000001000000000000000A /* AuthenticationServicing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000002000000000000000A /* AuthenticationServicing.swift */; };
@@ -36,6 +37,9 @@
 		BF00000B00000000000000C4 /* AuthenticatedHomeViewModel+Status.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000C4 /* AuthenticatedHomeViewModel+Status.swift */; };
 		BF00000B000000000000000A /* LobbySidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000A /* LobbySidebarView.swift */; };
 		BF00000B000000000000000C /* ChannelDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000C /* ChannelDetailView.swift */; };
+		BF00000B00000000000000F2 /* ChannelInfoPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000F2 /* ChannelInfoPane.swift */; };
+		BF00000B00000000000000F3 /* ChannelResourcesPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000F3 /* ChannelResourcesPane.swift */; };
+		BF00000B00000000000000F4 /* PlayerListGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000F4 /* PlayerListGrouping.swift */; };
 		BF00000B00000000000000C2 /* ChatInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C00000000000000C2 /* ChatInputView.swift */; };
 		BF00000B000000000000000D /* ChannelBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000D /* ChannelBrowserView.swift */; };
 		BF00000B000000000000000E /* FightcadeChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000000E /* FightcadeChatMessage.swift */; };
@@ -193,6 +197,7 @@
 		BF0000020000000000000005 /* MacadeColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeColor.swift; sourceTree = "<group>"; };
 		BF0000020000000000000006 /* MacadeSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSpacing.swift; sourceTree = "<group>"; };
 		BF0000020000000000000007 /* MacadeTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeTypography.swift; sourceTree = "<group>"; };
+		BF0000020000000000000016 /* MacadePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadePanel.swift; sourceTree = "<group>"; };
 		BF0000020000000000000008 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		BF0000020000000000000009 /* LoginCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginCredentials.swift; sourceTree = "<group>"; };
 		BF000002000000000000000A /* AuthenticationServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationServicing.swift; sourceTree = "<group>"; };
@@ -218,6 +223,9 @@
 		BF00000C00000000000000C4 /* AuthenticatedHomeViewModel+Status.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AuthenticatedHomeViewModel+Status.swift"; sourceTree = "<group>"; };
 		BF00000C000000000000000A /* LobbySidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LobbySidebarView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000000C /* ChannelDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelDetailView.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000F2 /* ChannelInfoPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelInfoPane.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000F3 /* ChannelResourcesPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelResourcesPane.swift; sourceTree = "<group>"; };
+		BF00000C00000000000000F4 /* PlayerListGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerListGrouping.swift; sourceTree = "<group>"; };
 		BF00000C00000000000000C2 /* ChatInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatInputView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000000D /* ChannelBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelBrowserView.swift; sourceTree = "<group>"; };
 		BF00000C000000000000000E /* FightcadeChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeChatMessage.swift; sourceTree = "<group>"; };
@@ -433,6 +441,7 @@
 				BF0000020000000000000005 /* MacadeColor.swift */,
 				BF0000020000000000000006 /* MacadeSpacing.swift */,
 				BF0000020000000000000007 /* MacadeTypography.swift */,
+				BF0000020000000000000016 /* MacadePanel.swift */,
 			);
 			path = Design;
 			sourceTree = "<group>";
@@ -677,6 +686,9 @@
 			children = (
 				BF00000C000000000000000A /* LobbySidebarView.swift */,
 				BF00000C000000000000000C /* ChannelDetailView.swift */,
+				BF00000C00000000000000F2 /* ChannelInfoPane.swift */,
+				BF00000C00000000000000F3 /* ChannelResourcesPane.swift */,
+				BF00000C00000000000000F4 /* PlayerListGrouping.swift */,
 				BF00000C00000000000000C2 /* ChatInputView.swift */,
 				BF00000C0000000000000021 /* ChannelHeaderView.swift */,
 				BF00000C00000000000000EE /* AutoMatchSettingsView.swift */,
@@ -892,6 +904,7 @@
 				BF0000010000000000000005 /* MacadeColor.swift in Sources */,
 				BF0000010000000000000006 /* MacadeSpacing.swift in Sources */,
 				BF0000010000000000000007 /* MacadeTypography.swift in Sources */,
+				BF0000010000000000000016 /* MacadePanel.swift in Sources */,
 				BF0000010000000000000008 /* AuthSession.swift in Sources */,
 				BF0000010000000000000009 /* LoginCredentials.swift in Sources */,
 				BF000001000000000000000A /* AuthenticationServicing.swift in Sources */,
@@ -923,6 +936,9 @@
 				BF00000B00000000000000CA /* FriendsSidebarSection.swift in Sources */,
 				BF00000B00000000000000CB /* GameplayDetailView.swift in Sources */,
 				BF00000B000000000000000C /* ChannelDetailView.swift in Sources */,
+				BF00000B00000000000000F2 /* ChannelInfoPane.swift in Sources */,
+				BF00000B00000000000000F3 /* ChannelResourcesPane.swift in Sources */,
+				BF00000B00000000000000F4 /* PlayerListGrouping.swift in Sources */,
 				BF00000B00000000000000C2 /* ChatInputView.swift in Sources */,
 				BF00000B000000000000000D /* ChannelBrowserView.swift in Sources */,
 				BF00000B00000000000000A6 /* FightcadeChannelBrowserModels.swift in Sources */,
