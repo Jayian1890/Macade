@@ -177,6 +177,19 @@
 		BF10000B0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift */; };
 		BF10000B0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */; };
 		BF10000B0000000000000012 /* FightcadeNetplayLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF10000C0000000000000012 /* FightcadeNetplayLifecycleTests.swift */; };
+		CE0000010000000000000001 /* MacadeGamepadPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000020000000000000001 /* MacadeGamepadPreferences.swift */; };
+		CE0000010000000000000002 /* GamepadSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000020000000000000002 /* GamepadSettingsViewModel.swift */; };
+		CE0000010000000000000003 /* GamepadSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000020000000000000003 /* GamepadSettingsSection.swift */; };
+		CE0000010000000000000004 /* GamepadSettingsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000020000000000000004 /* GamepadSettingsModels.swift */; };
+		CE0000010000000000000005 /* SDLGamepadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000020000000000000005 /* SDLGamepadService.swift */; };
+		CE0000010000000000000006 /* MacadeGamepadPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000020000000000000006; };
+		CE0000010000000000000007 /* GamepadSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000020000000000000007; };
+		CF0000010000000000000001 /* MacadeLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000001; };
+		CF0000010000000000000002 /* MacadeResizableSplitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000002; };
+		CF0000010000000000000003 /* LobbyLayoutStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000003; };
+		CF0000010000000000000004 /* LobbyLayoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000004; };
+		CF0000010000000000000005 /* LobbyLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000005; };
+		CF0000010000000000000006 /* SinglePlayerLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000006; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -364,6 +377,19 @@
 		BF10000C0000000000000010 /* FightcadeGGPOServedHandshakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeGGPOServedHandshakeTests.swift; sourceTree = "<group>"; };
 		BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeSettingsPreferencesStoreTests.swift; sourceTree = "<group>"; };
 		BF10000C0000000000000012 /* FightcadeNetplayLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FightcadeNetplayLifecycleTests.swift; sourceTree = "<group>"; };
+		CE0000020000000000000001 /* MacadeGamepadPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeGamepadPreferences.swift; sourceTree = "<group>"; };
+		CE0000020000000000000002 /* GamepadSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamepadSettingsViewModel.swift; sourceTree = "<group>"; };
+		CE0000020000000000000003 /* GamepadSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamepadSettingsSection.swift; sourceTree = "<group>"; };
+		CE0000020000000000000004 /* GamepadSettingsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MacadeApp/Features/Settings/Models/GamepadSettingsModels.swift; sourceTree = SOURCE_ROOT; };
+		CE0000020000000000000005 /* SDLGamepadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MacadeApp/Features/Settings/Services/SDLGamepadService.swift; sourceTree = SOURCE_ROOT; };
+		CE0000020000000000000006 /* MacadeGamepadPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacadeGamepadPreferencesTests.swift; sourceTree = "<group>"; };
+		CE0000020000000000000007 /* GamepadSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamepadSettingsViewModelTests.swift; sourceTree = "<group>"; };
+		CF0000020000000000000001 /* MacadeLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MacadeApp/Core/Design/MacadeLayout.swift; sourceTree = SOURCE_ROOT; };
+		CF0000020000000000000002 /* MacadeResizableSplitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MacadeApp/Core/Design/MacadeResizableSplitView.swift; sourceTree = SOURCE_ROOT; };
+		CF0000020000000000000003 /* LobbyLayoutStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MacadeApp/Features/Lobby/Services/LobbyLayoutStore.swift; sourceTree = SOURCE_ROOT; };
+		CF0000020000000000000004 /* LobbyLayoutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MacadeApp/Features/Lobby/ViewModels/LobbyLayoutViewModel.swift; sourceTree = SOURCE_ROOT; };
+		CF0000020000000000000005 /* LobbyLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MacadeAppTests/LobbyLayoutTests.swift; sourceTree = SOURCE_ROOT; };
+		CF0000020000000000000006 /* SinglePlayerLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MacadeAppTests/SinglePlayerLaunchTests.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -440,6 +466,8 @@
 				BF0000020000000000000004 /* MacadeBackground.swift */,
 				BF0000020000000000000005 /* MacadeColor.swift */,
 				BF0000020000000000000006 /* MacadeSpacing.swift */,
+				CF0000020000000000000002 /* MacadeResizableSplitView.swift */,
+				CF0000020000000000000001 /* MacadeLayout.swift */,
 				BF0000020000000000000007 /* MacadeTypography.swift */,
 				BF0000020000000000000016 /* MacadePanel.swift */,
 			);
@@ -545,6 +573,10 @@
 				BF10000C0000000000000003 /* FightcadeUserStatusReporterTests.swift */,
 				BF10000C0000000000000005 /* FightcadeWelcomeParserTests.swift */,
 				BF10000C0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift */,
+				CE0000020000000000000006 /* MacadeGamepadPreferencesTests.swift */,
+				CE0000020000000000000007 /* GamepadSettingsViewModelTests.swift */,
+				CF0000020000000000000005 /* LobbyLayoutTests.swift */,
+				CF0000020000000000000006 /* SinglePlayerLaunchTests.swift */,
 			);
 			path = MacadeAppTests;
 			sourceTree = "<group>";
@@ -594,6 +626,7 @@
 				BF00000C000000000000001F /* FightcadeFBNeoConfig.swift */,
 				BF00000C0000000000000024 /* FightcadeFBNeoSettings.swift */,
 				BF00000C00000000000000D1 /* MacadeControllerPreferences.swift */,
+				CE0000020000000000000001 /* MacadeGamepadPreferences.swift */,
 				BF00000C00000000000000D8 /* MacadeRelayProfile.swift */,
 				BF00000C00000000000000D9 /* MacadeRelayRunner.swift */,
 			);
@@ -648,6 +681,7 @@
 				BF00000C0000000000000028 /* FightcadeLobbyDiagnostics.swift */,
 				BF00000C00000000000000C7 /* FightcadeFriendStore.swift */,
 				BF00000C0000000000000032 /* JoinedChannelStore.swift */,
+				CF0000020000000000000003 /* LobbyLayoutStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -656,6 +690,7 @@
 			isa = PBXGroup;
 			children = (
 				BF00000C0000000000000009 /* AuthenticatedHomeViewModel.swift */,
+				CF0000020000000000000004 /* LobbyLayoutViewModel.swift */,
 				BF00000C00000000000000E5 /* AuthenticatedHomeViewModel+AutoMatch.swift */,
 				BF00000C00000000000000ED /* AuthenticatedHomeViewModel+AutoMatchSettings.swift */,
 				BF00000C00000000000000C4 /* AuthenticatedHomeViewModel+Status.swift */,
@@ -730,6 +765,8 @@
 			isa = PBXGroup;
 			children = (
 				BF00000D0000000000000008 /* ViewModels */,
+				CE0000020000000000000005 /* SDLGamepadService.swift */,
+				CE0000020000000000000004 /* GamepadSettingsModels.swift */,
 				BF00000D0000000000000009 /* Views */,
 			);
 			path = Settings;
@@ -740,6 +777,7 @@
 			children = (
 				BF00000C00000000000000AD /* MacadeSettingsPreferencesStore.swift */,
 				BF00000C00000000000000AE /* MacadeSettingsViewModel.swift */,
+				CE0000020000000000000002 /* GamepadSettingsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -749,6 +787,7 @@
 			children = (
 				BF00000C00000000000000AF /* MacadeSettingsView.swift */,
 				BF00000C00000000000000D0 /* ControllerSettingsSection.swift */,
+				CE0000020000000000000003 /* GamepadSettingsSection.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -898,6 +937,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				BF0000010000000000000001 /* MacadeApp.swift in Sources */,
+				CE0000010000000000000005 /* SDLGamepadService.swift in Sources */,
+				CE0000010000000000000004 /* GamepadSettingsModels.swift in Sources */,
+				CE0000010000000000000003 /* GamepadSettingsSection.swift in Sources */,
+				CE0000010000000000000002 /* GamepadSettingsViewModel.swift in Sources */,
+				CE0000010000000000000001 /* MacadeGamepadPreferences.swift in Sources */,
+				CF0000010000000000000004 /* LobbyLayoutViewModel.swift in Sources */,
+				CF0000010000000000000003 /* LobbyLayoutStore.swift in Sources */,
+				CF0000010000000000000002 /* MacadeResizableSplitView.swift in Sources */,
+				CF0000010000000000000001 /* MacadeLayout.swift in Sources */,
 				BF0000010000000000000002 /* RootView.swift in Sources */,
 				BF0000010000000000000003 /* AuthenticatedHomeView.swift in Sources */,
 				BF0000010000000000000004 /* MacadeBackground.swift in Sources */,
@@ -1071,6 +1119,10 @@
 				BF10000B0000000000000003 /* FightcadeUserStatusReporterTests.swift in Sources */,
 				BF10000B0000000000000005 /* FightcadeWelcomeParserTests.swift in Sources */,
 				BF10000B0000000000000011 /* MacadeSettingsPreferencesStoreTests.swift in Sources */,
+				CE0000010000000000000006 /* MacadeGamepadPreferencesTests.swift in Sources */,
+				CE0000010000000000000007 /* GamepadSettingsViewModelTests.swift in Sources */,
+				CF0000010000000000000005 /* LobbyLayoutTests.swift in Sources */,
+				CF0000010000000000000006 /* SinglePlayerLaunchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1206,7 +1258,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1220,7 +1272,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -1235,7 +1287,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1249,7 +1301,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;

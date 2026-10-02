@@ -40,3 +40,11 @@ ghidra-out/*
 # Keep macOS metadata ignored even inside allowlisted research/source trees.
 **/.DS_Store
 /Scripts/Macade.app
+
+# Ship runtime implementation contracts; keep local protocol research ignored.
+!docs/
+docs/*
+!docs/emulators/
+docs/emulators/*
+!docs/emulators/gamepad-support.md
+!docs/emulators/single-player-launch.md

@@ -7,6 +7,7 @@ import Observation
 @Observable
 final class FightcadeEmbeddedSession {
     enum Mode: String, Sendable {
+        case singlePlayer = "Single Player"
         case test = "Test"
         case training = "Training"
         case direct = "Direct"
@@ -231,6 +232,12 @@ struct FightcadeEmbeddedLaunch: Sendable, Equatable {
             title: "Test · \(gameID)",
             match: nil
         )
+    }
+
+    static func singlePlayer(channelID: FightcadeChannel.ID, emulator: String, gameID: String) -> FightcadeEmbeddedLaunch {
+        FightcadeEmbeddedLaunch(channelID: channelID, mode: .singlePlayer,
+            emulator: emulator, gameID: gameID, arguments: [gameID],
+            title: "Single Player · \(gameID)", match: nil)
     }
 
     static func training(channelID: FightcadeChannel.ID, emulator: String, gameID: String) -> FightcadeEmbeddedLaunch {

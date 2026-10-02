@@ -2,6 +2,30 @@ import XCTest
 @testable import Macade
 
 final class ChannelTVTests: XCTestCase {
+    @MainActor
+    func testRosterChecksAvailabilityOncePerRouteAndRefreshesAfterROMRemoval() {
+        let launcher = RouteGatedFightcadeLauncher()
+        launcher.capabilities = [.fightcadeMatch, .fightcadeSpectate]
+        launcher.roms = [launcher.romKey(emulator: "fbneo", gameID: "sfiii3n")]
+        let channel = makeChannel(gameID: "sfiii3n")
+        let model = makeViewModel(channel: channel, launcher: launcher)
+        model.joinedChannelIDs = [channel.id]
+        let stream = FightcadeSpectatorStream(gameID: "sfiii3n", quarkID: "1785013981484-4901", port: 7001)
+        let users = (0..<200).map { makeIdleUser("Idle\($0)") }
+            + (0..<200).map { makeUser("Playing\($0)", stream: stream) }
+        let rows = model.playerListRows(for: users, in: channel)
+        XCTAssertEqual(rows.filter(\.isChallengeable).count, 200)
+        XCTAssertEqual(rows.filter(\.isWatchable).count, 200)
+        XCTAssertEqual(launcher.routeChecks, 2)
+        XCTAssertEqual(launcher.romChecks, 2)
+
+        launcher.roms = []
+        XCTAssertFalse(model.canChallenge(users[0], in: channel))
+        XCTAssertFalse(model.canSpectate(users[200], in: channel))
+        let refreshed = model.playerListRows(for: users, in: channel)
+        XCTAssertFalse(refreshed.contains { $0.isChallengeable || $0.isWatchable })
+    }
+
     func testTVChannelsUseSpectatorsAsPlayerCountTieBreaker() {
         let lowSpectators = makeChannel(gameID: "low", title: "Low", playerCount: 8, spectatorCount: 1)
         let highSpectators = makeChannel(gameID: "high", title: "High", playerCount: 8, spectatorCount: 12)
@@ -259,19 +283,25 @@ final class ChannelTVTests: XCTestCase {
 
 @MainActor
 final class RouteGatedFightcadeLauncher: FightcadeLaunching {
+    var localAvailable = true
+    var embeddedLaunches: [FightcadeEmbeddedLaunch] = []
     var capabilities = Set<FightcadeRuntimeCapability>()
     var roms = Set<String>()
+    var routeChecks = 0
+    var romChecks = 0
 
     func canLaunchLocalGame(emulator: String) -> Bool {
-        true
+        localAvailable
     }
 
     func canLaunchFightcadeRoute(_ capability: FightcadeRuntimeCapability, emulator: String) -> Bool {
-        capabilities.contains(capability)
+        routeChecks += 1
+        return capabilities.contains(capability)
     }
 
     func hasLocalROM(emulator: String, gameID: String) -> Bool {
-        roms.contains(romKey(emulator: emulator, gameID: gameID))
+        romChecks += 1
+        return roms.contains(romKey(emulator: emulator, gameID: gameID))
     }
 
     func open(_ route: FightcadeLaunchRoute) async throws {
@@ -279,6 +309,7 @@ final class RouteGatedFightcadeLauncher: FightcadeLaunching {
     }
 
     func openEmbedded(_ launch: FightcadeEmbeddedLaunch) async throws -> FightcadeEmbeddedSession {
+        embeddedLaunches.append(launch)
         throw StubError.unexpectedLaunch
     }
 

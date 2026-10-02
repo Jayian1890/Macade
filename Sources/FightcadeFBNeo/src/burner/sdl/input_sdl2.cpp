@@ -8,7 +8,7 @@
 static void GameInpConfigOne(int nPlayer, int nPcDev, int nAnalog, struct GameInp* pgi, char* szi);
 //INT32 display_set_controls();
 INT32 MapJoystick(struct GameInp* pgi, char* szi, INT32 nPlayer, INT32 nDevice);
-extern int buttons [4][8];
+extern int buttons [8][8];
 
 #define KEY(x) { pgi->nInput = GIT_SWITCH; pgi->Input.Switch.nCode = (UINT16)(x); }
 

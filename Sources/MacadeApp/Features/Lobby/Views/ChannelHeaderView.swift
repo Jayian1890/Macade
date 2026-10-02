@@ -21,9 +21,11 @@ struct ChannelHeader: View {
 
             HStack(spacing: MacadeSpacing.small) {
                 Text(channel.title)
-                    .font(.system(size: 21, weight: .black, design: .rounded))
+                    .font(MacadeTypography.roomTitle)
                     .foregroundStyle(MacadeColor.ink)
                     .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(channel.title)
 
                 if channel.isRanked {
                     Image(systemName: "rosette")
@@ -33,8 +35,9 @@ struct ChannelHeader: View {
                 }
             }
 
-            Spacer()
+            Spacer(minLength: MacadeSpacing.small)
 
+            singlePlayerButton
             autoMatchButton
             autoMatchOutcomePill
             autoMatchSettingsButton
@@ -46,13 +49,26 @@ struct ChannelHeader: View {
 
         }
         .padding(.horizontal, MacadeSpacing.medium)
-        .frame(height: 48)
+        .frame(height: MacadeLayout.toolbarHeight)
         .background(MacadeColor.sidebar.opacity(0.46))
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(MacadeColor.divider)
                 .frame(height: 1)
         }
+    }
+
+    private var singlePlayerButton: some View {
+        let unavailable = viewModel.singlePlayerUnavailableReason(for: channel)
+        return Button {
+            viewModel.launchSinglePlayer(in: channel)
+        } label: {
+            Label("Single Player", systemImage: "person.fill")
+                .fixedSize()
+        }
+        .buttonStyle(ChannelHeaderButtonStyle(isProminent: true))
+        .disabled(unavailable != nil)
+        .help(unavailable ?? "Play this game locally")
     }
 
     private var autoMatchButton: some View {
@@ -102,13 +118,13 @@ struct ChannelHeaderButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .black, design: .rounded))
+            .font(MacadeTypography.control)
             .foregroundStyle(isProminent ? MacadeColor.midnight : (configuration.isPressed ? MacadeColor.ink : MacadeColor.inkMuted))
-            .padding(.horizontal, MacadeSpacing.medium)
-            .frame(height: 36)
-            .background(buttonBackground(isPressed: configuration.isPressed), in: RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal, MacadeSpacing.small)
+            .frame(height: MacadeLayout.controlHeight)
+            .background(buttonBackground(isPressed: configuration.isPressed), in: RoundedRectangle(cornerRadius: MacadeLayout.controlRadius))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: MacadeLayout.controlRadius)
                     .stroke(isProminent ? .clear : MacadeColor.stroke, lineWidth: 1)
             )
     }

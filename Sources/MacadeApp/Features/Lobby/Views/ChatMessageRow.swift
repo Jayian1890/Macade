@@ -20,11 +20,6 @@ struct ChatMessageRow: View {
 
     private var chatRow: some View {
         HStack(alignment: .top, spacing: MacadeSpacing.small) {
-            Text(message.sentAt.formatted(date: .omitted, time: .shortened))
-                .font(MacadeTypography.caption)
-                .foregroundStyle(MacadeColor.inkMuted.opacity(0.62))
-                .frame(width: 54, alignment: .leading)
-
             PlayerAvatarView(
                 url: chatUser?.avatarURL,
                 fallbackName: message.username,
@@ -35,13 +30,9 @@ struct ChatMessageRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: MacadeSpacing.xSmall) {
                     Text(message.username)
-                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .font(MacadeTypography.control)
                         .foregroundStyle(nameColor)
                         .lineLimit(1)
-                        .padding(.horizontal, 7)
-                        .frame(height: 22)
-                        .background(chatNameBackground, in: Capsule())
-                        .overlay(Capsule().stroke(chatNameStroke, lineWidth: 1))
                         .contentShape(Rectangle())
                         .onTapGesture(perform: focusChatUser)
                         .onTapGesture(count: 2, perform: challengeFromChat)
@@ -62,10 +53,15 @@ struct ChatMessageRow: View {
 
                     challengeControl
                     replayControl
+                    Spacer(minLength: MacadeSpacing.xSmall)
+                    Text(message.sentAt.formatted(date: .omitted, time: .shortened))
+                        .font(MacadeTypography.metadata)
+                        .foregroundStyle(MacadeColor.inkMuted.opacity(0.62))
+                        .fixedSize()
                 }
 
                 mentionText
-                    .font(.system(size: 15, weight: message.kind == .system ? .semibold : .medium, design: .rounded))
+                    .font(MacadeTypography.body)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
@@ -100,11 +96,11 @@ struct ChatMessageRow: View {
             translation.translatedBody != message.body {
             VStack(alignment: .leading, spacing: 3) {
                 Text(translationHeader(for: translation))
-                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .font(MacadeTypography.metadata)
                     .foregroundStyle(MacadeColor.neonCyan.opacity(0.75))
 
                 Text(translation.translatedBody)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(MacadeTypography.body)
                     .foregroundStyle(MacadeColor.ink.opacity(0.82))
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
@@ -244,18 +240,6 @@ struct ChatMessageRow: View {
         case .motd:
             MacadeColor.warning
         }
-    }
-
-    private var chatNameBackground: Color {
-        guard canChallengeFromChat || isHoveringName else {
-            return .clear
-        }
-
-        return MacadeColor.neonCyan.opacity(isHoveringName ? 0.18 : 0.08)
-    }
-
-    private var chatNameStroke: Color {
-        isHoveringName && canChallengeFromChat ? MacadeColor.neonCyan.opacity(0.38) : .clear
     }
 
     private var avatarBorderColor: Color {

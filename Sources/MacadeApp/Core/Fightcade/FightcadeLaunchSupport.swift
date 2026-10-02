@@ -19,7 +19,9 @@ struct FightcadeLaunchDiagnostics {
         environment: [String: String]
     ) -> String {
         let emulatorDirectory = executable.deletingLastPathComponent()
-        let libraryDirectory = emulatorDirectory.appendingPathComponent("lib")
+        let legacyLibraryDirectory = emulatorDirectory.appendingPathComponent("lib")
+        let libraryDirectory = fileManager.fileExists(atPath: legacyLibraryDirectory.path)
+            ? legacyLibraryDirectory : emulatorDirectory
         let command = ([executable.path] + arguments).map(shellQuoted).joined(separator: " ")
         let dylibs = [
             "libSDL-1.2.0.dylib",

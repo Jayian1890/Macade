@@ -31,14 +31,20 @@ extension AuthenticatedHomeViewModel {
     }
 
     func launchGame(for channel: FightcadeChannel, mode: GameLaunchMode) {
+        guard !isLaunchingGame else { return }
+        if mode == .singlePlayer, let reason = singlePlayerUnavailableReason(for: channel) {
+            errorMessage = reason
+            return
+        }
         guard let emulator = channel.launchEmulator,
               let gameID = channel.launchGameID else {
             errorMessage = FightcadeLaunchError.missingGame.localizedDescription
             return
         }
 
+        isLaunchingGame = true
+        errorMessage = nil
         Task { @MainActor in
-            isLaunchingGame = true
             defer { isLaunchingGame = false }
 
             do {
@@ -46,15 +52,19 @@ extension AuthenticatedHomeViewModel {
                 case .checkROM:
                     try await launcher.open(.checkROM(emulator: emulator, gameID: gameID))
                     appendSystemMessage("ROM found for \(gameID)", channelName: channel.name)
-                case .test:
+                case .singlePlayer, .test:
+                    if mode == .singlePlayer { stopChannelTVSession(stoppingSession: true) }
                     activeMatchOpponentUsername = nil
                     activeMatchOpponentChannelName = nil
                     activeEmulationSession?.stop()
                     activeEmulationSession = try await launcher.openEmbedded(
-                        .test(channelID: channel.id, emulator: emulator, gameID: gameID)
+                        mode == .singlePlayer
+                            ? .singlePlayer(channelID: channel.id, emulator: emulator, gameID: gameID)
+                            : .test(channelID: channel.id, emulator: emulator, gameID: gameID)
                     )
+                    selectedChannelID = channel.id
                     showGameplay()
-                    appendSystemMessage("Launched \(emulator) for \(gameID)", channelName: channel.name)
+                    appendSystemMessage(mode == .singlePlayer ? "Started single player for \(gameID)" : "Launched \(emulator) for \(gameID)", channelName: channel.name)
                 case .training:
                     activeMatchOpponentUsername = nil
                     activeMatchOpponentChannelName = nil

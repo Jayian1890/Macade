@@ -161,7 +161,7 @@ struct EmbeddedEmulatorPanel: View {
             "eye.fill"
         case .replay:
             "play.tv.fill"
-        case .test, .training, .direct, .match:
+        case .singlePlayer, .test, .training, .direct, .match:
             "gamecontroller.fill"
         }
     }

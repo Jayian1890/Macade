@@ -13,11 +13,11 @@ struct PlayerRow: View {
     var body: some View {
         HStack(spacing: MacadeSpacing.small) {
             Text(user.countryFlag)
-                .font(.system(size: 13))
+                .font(MacadeTypography.body)
                 .frame(width: 22)
 
             Text(user.name)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(MacadeTypography.control)
                 .foregroundStyle(nameColor)
                 .lineLimit(1)
                 .layoutPriority(1)
@@ -28,9 +28,9 @@ struct PlayerRow: View {
             rankBadge(user.displayRank)
         }
         .padding(.horizontal, MacadeSpacing.small)
-        .frame(height: 40)
-        .background(rowBackground, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(rowStroke, lineWidth: 1))
+        .frame(height: MacadeLayout.playerRowHeight)
+        .background(rowBackground, in: RoundedRectangle(cornerRadius: MacadeLayout.controlRadius))
+        .overlay(RoundedRectangle(cornerRadius: MacadeLayout.controlRadius).stroke(rowStroke, lineWidth: 1))
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .onTapGesture(perform: onSelect)

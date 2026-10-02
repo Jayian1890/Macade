@@ -11,7 +11,7 @@ struct ControllerSettingsSection: View {
         VStack(alignment: .leading, spacing: MacadeSpacing.large) {
             SettingsSection(
                 title: "Controllers",
-                subtitle: "Map Macade's embedded keyboard controls and provide SDL mappings for gamepads. Save before launching FBNeo."
+                subtitle: "Configure keyboard and gamepad controls for embedded FBNeo. Save before launching the game."
             ) {
                 LazyVGrid(columns: columns, alignment: .leading, spacing: MacadeSpacing.medium) {
                     ControllerSummaryCard(
@@ -22,7 +22,7 @@ struct ControllerSettingsSection: View {
                     ControllerSummaryCard(
                         symbolName: "gamecontroller.fill",
                         title: "Gamepad Support",
-                        detail: "Most controllers work automatically. Add SDL database lines only when a pad is detected incorrectly."
+                        detail: "Select a connected controller below and bind the actual controls exposed by your FBNeo game."
                     )
                     ControllerSummaryCard(
                         symbolName: "arrow.counterclockwise.circle.fill",
@@ -78,8 +78,10 @@ struct ControllerSettingsSection: View {
                 }
             }
 
-            SettingsSection(title: "Gamepad Database", subtitle: "Advanced SDL controller mappings. Leave empty unless a controller is misidentified.") {
-                Text("Paste one SDL gamecontrollerdb line per controller. Macade passes this to FBNeo with SDL_GAMECONTROLLERCONFIG when a game starts.")
+            GamepadSettingsSection(settings: viewModel)
+
+            SettingsSection(title: "Gamepad Database", subtitle: "Advanced SDL device recognition. These entries do not set gameplay bindings.") {
+                Text("Paste one SDL gamecontrollerdb line per controller to change SDL logical device recognition. Save and relaunch FBNeo to apply. Direct button, axis, and D-pad bindings above do not require a database entry.")
                     .font(MacadeTypography.caption)
                     .foregroundStyle(MacadeColor.inkMuted)
 

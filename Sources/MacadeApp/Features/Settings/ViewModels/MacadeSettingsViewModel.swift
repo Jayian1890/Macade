@@ -51,9 +51,11 @@ final class MacadeSettingsViewModel {
     var includeLobbyDiagnosticChatBodies = false
     var chatTranslationEnabled = false
     var chatTranslationTargetLanguageIdentifier = ""
+    var gamepadPreferences = MacadeGamepadPreferences()
     var controllerPreferences = MacadeControllerPreferences.defaults
     var statusMessage: String?
     var isLoaded = false
+    var savedSettingsGeneration = 0
 
     private let fbneoStore: any FightcadeFBNeoSettingsPersisting
     private let preferencesStore: MacadeSettingsPreferencesStore
@@ -64,6 +66,7 @@ final class MacadeSettingsViewModel {
     private var savedIncludeLobbyDiagnosticChatBodies = false
     private var savedChatTranslationEnabled = false
     private var savedChatTranslationTargetLanguageIdentifier = ""
+    private var savedGamepadPreferences = MacadeGamepadPreferences()
     private var savedControllerPreferences = MacadeControllerPreferences.defaults
 
     init(
@@ -84,6 +87,7 @@ final class MacadeSettingsViewModel {
             || includeLobbyDiagnosticChatBodies != savedIncludeLobbyDiagnosticChatBodies
             || chatTranslationEnabled != savedChatTranslationEnabled
             || chatTranslationTargetLanguageIdentifier != savedChatTranslationTargetLanguageIdentifier
+            || gamepadPreferences.normalized() != savedGamepadPreferences.normalized()
             || controllerPreferences.normalized() != savedControllerPreferences.normalized()
     }
 
@@ -132,6 +136,7 @@ final class MacadeSettingsViewModel {
         chatTranslationEnabled = translationPreferences.isEnabled
         chatTranslationTargetLanguageIdentifier = translationPreferences.targetLanguageIdentifier ?? ""
         controllerPreferences = preferencesStore.controllerPreferences
+        gamepadPreferences = preferencesStore.gamepadPreferences
         markSaved()
         isLoaded = true
     }
@@ -140,6 +145,8 @@ final class MacadeSettingsViewModel {
         do {
             fbneoSettings = fbneoSettings.normalized()
             try fbneoStore.save(fbneoSettings)
+            gamepadPreferences = gamepadPreferences.normalized()
+            try preferencesStore.saveGamepadPreferences(gamepadPreferences)
             preferencesStore.forceWiredConnectionStatus = forceWiredConnectionStatus
             preferencesStore.automaticPortMappingEnabled = automaticPortMappingEnabled
             preferencesStore.lobbyDiagnosticsEnabled = lobbyDiagnosticsEnabled
@@ -167,6 +174,8 @@ final class MacadeSettingsViewModel {
         chatTranslationEnabled = savedChatTranslationEnabled
         chatTranslationTargetLanguageIdentifier = savedChatTranslationTargetLanguageIdentifier
         controllerPreferences = savedControllerPreferences
+        gamepadPreferences = savedGamepadPreferences
+        savedSettingsGeneration += 1
         statusMessage = nil
     }
 
@@ -203,6 +212,7 @@ final class MacadeSettingsViewModel {
     }
 
     private func markSaved() {
+        savedSettingsGeneration += 1
         savedFBNeoSettings = fbneoSettings.normalized()
         savedForceWiredConnectionStatus = forceWiredConnectionStatus
         savedAutomaticPortMappingEnabled = automaticPortMappingEnabled
@@ -211,5 +221,6 @@ final class MacadeSettingsViewModel {
         savedChatTranslationEnabled = chatTranslationEnabled
         savedChatTranslationTargetLanguageIdentifier = chatTranslationTargetLanguageIdentifier
         savedControllerPreferences = controllerPreferences.normalized()
+        savedGamepadPreferences = gamepadPreferences.normalized()
     }
 }

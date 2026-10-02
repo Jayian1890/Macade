@@ -27,7 +27,7 @@ struct WatchMatchRow: View {
             ForEach(Array(match.rows.prefix(2).enumerated()), id: \.element.id) { index, row in
                 if index > 0 {
                     Text("vs")
-                        .font(.system(size: 11, weight: .black, design: .monospaced))
+                        .font(MacadeTypography.metadata)
                         .foregroundStyle(MacadeColor.inkMuted)
                 }
 
@@ -37,9 +37,9 @@ struct WatchMatchRow: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, MacadeSpacing.small)
-        .frame(height: 40)
-        .background(MacadeColor.panel.opacity(isHovering ? 0.82 : 0.56), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(rowStroke, lineWidth: 1))
+        .frame(height: MacadeLayout.playerRowHeight)
+        .background(MacadeColor.panel.opacity(isHovering ? 0.82 : 0.56), in: RoundedRectangle(cornerRadius: MacadeLayout.controlRadius))
+        .overlay(RoundedRectangle(cornerRadius: MacadeLayout.controlRadius).stroke(rowStroke, lineWidth: 1))
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
         .onTapGesture(perform: watch)
@@ -59,7 +59,7 @@ struct WatchMatchRow: View {
                 .font(.system(size: 12))
 
             Text(user.name)
-                .font(.system(size: 13, weight: .black, design: .rounded))
+                .font(MacadeTypography.control)
                 .foregroundStyle(MacadeColor.ink)
                 .lineLimit(1)
 

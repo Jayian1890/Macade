@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AuthenticatedHomeView: View {
     @State private var viewModel: AuthenticatedHomeViewModel
+    @State private var layout = LobbyLayoutViewModel()
     private let onSignOut: () -> Void
 
     init(
@@ -16,30 +17,33 @@ struct AuthenticatedHomeView: View {
 
     var body: some View {
         @Bindable var viewModel = viewModel
+        @Bindable var layout = layout
 
         ZStack {
             MacadeBackground()
 
-            ZStack(alignment: .leading) {
-                HStack(spacing: 0) {
-                    Color.clear
-                        .frame(width: 56)
-
-                    Group {
-                        if viewModel.isShowingChannelTV {
-                            ChannelTVView(viewModel: viewModel)
-                        } else if viewModel.isShowingGameplay {
-                            GameplayDetailView(viewModel: viewModel)
-                        } else if viewModel.isShowingChannelBrowser {
-                            ChannelBrowserView(viewModel: viewModel)
-                        } else {
-                            ChannelDetailView(viewModel: viewModel)
-                        }
+            MacadeResizableSplitView(
+                dimension: Binding(get: { layout.displayedSidebarWidth }, set: { layout.sidebarWidth = $0 }),
+                minimum: MacadeLayout.sidebarCompact,
+                maximum: MacadeLayout.sidebarMaximum,
+                flexibleMinimum: MacadeLayout.roomMinimum,
+                defaultDimension: MacadeLayout.sidebarDefault,
+                label: "rooms"
+            ) {
+                LobbySidebarView(viewModel: viewModel, layout: layout, onSignOut: signOut)
+            } trailing: {
+                Group {
+                    if viewModel.isShowingChannelTV {
+                        ChannelTVView(viewModel: viewModel)
+                    } else if viewModel.isShowingGameplay {
+                        GameplayDetailView(viewModel: viewModel)
+                    } else if viewModel.isShowingChannelBrowser {
+                        ChannelBrowserView(viewModel: viewModel)
+                    } else {
+                        ChannelDetailView(viewModel: viewModel, layout: layout)
                     }
                 }
                 .background(MacadeColor.midnight.opacity(0.22))
-
-                LobbySidebarView(viewModel: viewModel, onSignOut: signOut)
             }
             .transition(.opacity)
 

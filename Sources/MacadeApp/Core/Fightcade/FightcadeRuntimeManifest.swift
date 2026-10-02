@@ -95,7 +95,7 @@ extension FightcadeEmbeddedLaunch {
             .fightcadeSpectate
         case .replay:
             replayCapability
-        case .test, .training:
+        case .singlePlayer, .test, .training:
             quarkArgumentCapability
         }
     }

@@ -4,13 +4,13 @@ struct PlayerListView: View {
     let channel: FightcadeChannel
     let users: [FightcadeChannelUser]
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    @Bindable var layout: LobbyLayoutViewModel
+    @State private var collapsedSections: Set<String> = ["playing", "watching", "away"]
     @State private var searchText = ""
     @AppStorage("playerListSort") private var selectedSortRawValue = PlayerListSort.smart.rawValue
     @AppStorage("playerListGroup") private var selectedGroupRawValue = PlayerListGroup.status.rawValue
-    @AppStorage("playerListSidebarWidth") private var playerListWidth = 300.0
     @State private var detailUserID: FightcadeChannelUser.ID?
     @State private var isDetailPaneMinimized = true
-    @State private var resizeStartWidth: Double?
 
     var body: some View {
         let state = makeListState()
@@ -21,70 +21,91 @@ struct PlayerListView: View {
         )
 
         VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Players").font(MacadeTypography.control)
+                Spacer()
+                Text("\(state.visibleRows.count)").font(MacadeTypography.metadata)
+                    .foregroundStyle(MacadeColor.inkMuted)
+            }
+            .padding(.horizontal, MacadeSpacing.medium)
+            .frame(height: MacadeLayout.toolbarHeight)
+
             HStack(spacing: MacadeSpacing.xSmall) {
-                TextField("Search", text: $searchText)
+                Image(systemName: "magnifyingglass").foregroundStyle(MacadeColor.inkMuted)
+                TextField("Find a player", text: $searchText)
                     .textFieldStyle(.plain)
                     .foregroundStyle(MacadeColor.ink)
-
-                Spacer()
-
                 groupMenu
                 sortMenu
             }
             .font(MacadeTypography.body)
             .padding(.horizontal, MacadeSpacing.small)
-            .frame(height: 34)
-            .background(MacadeColor.panel.opacity(0.7), in: RoundedRectangle(cornerRadius: 12))
+            .frame(height: MacadeLayout.controlHeight)
+            .background(MacadeColor.panel, in: RoundedRectangle(cornerRadius: MacadeLayout.controlRadius))
             .padding(.horizontal, MacadeSpacing.small)
             .padding(.bottom, MacadeSpacing.small)
 
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 10) {
-                        ForEach(sections) { section in
-                            groupedSection(section, focusedID: state.detailRow?.id)
-                        }
-                    }
-                    .padding(.horizontal, MacadeSpacing.small)
-                    .padding(.bottom, MacadeSpacing.small)
+            if let detailRow = state.detailRow, !isDetailPaneMinimized {
+                MacadeResizableSplitView(
+                    axis: .vertical, fixedSide: .trailing, dimension: $layout.playerDetailsHeight,
+                    minimum: MacadeLayout.detailsMinimum, maximum: MacadeLayout.detailsMaximum,
+                    flexibleMinimum: MacadeLayout.rosterMinimumHeight,
+                    defaultDimension: MacadeLayout.detailsDefault, label: "player details"
+                ) {
+                    roster(sections: sections, focusedID: state.detailRow?.id)
+                } trailing: {
+                    details(for: detailRow)
                 }
-                .onAppear {
-                    applyFocusRequest(viewModel.playerListFocusRequest, proxy: proxy)
-                }
-                .onChange(of: viewModel.playerListFocusRequest) { _, request in
-                    applyFocusRequest(request, proxy: proxy)
-                }
-                .onChange(of: users) { _, _ in
-                    applyFocusRequest(viewModel.playerListFocusRequest, proxy: proxy)
-                }
+            } else {
+                roster(sections: sections, focusedID: state.detailRow?.id)
+                if let detailRow = state.detailRow { details(for: detailRow) }
             }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background { MacadeFrostedFill(opacity: 0.5) }
+    }
 
-            if let detailRow = state.detailRow {
-                PlayerDetailPane(
-                    channel: channel,
-                    user: detailRow.user,
-                    viewModel: viewModel,
-                    isChallengeable: detailRow.isChallengeable,
-                    isChallenging: detailRow.isChallenging,
-                    isCurrentUser: detailRow.isCurrentUser,
-                    isMinimized: $isDetailPaneMinimized
-                )
+    private func roster(sections: [PlayerListGroupSection], focusedID: FightcadeChannelUser.ID?) -> some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: MacadeSpacing.small) {
+                    ForEach(sections) { section in
+                        groupedSection(section, focusedID: focusedID)
+                    }
+                }
                 .padding(.horizontal, MacadeSpacing.small)
                 .padding(.bottom, MacadeSpacing.small)
             }
+            .onAppear { applyFocusRequest(viewModel.playerListFocusRequest, proxy: proxy) }
+            .onChange(of: viewModel.playerListFocusRequest) { _, request in
+                applyFocusRequest(request, proxy: proxy)
+            }
+            .onChange(of: users) { _, _ in
+                applyFocusRequest(viewModel.playerListFocusRequest, proxy: proxy)
+            }
         }
-        .frame(width: playerListWidth)
         .frame(maxHeight: .infinity)
-        .background { MacadeFrostedFill(opacity: 0.5) }
-        .overlay(alignment: .leading) {
-            playerListResizeHandle
-        }
-        .animation(.smooth(duration: 0.16), value: isDetailPaneMinimized)
+    }
+
+    private func details(for row: PlayerListRowState) -> some View {
+        PlayerDetailPane(channel: channel, user: row.user, viewModel: viewModel,
+            isChallengeable: row.isChallengeable, isChallenging: row.isChallenging,
+            isCurrentUser: row.isCurrentUser, isMinimized: $isDetailPaneMinimized)
+            .padding(.horizontal, MacadeSpacing.small)
+            .padding(.bottom, MacadeSpacing.small)
     }
 
     @ViewBuilder
     private func groupedSection(_ section: PlayerListGroupSection, focusedID: FightcadeChannelUser.ID?) -> some View {
-        DisclosureGroup {
+        DisclosureGroup(isExpanded: Binding(
+            get: { !collapsedSections.contains(section.id) || !searchText.isEmpty },
+            set: { expanded in
+                guard searchText.isEmpty,
+                      expanded == collapsedSections.contains(section.id) else { return }
+                if expanded { collapsedSections.remove(section.id) }
+                else { collapsedSections.insert(section.id) }
+            }
+        )) {
             LazyVStack(spacing: 4) {
                 ForEach(section.watchMatches) { match in
                     WatchMatchRow(match: match, channel: channel, viewModel: viewModel)
@@ -112,37 +133,13 @@ struct PlayerListView: View {
                 Text("\(section.rows.count + section.watchMatches.count)")
                     .foregroundStyle(MacadeColor.inkMuted)
             }
-            .font(.system(size: 11, weight: .black, design: .rounded))
+            .font(MacadeTypography.control)
             .foregroundStyle(MacadeColor.inkMuted)
         }
     }
 
-    private var playerListResizeHandle: some View {
-        Rectangle()
-            .fill(.clear)
-            .frame(width: 8)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        let base = resizeStartWidth ?? playerListWidth
-                        resizeStartWidth = base
-                        playerListWidth = min(max(base - value.translation.width, 240), 460)
-                    }
-                    .onEnded { _ in
-                        resizeStartWidth = nil
-                    }
-            )
-            .overlay(alignment: .leading) {
-                Rectangle()
-                    .fill(MacadeColor.divider)
-                    .frame(width: 1)
-            }
-            .help("Resize player list")
-    }
-
     private func makeListState() -> PlayerListState {
-        let rows = users.map { makeRow(for: $0) }
+        let rows = viewModel.playerListRows(for: users, in: channel)
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filteredRows = rows.filter { row in
             query.isEmpty || row.user.name.localizedCaseInsensitiveContains(query)
@@ -161,16 +158,6 @@ struct PlayerListView: View {
         }
 
         return PlayerListState(rows: rows, visibleRows: visibleRows, detailRow: detailRow)
-    }
-
-    private func makeRow(for user: FightcadeChannelUser) -> PlayerListRowState {
-        PlayerListRowState(
-            user: user,
-            isCurrentUser: isCurrentUser(user),
-            isChallengeable: viewModel.canChallenge(user, in: channel),
-            isChallenging: viewModel.isChallenging(user, in: channel),
-            isWatchable: viewModel.canSpectate(user, in: channel)
-        )
     }
 
     private func watchMatches(from rows: [PlayerListRowState]) -> [WatchMatchRowState] {
@@ -268,10 +255,6 @@ struct PlayerListView: View {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .help("Group by \(selectedGroup.title)")
-    }
-
-    private func isCurrentUser(_ user: FightcadeChannelUser) -> Bool {
-        user.isCurrentUser(session: viewModel.session)
     }
 
     private var activeMatchOpponentUsername: String? {

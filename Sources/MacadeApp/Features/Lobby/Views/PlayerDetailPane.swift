@@ -94,28 +94,25 @@ struct PlayerDetailPane: View {
     @Binding var isMinimized: Bool
 
     var body: some View {
-        slimBar
-            .onTapGesture { isMinimized.toggle() }
-            .onHover { hovering in
-                if hovering { isMinimized = false }
-            }
-            .help(statusText)
-            .popover(isPresented: Binding(
-                get: { !isMinimized },
-                set: { isMinimized = !$0 }
-            )) {
-                VStack(alignment: .leading, spacing: MacadeSpacing.small) {
-                    LazyVGrid(columns: detailColumns, alignment: .leading, spacing: 6) {
-                        ForEach(detailItems) { item in
-                            detailChip(item)
-                        }
-                    }
-
-                    PlayerRecentMatchesView(channel: channel, user: user, viewModel: viewModel)
+        VStack(alignment: .leading, spacing: MacadeSpacing.small) {
+            Button { isMinimized.toggle() } label: { slimBar }
+                .buttonStyle(.plain)
+                .onHover { hovering in
+                    if hovering && isMinimized { isMinimized = false }
                 }
-                .padding(MacadeSpacing.medium)
-                .frame(width: 280)
+                .accessibilityLabel("\(isMinimized ? "Show" : "Hide") player details for \(user.name)")
+                .help(statusText)
+            if !isMinimized {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: MacadeSpacing.small) {
+                        LazyVGrid(columns: detailColumns, alignment: .leading, spacing: MacadeSpacing.xSmall) {
+                            ForEach(detailItems) { item in detailChip(item) }
+                        }
+                        PlayerRecentMatchesView(channel: channel, user: user, viewModel: viewModel)
+                    }
+                }
             }
+        }
     }
 
     private var slimBar: some View {
@@ -123,7 +120,7 @@ struct PlayerDetailPane: View {
             PlayerAvatarView(user: user, size: 28, borderColor: headerAccent)
 
             Text(user.name)
-                .font(.system(size: 13, weight: .black, design: .rounded))
+                .font(MacadeTypography.control)
                 .foregroundStyle(MacadeColor.ink)
                 .lineLimit(1)
 
@@ -137,11 +134,14 @@ struct PlayerDetailPane: View {
             }
 
             Text(statusText)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(MacadeTypography.metadata)
                 .foregroundStyle(user.statusAccent)
                 .lineLimit(1)
 
             Spacer(minLength: 0)
+            Image(systemName: isMinimized ? "chevron.up" : "chevron.down")
+                .font(MacadeTypography.metadata)
+                .foregroundStyle(MacadeColor.inkMuted)
         }
         .padding(.horizontal, MacadeSpacing.small)
         .frame(height: 40)

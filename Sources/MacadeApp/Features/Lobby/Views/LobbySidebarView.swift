@@ -2,13 +2,9 @@ import SwiftUI
 
 struct LobbySidebarView: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    @Bindable var layout: LobbyLayoutViewModel
     let onSignOut: () -> Void
-    @AppStorage("lobbySidebarPinned") private var isPinned = false
-    @State private var isHovering = false
-    @State private var hoverTask: Task<Void, Never>?
-
-    private var isExpanded: Bool { isPinned || isHovering }
-    private var railWidth: CGFloat { isExpanded ? 220 : 56 }
+    private var isExpanded: Bool { layout.isSidebarExpanded }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -40,54 +36,40 @@ struct LobbySidebarView: View {
             .padding(.horizontal, isExpanded ? MacadeSpacing.small : 8)
             .padding(.bottom, MacadeSpacing.medium)
         }
-        .frame(width: railWidth, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(maxHeight: .infinity)
         .background { MacadeFrostedFill(opacity: 0.58) }
-        .overlay(alignment: .trailing) {
-            Rectangle()
-                .fill(MacadeColor.stroke)
-                .frame(width: 1)
-        }
-        .shadow(color: MacadeColor.neonCyan.opacity(isExpanded && !isPinned ? 0.16 : 0), radius: 18, x: 8)
-        .animation(.smooth(duration: 0.2), value: isExpanded)
-        .onHover { hovering in
-            hoverTask?.cancel()
-            hoverTask = Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(hovering ? 140 : 120))
-                guard !Task.isCancelled else { return }
-                isHovering = hovering
-            }
-        }
-        .onDisappear { hoverTask?.cancel() }
+        .onHover { layout.updateSidebarHover($0) }
+        .onDisappear { layout.endSidebarHover() }
     }
 
     private var sidebarHeader: some View {
         Button {
-            isPinned.toggle()
+            layout.toggleSidebar()
         } label: {
             HStack(spacing: MacadeSpacing.small) {
-                Image(systemName: isPinned ? "rectangle.3.group.fill" : "rectangle.3.group")
+                Image(systemName: layout.isSidebarPinned ? "rectangle.3.group.fill" : "rectangle.3.group")
                     .font(.system(size: 16, weight: .black))
                     .frame(width: 24, height: 24)
                     .foregroundStyle(MacadeColor.neonCyan)
 
                 if isExpanded {
                     Text("Rooms")
-                        .font(.system(size: 18, weight: .black, design: .rounded))
+                        .font(MacadeTypography.headline)
                         .foregroundStyle(MacadeColor.ink)
 
                     Spacer(minLength: 0)
 
-                    Image(systemName: isPinned ? "pin.fill" : "pin")
+                    Image(systemName: layout.isSidebarPinned ? "pin.fill" : "pin")
                         .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(isPinned ? MacadeColor.neonPink : MacadeColor.inkMuted)
+                        .foregroundStyle(MacadeColor.inkMuted)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 34)
         }
         .buttonStyle(.plain)
-        .help(isPinned ? "Unpin rooms rail" : "Pin rooms rail")
+        .help(layout.isSidebarPinned ? "Unpin rooms rail" : "Pin rooms rail")
     }
 
     private var filters: some View {
@@ -189,7 +171,7 @@ struct LobbySidebarView: View {
     private var compactFriendsButton: some View {
         let onlineCount = viewModel.friendRows.filter(\.isOnline).count
         return Button {
-            isPinned = true
+            layout.expandSidebar()
         } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "person.2.fill")
@@ -247,37 +229,41 @@ struct LobbySidebarView: View {
         .background(MacadeColor.panel.opacity(0.55), in: RoundedRectangle(cornerRadius: 12))
     }
 
-    private var accountFooter: some View {
-        HStack(spacing: MacadeSpacing.xSmall) {
-            PlayerAvatarView(
-                url: currentUser?.avatarURL,
-                fallbackName: viewModel.session.displayName,
-                size: 24,
-                borderColor: currentUser == nil ? MacadeColor.stroke : MacadeColor.warning
-            )
-
-            if isExpanded {
+    @ViewBuilder private var accountFooter: some View {
+        if isExpanded {
+            HStack(spacing: MacadeSpacing.xSmall) {
+                accountAvatar
                 Text(viewModel.session.displayName)
                     .font(MacadeTypography.caption)
                     .foregroundStyle(MacadeColor.ink)
                     .lineLimit(1)
-
                 Spacer(minLength: 0)
+                Button(action: onSignOut) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .foregroundStyle(MacadeColor.inkMuted)
+                }
+                .buttonStyle(.plain)
+                .help("Sign out")
             }
-
-            Button(action: onSignOut) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 12, weight: .black))
-                    .frame(width: 24, height: 24)
-                    .foregroundStyle(MacadeColor.inkMuted)
-                    .background(MacadeColor.panel, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .help("Sign out")
+            .padding(.horizontal, MacadeSpacing.xSmall)
+            .frame(height: 34)
+        } else {
+            Menu {
+                Button("Sign out", action: onSignOut)
+            } label: { accountAvatar }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .frame(maxWidth: .infinity)
+                .frame(height: 34)
+                .help("Account")
         }
-        .padding(.horizontal, isExpanded ? MacadeSpacing.xSmall : 0)
-        .frame(height: 34)
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var accountAvatar: some View {
+        PlayerAvatarView(url: currentUser?.avatarURL,
+            fallbackName: viewModel.session.displayName, size: 24,
+            borderColor: currentUser == nil ? MacadeColor.stroke : MacadeColor.warning)
     }
 
     private func iconToggle(
@@ -328,7 +314,7 @@ private struct SidebarButton: View {
 
                 if !isCompact {
                     Text(title)
-                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .font(MacadeTypography.control)
 
                     Spacer()
 
@@ -373,7 +359,7 @@ private struct SidebarChannelButton: View {
 
                     if !isCompact {
                         Text(channel.title)
-                            .font(.system(size: 13, weight: .black, design: .rounded))
+                            .font(MacadeTypography.control)
                             .lineLimit(1)
 
                         Spacer(minLength: 0)

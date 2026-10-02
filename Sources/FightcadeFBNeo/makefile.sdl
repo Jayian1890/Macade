@@ -224,7 +224,7 @@ drvobj	+= \
 		d_sg1000.o
 
 depobj	+= \
-		bzip.o config.o drv.o fbn_network_sdl.o fbn_quark_command.o fbn_quark_controls_sdl.o fbn_quark_sdl.o inpdipsw.o luaengine.o luasav.o main.o macade_embedded.o media.o replay.o run.o sdl_lua_shims.o sdl_quark_detector.o stated.o tchar_bridge_sdl.o \
+		bzip.o config.o drv.o fbn_network_sdl.o fbn_quark_command.o fbn_quark_controls_sdl.o fbn_quark_sdl.o inpdipsw.o luaengine.o luasav.o main.o macade_gamepad.o macade_gamepad_devices.o macade_gamepad_helper.o macade_embedded.o media.o replay.o run.o sdl_lua_shims.o sdl_quark_detector.o stated.o tchar_bridge_sdl.o \
 		stringset.o ips_manager.o support_paths.o scrn.o \
 		\
 		ioapi.o unzip.o conc.o cong.o dat.o dynhuff.o gamc.o gami.o image.o \
@@ -476,6 +476,15 @@ ifdef	COMPRESS
 endif
 endif
 endif
+
+# Resolve full object paths on incremental builds even when DEPEND= is empty.
+$(objdir)%.o: $(srcdir)%.cpp
+	@echo Compiling $<...
+	@mkdir -p $(dir $@)
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(objdir)macade/macade_gamepad.o $(objdir)macade/macade_gamepad_helper.o $(objdir)macade/macade_gamepad_devices.o: $(srcdir)macade/macade_gamepad_devices.h $(srcdir)macade/macade_gamepad.h
+$(objdir)burner/sdl/main.o $(objdir)intf/input/inp_interface.o $(objdir)intf/input/sdl/inp_sdl2.o: $(srcdir)macade/macade_gamepad.h
 
 $(objdir)dep/ggponet-native-native/%.o: $(srcdir)dep/ggponet-native/src/%.cpp
 	@echo Compiling $<...
@@ -747,3 +756,10 @@ endif
 #
 
 FORCE:
+
+# Exercise real SDL input, GameInp and GGPO synchronization without a game ROM.
+.PHONY: gamepad-tests
+gamepad-tests: $(allobj)
+	$(CXX) $(CXXFLAGS) -c src/macade/tests/gamepad_input_tests.cpp -o $(objdir)macade/gamepad_input_tests.o
+	$(LD) $(CFLAGS) $(LDFLAGS) -o $(objdir)macade/gamepad-input-tests $(sort $(filter-out $(objdir)burner/sdl/main.o $(objdir)dep/ggponet-native-native/client_backend.o,$(allobj))) $(objdir)macade/gamepad_input_tests.o $(lib)
+	$(objdir)macade/gamepad-input-tests

@@ -1,3 +1,6 @@
+#ifdef BUILD_SDL2
+#include "macade_gamepad.h"
+#endif
 // Burner Input module
 #include "burner.h"
 #include <vector>
@@ -239,6 +242,10 @@ INT32 InputMake(bool bCopy)
 				break;
 			case GIT_SWITCH: {						// Digital input
 				INT32 s = CinpState(pgi->Input.Switch.nCode);
+#ifdef BUILD_SDL2
+				// A Macade profile overrides legacy joystick binds, retaining keyboard binds.
+				if (pgi->Input.Switch.nCode >= 0x4000 && pgi->Input.Switch.nCode < 0x8000 && MacadeGamepadOwnsInput(i)) s = 0;
+#endif
 
 				if (pgi->nType & BIT_GROUP_ANALOG) {
 					// Set analog controls to full
@@ -383,6 +390,9 @@ INT32 InputMake(bool bCopy)
 		}
 	}
 
+#ifdef BUILD_SDL2
+	MacadeGamepadApply(bCopy);
+#endif
 	for (i = 0; i < nMacroCount; i++, pgi++) {
 		if (pgi->Macro.nMode == 1 && pgi->Macro.nSysMacro == 0) { // Macro is defined
 			if (bCopy && CinpState(pgi->Macro.Switch.nCode)) {

@@ -22,34 +22,26 @@ struct ChatInput: View {
                 }
             }
 
-            HStack(spacing: MacadeSpacing.medium) {
-                TextField(isTranslatingDraft ? "Translating..." : "Message", text: $viewModel.chatDraft)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
-                    .focused($isChatFocused)
-                    .disabled(!viewModel.joinedChannelIDs.contains(channel.id) || isTranslatingDraft)
-                    .onSubmit(sendChatKeepingFocus)
-                    .onKeyPress(.tab) {
-                        guard let user = mentionSuggestions.first else { return .ignored }
-                        viewModel.completeChatMention(user.name)
-                        return .handled
-                    }
-
-                inputTranslationTargetMenu
-                outputTranslationTargetMenu
-
-                Button(action: sendChatKeepingFocus) {
-                    Image(systemName: isTranslatingDraft ? "arrow.triangle.2.circlepath" : "paperplane.fill")
-                        .frame(width: 28, height: 28)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: MacadeSpacing.small) {
+                    messageField.frame(minWidth: MacadeLayout.chatEntryMinimum)
+                    translationControls.fixedSize()
+                    sendButton
                 }
-                .buttonStyle(.plain)
-                .font(.system(size: 13, weight: .black, design: .rounded))
-                .foregroundStyle(canSendChat && !isTranslatingDraft ? MacadeColor.warning : MacadeColor.inkMuted)
-                .disabled(!canSendChat || isTranslatingDraft)
-                .help(translationStatus ?? "Send")
+                VStack(spacing: MacadeSpacing.xSmall) {
+                    HStack(spacing: MacadeSpacing.small) {
+                        messageField
+                        sendButton
+                    }
+                    HStack {
+                        Spacer(minLength: 0)
+                        translationControls
+                    }
+                }
             }
             .padding(.horizontal, MacadeSpacing.medium)
-            .frame(height: 50)
+            .padding(.vertical, MacadeSpacing.small)
+
         }
         .onAppear { isChatFocused = true }
         .onChange(of: viewModel.chatDraft) { _, draft in
@@ -65,6 +57,39 @@ struct ChatInput: View {
                 .fill(MacadeColor.divider)
                 .frame(height: 1)
         }
+    }
+
+    private var messageField: some View {
+        TextField(isTranslatingDraft ? "Translating..." : "Message", text: $viewModel.chatDraft)
+            .textFieldStyle(.plain)
+            .font(MacadeTypography.body)
+            .focused($isChatFocused)
+            .disabled(!viewModel.joinedChannelIDs.contains(channel.id) || isTranslatingDraft)
+            .onSubmit(sendChatKeepingFocus)
+            .onKeyPress(.tab) {
+                guard let user = mentionSuggestions.first else { return .ignored }
+                viewModel.completeChatMention(user.name)
+                return .handled
+            }
+    }
+
+    private var translationControls: some View {
+        HStack(spacing: MacadeSpacing.xSmall) {
+            inputTranslationTargetMenu
+            outputTranslationTargetMenu
+        }
+    }
+
+    private var sendButton: some View {
+        Button(action: sendChatKeepingFocus) {
+            Image(systemName: isTranslatingDraft ? "arrow.triangle.2.circlepath" : "paperplane.fill")
+                .frame(width: MacadeLayout.controlHeight, height: MacadeLayout.controlHeight)
+        }
+        .buttonStyle(.plain)
+        .font(MacadeTypography.control)
+        .foregroundStyle(canSendChat && !isTranslatingDraft ? MacadeColor.warning : MacadeColor.inkMuted)
+        .disabled(!canSendChat || isTranslatingDraft)
+        .help(translationStatus ?? "Send")
     }
 
     private var mentionSuggestions: [FightcadeChannelUser] {
@@ -151,7 +176,7 @@ struct ChatInput: View {
             }
         } label: {
             Text(title)
-                .font(.system(size: 11, weight: .black, design: .rounded))
+                .font(MacadeTypography.metadata)
                 .foregroundStyle(selectedIdentifier == nil ? MacadeColor.inkMuted : MacadeColor.neonCyan)
                 .lineLimit(1)
                 .padding(.horizontal, 8)

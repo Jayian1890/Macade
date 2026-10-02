@@ -16,6 +16,9 @@ extension FightcadeLauncher {
             )
         }
 
+        if FightcadeEmulatorID.runtimeID(for: launch.emulator) == "fbneo" {
+            UserDefaults.standard.set(launch.gameID, forKey: "MacadeLastFBNeoGame")
+        }
         let expectedROM = try ensureROMExists(emulator: launch.emulator, gameID: launch.gameID)
         let netplayPreparation = try await prepareNetplay(for: launch)
         let resources = try makeEmbeddedResources(emulator: launch.emulator)

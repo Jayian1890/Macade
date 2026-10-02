@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ChannelDetailView: View {
     @Bindable var viewModel: AuthenticatedHomeViewModel
+    @Bindable var layout: LobbyLayoutViewModel
     @State private var selectedTab: ChannelLobbyTab = .chat
 
     var body: some View {
@@ -12,7 +13,12 @@ struct ChannelDetailView: View {
 
                 ChannelErrorBanner(viewModel: viewModel)
 
-                HStack(spacing: 0) {
+                MacadeResizableSplitView(
+                    fixedSide: .trailing, dimension: $layout.playerListWidth,
+                    minimum: MacadeLayout.playersMinimum, maximum: MacadeLayout.playersMaximum,
+                    flexibleMinimum: MacadeLayout.chatMinimum,
+                    defaultDimension: MacadeLayout.playersDefault, label: "players"
+                ) {
                     VStack(spacing: 0) {
                         ChannelLobbyTabBar(selectedTab: $selectedTab)
 
@@ -26,7 +32,9 @@ struct ChannelDetailView: View {
                         }
                     }
 
-                    PlayerListView(channel: channel, users: viewModel.selectedChannelUsers, viewModel: viewModel)
+                } trailing: {
+                    PlayerListView(channel: channel, users: viewModel.selectedChannelUsers,
+                                   viewModel: viewModel, layout: layout)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,7 +85,7 @@ struct ChannelChatView: View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: MacadeSpacing.medium) {
+                    LazyVStack(alignment: .leading, spacing: MacadeSpacing.small) {
                         Color.clear
                             .frame(height: 1)
                             .id(topID)
@@ -124,7 +132,7 @@ struct ChannelChatView: View {
                             .frame(height: 1)
                             .id(bottomID)
                     }
-                    .padding(MacadeSpacing.large)
+                    .padding(MacadeSpacing.medium)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .onAppear {
@@ -405,7 +413,7 @@ private struct ChannelLobbyTabBar: View {
                     selectedTab = tab
                 } label: {
                     Text(tab.title)
-                        .font(.system(size: 12, weight: .black, design: .rounded))
+                        .font(MacadeTypography.control)
                         .foregroundStyle(selectedTab == tab ? MacadeColor.midnight : MacadeColor.inkMuted)
                         .padding(.horizontal, 12)
                         .frame(height: 28)
@@ -416,7 +424,7 @@ private struct ChannelLobbyTabBar: View {
             Spacer()
         }
         .padding(.horizontal, MacadeSpacing.medium)
-        .frame(height: 40)
+        .frame(height: MacadeLayout.toolbarHeight)
         .background { MacadeFrostedFill(opacity: 0.35) }
         .overlay(alignment: .bottom) {
             Rectangle()

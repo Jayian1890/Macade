@@ -12,8 +12,13 @@ extension AuthenticatedHomeViewModel {
     }
 
     func canChallenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel) -> Bool {
+        canChallenge(user, in: channel) { canLaunchFightcadeGame(.fightcadeMatch, in: channel) }
+    }
+
+    func canChallenge(_ user: FightcadeChannelUser, in channel: FightcadeChannel,
+                      canLaunchGame: () -> Bool) -> Bool {
         guard joinedChannelIDs.contains(channel.id),
-              canLaunchFightcadeGame(.fightcadeMatch, in: channel) else {
+              canLaunchGame() else {
             return false
         }
 

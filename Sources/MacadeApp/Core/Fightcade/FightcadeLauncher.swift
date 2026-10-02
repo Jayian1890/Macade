@@ -227,7 +227,7 @@ struct FightcadeLauncher: FightcadeLaunching {
             "SDL_VIDEODRIVER": "cocoa"
         ]) { _, new in new }
         .merging(additionalEnvironment) { _, new in new }
-        .merging(controllerEnvironment(emulator: emulator)) { _, new in new }
+        .merging(try controllerEnvironment(emulator: emulator)) { _, new in new }
         process.environment = environment
         launchLog.write(FightcadeLaunchDiagnostics(fileManager: fileManager).header(
             emulator: emulator,
@@ -330,14 +330,17 @@ struct FightcadeLauncher: FightcadeLaunching {
         )
     }
 
-    private func controllerEnvironment(emulator: String) -> [String: String] {
-        guard FightcadeEmulatorID.runtimeID(for: emulator) == "fbneo",
-              let mappings = try? FightcadeFBNeoSettingsStore(fileManager: fileManager).loadControllerMappings(),
-              !mappings.isEmpty else {
-            return [:]
-        }
-
-        return ["SDL_GAMECONTROLLERCONFIG": mappings]
+    private func controllerEnvironment(emulator: String) throws -> [String: String] {
+        guard FightcadeEmulatorID.runtimeID(for: emulator) == "fbneo" else { return [:] }
+        let directory = try runtime.dataDirectory(emulator: emulator)
+        let projection = try MacadeGamepadPreferencesStore().writeRuntimeProjection(in: directory)
+        var environment = [
+            "MACADE_GAMEPAD_PROFILE_PATH": projection.path,
+            "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS": "1"
+        ]
+        if let mappings = try? FightcadeFBNeoSettingsStore(fileManager: fileManager).loadControllerMappings(),
+           !mappings.isEmpty { environment["SDL_GAMECONTROLLERCONFIG"] = mappings }
+        return environment
     }
 
     private func emulatorExecutable(emulator: String, runtime: URL) throws -> URL {
@@ -382,7 +385,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
 
         let managedProcessIDs = keepManagedProcesses ? processRegistry.processIDs() : []
-        let processIDs = ["macfbneo", "fcadefbneo"].flatMap(runningProcessIDs(named:)).filter { !managedProcessIDs.contains($0) }
+        let processIDs = ["macfbneo", "fcadefbneo"].flatMap(runningProcessIDs(named:)).filter { !managedProcessIDs.contains($0) && !isControllerHelper($0) }
         guard !processIDs.isEmpty else { return }
 
         for processID in processIDs {
@@ -398,6 +401,19 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
 
         waitForExit(processIDs, graceSeconds: 0.25)
+    }
+
+    private func isControllerHelper(_ processID: pid_t) -> Bool {
+        let process = Process()
+        let output = Pipe()
+        process.executableURL = URL(fileURLWithPath: "/bin/ps")
+        process.arguments = ["-p", String(processID), "-o", "args="]
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return false }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return String(data: data, encoding: .utf8)?.contains(" --macade-controllers") == true
     }
 
     private func runningProcessIDs(named name: String) -> [pid_t] {

@@ -3,6 +3,8 @@
 
 #include "burner.h"
 #include "macade_embedded.h"
+#include "macade_gamepad.h"
+#include <algorithm>
 
 
 #define MAX_JOYSTICKS (8)
@@ -13,7 +15,7 @@ static int nInitedSubsytems = 0;
 static SDL_Joystick* JoyList[MAX_JOYSTICKS];
 static int* JoyPrevAxes = NULL;
 static int nJoystickCount = 0;						// Number of joysticks connected to this machine
-int buttons [4][8]= { {-1,-1,-1,-1,-1,-1,-1,-1}, {-1,-1,-1,-1,-1,-1,-1,-1}, {-1,-1,-1,-1,-1,-1,-1,-1}, {-1,-1,-1,-1,-1,-1,-1,-1} }; // 4 joysticks buttons 0 -5 and start / select
+int buttons[MAX_JOYSTICKS][8]; // Initialized to -1 when each joystick is opened.
 
 void setup_kemaps(void)
 {
@@ -275,6 +277,8 @@ static int SDLinpJoystickInit(int i)
 	SDL_GameControllerButtonBind bind;
  
    JoyList[i] = SDL_JoystickOpen(i);
+   if (!JoyList[i]) return 1;
+   std::fill(buttons[i], buttons[i] + 8, -1);
 
 // need this for any mapps that need done might just read a local file and do a readme on how to add your controller this will do for now
    SDL_JoystickGUID guid = SDL_JoystickGetGUID(JoyList[i]);
@@ -292,35 +296,16 @@ static int SDLinpJoystickInit(int i)
    }
 
    temp = SDL_GameControllerOpen(i);
-   mapping = SDL_GameControllerMapping(temp);
-   printf("mapping %s\n",mapping);   
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_A );
-   
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_A );
-   buttons[i][0] = bind.value.button;
-
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_B);
-   buttons[i][1] = bind.value.button;
-
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_X );
-   buttons[i][2] = bind.value.button;
-   
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_Y);
-   buttons[i][3] = bind.value.button;
-
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_LEFTSHOULDER  );
-   buttons[i][4] = bind.value.button;
-
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER );
-   buttons[i][5] = bind.value.button;
-
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_BACK   );
-   buttons[i][6] = bind.value.button;
-
-   bind = SDL_GameControllerGetBindForButton(temp, SDL_CONTROLLER_BUTTON_START  );
-   buttons[i][7] = bind.value.button;
-
-
+   if (temp) {
+       const SDL_GameControllerButton controls[8] = {SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B,
+           SDL_CONTROLLER_BUTTON_X, SDL_CONTROLLER_BUTTON_Y, SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
+           SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, SDL_CONTROLLER_BUTTON_BACK, SDL_CONTROLLER_BUTTON_START};
+       for (int button = 0; button < 8; ++button) {
+           bind = SDL_GameControllerGetBindForButton(temp, controls[button]);
+           buttons[i][button] = bind.bindType == SDL_CONTROLLER_BINDTYPE_BUTTON ? bind.value.button : -1;
+       }
+       SDL_GameControllerClose(temp);
+   }
 
 	return 0;
 }
@@ -351,6 +336,7 @@ int SDLinpSetCooperativeLevel(bool bExclusive, bool /*bForeGround*/)
 
 int SDLinpExit()
 {
+	MacadeGamepadClose();
 	// Close all joysticks
 	for (int i = 0; i < MAX_JOYSTICKS; i++) {
 		if (JoyList[i]) {
@@ -376,6 +362,7 @@ int SDLinpInit()
 	SDLinpExit();
 
 	memset(&JoyList, 0, sizeof(JoyList));
+	for (auto& row : buttons) std::fill(row, row + 8, -1);
 
 	nSize = MAX_JOYSTICKS * 8 * sizeof(int);
 	if ((JoyPrevAxes = (int*)malloc(nSize)) == NULL) {
@@ -391,11 +378,11 @@ int SDLinpInit()
 	}
 
 	// Set up the joysticks
-	nJoystickCount = SDL_NumJoysticks();
+	nJoystickCount = std::min(SDL_NumJoysticks(), MAX_JOYSTICKS);
 	for (int i = 0; i < nJoystickCount; i++) {
 		SDLinpJoystickInit(i);
 	}
-	SDL_JoystickEventState(SDL_IGNORE);
+	SDL_JoystickEventState(SDL_ENABLE);
 
 	// Set up the keyboard
 	SDLinpKeyboardInit();
@@ -422,6 +409,7 @@ int SDLinpStart()
 	// Update SDL event queue
 	SDL_PumpEvents();
 	MacadeEmbeddedPumpInput();
+	MacadeGamepadPoll();
 
 	// Keyboard not read this frame
 	bKeyboardRead = 0;

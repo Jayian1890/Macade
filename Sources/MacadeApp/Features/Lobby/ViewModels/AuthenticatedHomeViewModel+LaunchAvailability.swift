@@ -1,4 +1,50 @@
 extension AuthenticatedHomeViewModel {
+    func singlePlayerUnavailableReason(for channel: FightcadeChannel) -> String? {
+        guard !isLaunchingGame, !isDownloadingROM, !isDeletingROM else { return "Game launch or ROM operation in progress." }
+        if let session = activeEmulationSession, session.isActive,
+           session.mode == .match || session.mode == .direct {
+            return "Stop the active match before starting single player."
+        }
+        guard let emulator = channel.launchEmulator, let gameID = channel.launchGameID else {
+            return FightcadeLaunchError.missingGame.localizedDescription
+        }
+        guard launcher.canLaunchLocalGame(emulator: emulator) else { return "Native \(emulator) runtime not installed." }
+        guard launcher.hasLocalROM(emulator: emulator, gameID: gameID) else { return "Download this game's ROM from Resources first." }
+        return nil
+    }
+
+    func launchSinglePlayer(in channel: FightcadeChannel) {
+        guard !isLaunchingGame else { return }
+        if let reason = singlePlayerUnavailableReason(for: channel) {
+            errorMessage = reason
+            return
+        }
+        launchGame(for: channel, mode: .singlePlayer)
+    }
+
+    func playerListRows(for users: [FightcadeChannelUser], in channel: FightcadeChannel) -> [PlayerListRowState] {
+        // A roster redraw checks each runtime/game once, rather than once per
+        // player. This snapshot is discarded immediately; actions revalidate.
+        var availability: [PlayerListAvailabilityKey: Bool] = [:]
+        func canLaunch(_ capability: FightcadeRuntimeCapability, emulator: String, gameID: String) -> Bool {
+            let key = PlayerListAvailabilityKey(capability: capability, emulator: emulator, gameID: gameID)
+            if let cached = availability[key] { return cached }
+            let result = canLaunchFightcadeGame(capability, emulator: emulator, gameID: gameID)
+            availability[key] = result
+            return result
+        }
+        return users.map { user in
+            PlayerListRowState(user: user, isCurrentUser: user.isCurrentUser(session: session),
+                isChallengeable: canChallenge(user, in: channel) {
+                    guard let emulator = channel.launchEmulator, let gameID = channel.launchGameID else { return false }
+                    return canLaunch(.fightcadeMatch, emulator: emulator, gameID: gameID)
+                }, isChallenging: isChallenging(user, in: channel),
+                isWatchable: canSpectate(user, in: channel) { emulator, gameID in
+                    canLaunch(.fightcadeSpectate, emulator: emulator, gameID: gameID)
+                })
+        }
+    }
+
     func launchTestGame() {
         guard let channel = selectedChannel else {
             return
@@ -95,7 +141,14 @@ extension AuthenticatedHomeViewModel {
 }
 
 enum GameLaunchMode {
+    case singlePlayer
     case checkROM
     case test
     case training
+}
+
+private struct PlayerListAvailabilityKey: Hashable {
+    let capability: FightcadeRuntimeCapability
+    let emulator: String
+    let gameID: String
 }

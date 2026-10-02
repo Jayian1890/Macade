@@ -1,4 +1,5 @@
 #include "burner.h"
+#include "macade_gamepad.h"
 
 #include "luaengine.h"
 
@@ -281,6 +282,8 @@ static int __cdecl AppDebugPrintf(int nStatus, TCHAR* pszFormat, ...)
 
 int main(int argc, char* argv[])
 {
+	int helper = MacadeGamepadCommand(argc, argv);
+	if (helper >= 0) return helper;
 	const char* romname = NULL;
 	UINT32      i = 0;
 	bool gamefound = 0;

@@ -37,6 +37,14 @@ struct MacadeSettingsPreferencesStore {
         nonmutating set { MacadeControllerPreferencesStore(userDefaults: userDefaults).save(newValue) }
     }
 
+    var gamepadPreferences: MacadeGamepadPreferences {
+        MacadeGamepadPreferencesStore(userDefaults: userDefaults).load()
+    }
+
+    func saveGamepadPreferences(_ preferences: MacadeGamepadPreferences) throws {
+        try MacadeGamepadPreferencesStore(userDefaults: userDefaults).save(preferences)
+    }
+
     var lobbyDiagnosticsLogPath: String {
         diagnosticsSettings.relativeLogPath
     }
