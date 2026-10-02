@@ -34,6 +34,18 @@ static void release(void* buffer) { free(buffer); }
 static void frame() { ++nCurrentFrame; assert(InputMake(true) == 0); }
 static int value(int index) { return *GameInp[index].Input.pVal; }
 
+static void localDefaults(int virtualIndex)
+{
+    Init_Joysticks(0);
+    // Let the virtual controller stand in for the first physical joystick even
+    // when hardware is attached to the machine running this test.
+    for (unsigned int i = 0; i < nGameInpCount; ++i) {
+        auto& input = GameInp[i];
+        if (input.nInput == GIT_SWITCH && (input.Input.Switch.nCode & 0xff00) == 0x4000)
+            input.Input.Switch.nCode |= virtualIndex << 8;
+    }
+}
+
 int main()
 {
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -80,12 +92,38 @@ int main()
         << identity << " sf2 7 1 " << MacadePadHex(trigger.szInfo) << " a 4 1\n"
         << identity << " sf2 8 1 " << MacadePadHex(extraButton.szInfo) << " b 15 0\n"
         << identity << " sf2 4 1 " << MacadePadHex(direction.szInfo) << " b 14 0\n"
+        << identity << " sfiii3nr1 6 1 " << MacadePadHex("p1 fire 1") << " b 0 0\n"
+        << identity << " sfiii3nr1 18 2 " << MacadePadHex("p2 fire 1") << " b 1 0\n"
+        << identity << " sfiii3nr1 0 1 " << MacadePadHex("p1 coin") << " b 6 0\n"
+        << identity << " sfiii3nr1 1 1 " << MacadePadHex("p1 start") << " b 7 0\n"
+        << identity << " sfiii3nr1 5 1 " << MacadePadHex("p1 right") << " a 0 1\n"
         << identity << " outrun 3 1 " << MacadePadHex("p1 x-axis") << " x 0 0\n";
     profile.close(); setenv("MACADE_GAMEPAD_PROFILE_PATH", path, 1);
     assert(InputInit() == 0); GameInpDefault();
     frame(); assert(value(6) == 1 && value(9) == 1 && value(18) == 0);
     SDL_JoystickSetVirtualButton(joystick, 1, 1);
     frame(); assert(value(18) == 1);
+
+    // Reproduce the real launch's post-DrvInit joystick configuration. The P1
+    // profile and legacy P2 fallback previously read the same first controller.
+    localDefaults(virtualIndex);
+    frame(); assert(value(6) == 1 && value(17) == 1 && value(18) == 1);
+    setenv("MACADE_SINGLE_PLAYER_INPUT", "1", 1);
+    localDefaults(virtualIndex);
+    frame();
+    assert(value(6) == 1 && value(9) == 1);
+    for (int i = 12; i < 24; ++i) assert(value(i) == 0);
+    assert(!MacadeGamepadOwnsInput(18)); // saved local P2 profiles are also excluded
+    unsetenv("MACADE_SINGLE_PLAYER_INPUT");
+    localDefaults(virtualIndex);
+    frame(); assert(value(17) == 1 && value(18) == 1); // local multiplayer unchanged
+    setenv("MACADE_SINGLE_PLAYER_INPUT", "1", 1);
+    localDefaults(virtualIndex);
+    frame(); assert(value(17) == 0 && value(18) == 0);
+    Init_Joysticks(1); // an explicit -joy must not restore P2 gamepad input
+    frame();
+    assert(value(6) == 1);
+    for (int i = 12; i < 24; ++i) assert(value(i) == 0);
     SDL_JoystickSetVirtualAxis(joystick, 4, -32768); // released analog trigger
     frame(); assert(value(7) == 0);
     SDL_JoystickSetVirtualAxis(joystick, 4, 32767);
@@ -110,11 +148,20 @@ int main()
     };
     // A keyboard switch remains available for a profiled action.
     GameInp[6].nInput = GIT_SWITCH; GameInp[6].Input.Switch.nCode = FBK_A;
+    GameInp[18].nInput = GIT_SWITCH; GameInp[18].Input.Switch.nCode = FBK_A;
+    assert(nMacroCount > 0);
+    auto originalMacro = GameInp[nGameInpCount];
+    GameInp[nGameInpCount] = {};
+    auto& macro = GameInp[nGameInpCount].Macro;
+    macro.nMode = 1; macro.Switch.nCode = FBK_A;
+    macro.pVal[0] = GameInp[20].Input.pVal; macro.nVal[0] = 1;
     SDL_JoystickSetVirtualButton(joystick, 0, 0);
     SDL_JoystickSetVirtualHat(joystick, 0, SDL_HAT_CENTERED);
     frame(); assert(value(6) == 0 && value(9) == 0);
     key("key 1 4"); assert(value(6) == 1);
+    assert(value(18) == 0 && value(20) == 0); // P2 keyboard and macro cannot bypass isolation
     key("key 0 4"); assert(value(6) == 0);
+    GameInp[nGameInpCount] = originalMacro;
     SDL_JoystickSetVirtualButton(joystick, 0, 1);
 
     // Real InputMake -> NetworkGetInput -> QuarkGetInput -> native GGPO synchronization.
@@ -135,6 +182,8 @@ int main()
         peer->synchronizing = false;
         sync_set_frame_delay(&peer->sync, 0);
         ggpo = &peer->base; kNetGame = 1; NetworkInitInput();
+        assert(!MacadeGamepadPlayerOneOnly()); // reject the still-set local-only flag
+        localDefaults(virtualIndex);
         frame(); assert(value(6) == 1);
         // Player 2's local-play profile must not enter a match's remote bank.
         assert(!MacadeGamepadOwnsInput(18));
@@ -162,6 +211,7 @@ int main()
         kNetGame = 0;
     }
     kNetSpectator = 1;
+    assert(!MacadeGamepadPlayerOneOnly());
     assert(!MacadeGamepadOwnsInput(6));
     kNetSpectator = 0;
 
@@ -177,6 +227,26 @@ int main()
     SDL_JoystickSetVirtualButton(joystick, 0, 1);
     frame(); assert(value(6) == 1);
     GameInpExit(); InputExit();
+    driver("sfiii3nr1"); nMaxPlayers = BurnDrvGetMaxPlayers();
+    assert(GameInpInit() == 0); assert(InputInit() == 0); GameInpDefault();
+    SDL_JoystickSetVirtualAxis(joystick, 0, 24000);
+    for (int button : {0, 1, 6, 7}) SDL_JoystickSetVirtualButton(joystick, button, 1);
+    unsetenv("MACADE_SINGLE_PLAYER_INPUT");
+    localDefaults(reconnected);
+    frame(); assert(value(6) == 1 && value(17) == 1 && value(18) == 1);
+    setenv("MACADE_SINGLE_PLAYER_INPUT", "1", 1);
+    localDefaults(reconnected);
+    frame(); assert(value(0) == 1 && value(1) == 1 && value(5) == 1 && value(6) == 1);
+    for (int i = 12; i < 24; ++i) assert(value(i) == 0);
+    SDL_JoystickSetVirtualAxis(joystick, 0, 0);
+    for (int button : {0, 1, 6, 7}) SDL_JoystickSetVirtualButton(joystick, button, 0);
+    frame(); assert(value(0) == 0 && value(1) == 0 && value(5) == 0 && value(6) == 0);
+    GameInp[6].nInput = GIT_SWITCH; GameInp[6].Input.Switch.nCode = FBK_Z;
+    key("key 1 29"); assert(value(6) == 1);
+    for (int i = 12; i < 24; ++i) assert(value(i) == 0);
+    key("key 0 29"); assert(value(6) == 0);
+    puts("Single Player SF2 and 3rd Strike: P1 profile/keyboard active, P2 controls neutral");
+    GameInpExit(); InputExit();
     driver("outrun"); nMaxPlayers = BurnDrvGetMaxPlayers();
     assert(GameInpInit() == 0); assert(InputInit() == 0); GameInpDefault();
     SDL_JoystickSetVirtualAxis(joystick, 0, 24000);
@@ -187,5 +257,5 @@ int main()
     close(sender); MacadeEmbeddedShutdown(); unlink(socketPath);
     InputExit(); GameInpExit(); BurnLibExit();
     devices.close(); SDL_JoystickClose(joystick); SDL_JoystickDetachVirtual(reconnected); SDL_Quit(); unlink(path);
-    puts("PASS: unmapped SDL device, analog/digital triggers, button/hat D-pad, high button indices, profile input, analog game axis, keyboard, both GGPO sides, spectator exclusion, disconnect and reconnect");
+    puts("PASS: isolated Single Player, local multiplayer, unmapped SDL device, analog/digital triggers, button/hat D-pad, high button indices, profile input, analog game axis, keyboard, both GGPO sides/routes despite local-only flag, spectator exclusion, disconnect and reconnect");
 }

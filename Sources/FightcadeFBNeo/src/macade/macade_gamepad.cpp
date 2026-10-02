@@ -6,6 +6,15 @@
 #include <sstream>
 #include <vector>
 
+bool MacadeGamepadPlayerOneOnly()
+{
+    // A network route always uses its existing P1 input bank/GGPO side routing,
+    // even if a caller accidentally supplies the local-only environment flag.
+    if (kNetGame || kNetSpectator) return false;
+    const char* mode = getenv("MACADE_SINGLE_PLAYER_INPUT");
+    return mode && !strcmp(mode, "1");
+}
+
 int MacadeGamepadInputPlayer(const BurnInputInfo& info)
 {
     auto player = [](const char* label) {
@@ -37,6 +46,7 @@ const Binding* bindingFor(unsigned int index)
     if (BurnDrvGetInputInfo(&info, index)) return nullptr;
     for (const auto& binding : bindings) {
         if (binding.input == index && binding.game == game && (!kNetGame || binding.player == 1)
+            && (!MacadeGamepadPlayerOneOnly() || binding.player == 1)
             && binding.info == MacadePadHex(info.szInfo) && info.szName
             && MacadeGamepadInputPlayer(info) == binding.player
             && (!kNetGame || ((info.szName[0] == 'P' || info.szName[0] == 'p') && info.szName[1] == '1'))
@@ -72,6 +82,25 @@ void MacadeGamepadPoll()
 }
 void MacadeGamepadClose() { devices.close(); }
 bool MacadeGamepadOwnsInput(unsigned int index) { return bindingFor(index) != nullptr; }
+void MacadeGamepadIsolatePlayerOne(bool copy)
+{
+    if (!MacadeGamepadPlayerOneOnly()) return;
+    // Run after legacy input, profiles and macros so none can activate another
+    // player in Single Player. Do not rewrite saved/default configurations.
+    for (unsigned int i = 0; i < nGameInpCount; ++i) {
+        BurnInputInfo info{};
+        if (BurnDrvGetInputInfo(&info, i) || MacadeGamepadInputPlayer(info) <= 1) continue;
+        auto& input = GameInp[i];
+        if (!input.Input.pVal) continue;
+        if (info.nType == BIT_DIGITAL) {
+            input.Input.nVal = 0;
+            if (copy) *input.Input.pVal = 0;
+        } else if (info.nType & BIT_GROUP_ANALOG) {
+            input.Input.nVal = info.nType == BIT_ANALOG_REL ? 0 : 32768;
+            if (copy) *input.Input.pShortVal = input.Input.nVal;
+        }
+    }
+}
 void MacadeGamepadApply(bool copy)
 {
     if (kNetSpectator) return;

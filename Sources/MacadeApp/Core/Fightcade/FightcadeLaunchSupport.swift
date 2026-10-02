@@ -142,6 +142,7 @@ struct FightcadeLaunchDiagnostics {
             "MACADE_EMULATOR_DATA_DIR",
             "MACADE_FIGHTCADE_RUNTIME",
             "MACADE_ROM_DIR",
+            "MACADE_SINGLE_PLAYER_INPUT",
             "PATH",
             "ROMPATH",
             "SHELL",

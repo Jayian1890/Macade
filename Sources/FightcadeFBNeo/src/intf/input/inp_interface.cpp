@@ -426,6 +426,9 @@ INT32 InputMake(bool bCopy)
 		}
 	}
 
+#ifdef BUILD_SDL2
+	MacadeGamepadIsolatePlayerOne(bCopy);
+#endif
 	return 0;
 }
 

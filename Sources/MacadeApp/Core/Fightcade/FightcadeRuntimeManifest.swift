@@ -81,6 +81,11 @@ enum FightcadeEmulatorID {
 }
 
 extension FightcadeEmbeddedLaunch {
+    var restrictsGamepadToPlayerOne: Bool {
+        mode == .singlePlayer && !requiresQuark
+            && FightcadeEmulatorID.runtimeID(for: emulator) == "fbneo"
+    }
+
     var requiresQuark: Bool {
         requiredRuntimeCapability != nil
     }

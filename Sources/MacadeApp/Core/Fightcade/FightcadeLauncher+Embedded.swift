@@ -40,6 +40,7 @@ extension FightcadeLauncher {
             "MACADE_EMBEDDED_VIDEO_BYTES": String(resources.videoStream.byteCount),
             "MACADE_EMBEDDED_INPUT_SOCKET": resources.inputClient.socketPath,
             "MACADE_EMBEDDED_HIDE_WINDOW": "1",
+            "MACADE_SINGLE_PLAYER_INPUT": launch.restrictsGamepadToPlayerOne ? "1" : "0",
             "SDL_MAC_BACKGROUND_APP": "1"
         ]
         if launch.mode == .match {

@@ -3,6 +3,21 @@ import XCTest
 
 @MainActor
 final class SinglePlayerLaunchTests: XCTestCase {
+    func testPlayerOneGamepadRestrictionOnlyAppliesToLocalFBNeoSinglePlayer() {
+        for mode: FightcadeEmbeddedSession.Mode in [.singlePlayer, .test, .training, .match, .direct, .spectate, .replay] {
+            let launch = FightcadeEmbeddedLaunch(channelID: channel.id, mode: mode,
+                emulator: "fbneo", gameID: channel.gameID!, arguments: [channel.gameID!],
+                title: "Input policy", match: nil)
+            XCTAssertEqual(launch.restrictsGamepadToPlayerOne, mode == .singlePlayer)
+            let networkArgument = FightcadeEmbeddedLaunch(channelID: channel.id, mode: mode,
+                emulator: "fbneo", gameID: channel.gameID!, arguments: ["quark:direct,sfiii3nr1,7000,127.0.0.1,7001,1,0"],
+                title: "Input policy", match: nil)
+            XCTAssertFalse(networkArgument.restrictsGamepadToPlayerOne)
+        }
+        XCTAssertFalse(FightcadeEmbeddedLaunch.singlePlayer(channelID: channel.id,
+            emulator: "snes9x", gameID: "snes_smwu").restrictsGamepadToPlayerOne)
+    }
+
     func testUnavailableRuntimeAndROMDoNotStartAnEmulator() {
         let launcher = RouteGatedFightcadeLauncher()
         let model = makeModel(launcher: launcher)
@@ -90,6 +105,8 @@ final class SinglePlayerLaunchTests: XCTestCase {
         XCTAssertEqual(model.activeEmulationChannel?.id, channel.id)
         XCTAssertEqual(session.mode, .singlePlayer)
         XCTAssertTrue(session.title.hasPrefix("Single Player"))
+        let launchLog = try String(contentsOf: session.logURL, encoding: .utf8)
+        XCTAssertTrue(launchLog.contains("MACADE_SINGLE_PLAYER_INPUT=1"))
 
         let deadline = ContinuousClock.now + .seconds(30)
         var firstFrame: FightcadeEmbeddedVideoFrame?
