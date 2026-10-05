@@ -33,6 +33,7 @@ final class FightcadeEmbeddedSession {
     let logURL: URL
     let videoStream: FightcadeEmbeddedVideoStream
     let inputClient: FightcadeEmbeddedInputClient
+    let videoDiagnostics: EmbeddedVideoDiagnostics
 
     private var process: Process?
     private var proxyTask: Task<Void, Never>?
@@ -62,6 +63,8 @@ final class FightcadeEmbeddedSession {
         self.logURL = logURL
         self.videoStream = videoStream
         self.inputClient = inputClient
+        videoDiagnostics = EmbeddedVideoDiagnostics(sessionID: id, mode: mode.rawValue,
+            emulator: emulator, gameID: gameID, launchLogURL: logURL)
     }
 
     var statusText: String {
@@ -109,6 +112,7 @@ final class FightcadeEmbeddedSession {
         } else {
             status = .terminated(status: terminationStatus)
         }
+        videoDiagnostics.finish(reason: "terminated status=\(terminationStatus)")
         process = nil
         sleepAssertion?.release()
         sleepAssertion = nil
@@ -128,6 +132,7 @@ final class FightcadeEmbeddedSession {
         if case .failed = status { return }
         let runningProcess = process
         status = .failed(message)
+        videoDiagnostics.finish(reason: "failed")
         sleepAssertion?.release()
         sleepAssertion = nil
         forceKillTask?.cancel()
@@ -147,6 +152,7 @@ final class FightcadeEmbeddedSession {
 
     func stop() {
         guard let process, process.isRunning else {
+            videoDiagnostics.finish(reason: "stopped")
             sleepAssertion?.release()
             sleepAssertion = nil
             forceKillTask?.cancel()

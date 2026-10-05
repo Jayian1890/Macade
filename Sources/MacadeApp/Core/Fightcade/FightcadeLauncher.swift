@@ -278,7 +278,7 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
     }
 
-    private func makeLaunchLog(emulator: String) throws -> FightcadeLaunchLog {
+    private func makeLaunchLog(emulator: String, sessionID: UUID? = nil) throws -> FightcadeLaunchLog {
         guard let logsURL = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first?
             .appendingPathComponent("Logs")
             .appendingPathComponent("Macade") else {
@@ -286,7 +286,8 @@ struct FightcadeLauncher: FightcadeLaunching {
         }
 
         try fileManager.createDirectory(at: logsURL, withIntermediateDirectories: true)
-        let logURL = logsURL.appendingPathComponent("\(emulator)-\(Self.logTimestamp()).log")
+        let suffix = sessionID.map { "-\($0.uuidString)" } ?? "-\(UUID().uuidString)"
+        let logURL = logsURL.appendingPathComponent("\(emulator)-\(Self.logTimestamp())\(suffix).log")
         let latestURL = logsURL.appendingPathComponent("\(emulator)-latest.log")
         fileManager.createFile(atPath: logURL.path, contents: nil)
         try? fileManager.removeItem(at: latestURL)
@@ -320,7 +321,7 @@ struct FightcadeLauncher: FightcadeLaunching {
 
         let videoStream = try FightcadeEmbeddedVideoStream(fileURL: directory.appendingPathComponent("video.mcade"))
         let inputClient = try FightcadeEmbeddedInputClient(socketPath: inputSocketURL.path)
-        let launchLog = try makeLaunchLog(emulator: "\(emulator)-embedded")
+        let launchLog = try makeLaunchLog(emulator: "\(emulator)-embedded", sessionID: id)
         return FightcadeEmbeddedResources(
             id: id,
             videoStream: videoStream,

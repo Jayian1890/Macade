@@ -48,3 +48,4 @@ docs/*
 docs/emulators/*
 !docs/emulators/gamepad-support.md
 !docs/emulators/single-player-launch.md
+!docs/emulators/frame-presentation.md

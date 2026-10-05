@@ -114,6 +114,8 @@
 		BF00000B000000000000003C /* EmbeddedEmulatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */; };
 		BF00000B0000000000000045 /* EmbeddedEmulatorSessionControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000045 /* EmbeddedEmulatorSessionControls.swift */; };
 		BF00000B0000000000000046 /* EmbeddedVideoDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */; };
+		CF0000010000000000000009 /* EmbeddedVideoDisplayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000009 /* EmbeddedVideoDisplayPolicy.swift */; };
+		CF0000010000000000000008 /* EmbeddedVideoFrameBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000008 /* EmbeddedVideoFrameBuffer.swift */; };
 		BF00000B0000000000000047 /* EmbeddedVideoNSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */; };
 		BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */; };
 		BF00000B000000000000003D /* PlayerListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF00000C000000000000003D /* PlayerListView.swift */; };
@@ -190,6 +192,7 @@
 		CF0000010000000000000004 /* LobbyLayoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000004; };
 		CF0000010000000000000005 /* LobbyLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000005; };
 		CF0000010000000000000006 /* SinglePlayerLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000006; };
+		CF0000010000000000000007 /* EmbeddedVideoPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0000020000000000000007; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -313,6 +316,8 @@
 		BF00000C000000000000003C /* EmbeddedEmulatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedEmulatorPanel.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000045 /* EmbeddedEmulatorSessionControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedEmulatorSessionControls.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoDiagnostics.swift; sourceTree = "<group>"; };
+		CF0000020000000000000009 /* EmbeddedVideoDisplayPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoDisplayPolicy.swift; sourceTree = "<group>"; };
+		CF0000020000000000000008 /* EmbeddedVideoFrameBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoFrameBuffer.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoNSView.swift; sourceTree = "<group>"; };
 		BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmbeddedVideoUpload.swift; sourceTree = "<group>"; };
 		BF00000C000000000000003D /* PlayerListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerListView.swift; sourceTree = "<group>"; };
@@ -390,6 +395,7 @@
 		CF0000020000000000000004 /* LobbyLayoutViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sources/MacadeApp/Features/Lobby/ViewModels/LobbyLayoutViewModel.swift; sourceTree = SOURCE_ROOT; };
 		CF0000020000000000000005 /* LobbyLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MacadeAppTests/LobbyLayoutTests.swift; sourceTree = SOURCE_ROOT; };
 		CF0000020000000000000006 /* SinglePlayerLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MacadeAppTests/SinglePlayerLaunchTests.swift; sourceTree = SOURCE_ROOT; };
+		CF0000020000000000000007 /* EmbeddedVideoPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests/MacadeAppTests/EmbeddedVideoPresentationTests.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -577,6 +583,7 @@
 				CE0000020000000000000007 /* GamepadSettingsViewModelTests.swift */,
 				CF0000020000000000000005 /* LobbyLayoutTests.swift */,
 				CF0000020000000000000006 /* SinglePlayerLaunchTests.swift */,
+				CF0000020000000000000007 /* EmbeddedVideoPresentationTests.swift */,
 			);
 			path = MacadeAppTests;
 			sourceTree = "<group>";
@@ -606,6 +613,9 @@
 				BF00000C0000000000000038 /* FightcadeEmbeddedInputClient.swift */,
 				BF00000C0000000000000039 /* FightcadeEmbeddedSession.swift */,
 				BF00000C000000000000003A /* FightcadeEmbeddedVideoStream.swift */,
+				BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */,
+				CF0000020000000000000009 /* EmbeddedVideoDisplayPolicy.swift */,
+				CF0000020000000000000008 /* EmbeddedVideoFrameBuffer.swift */,
 				BF00000C00000000000000B0 /* FightcadeLaunchRoutes.swift */,
 				BF00000C00000000000000D5 /* FightcadeRuntimeManifest.swift */,
 				BF00000C0000000000000011 /* FightcadeLauncher.swift */,
@@ -744,7 +754,6 @@
 				BF00000C00000000000000DC /* RelayConsoleParts.swift */,
 				BF00000C00000000000000DD /* RelayConsoleRecorder.swift */,
 				BF00000C00000000000000C1 /* NativeEmulatorOverlay.swift */,
-				BF00000C0000000000000046 /* EmbeddedVideoDiagnostics.swift */,
 				BF00000C0000000000000047 /* EmbeddedVideoNSView.swift */,
 				BF00000C0000000000000044 /* EmbeddedVideoUpload.swift */,
 				BF00000C0000000000000040 /* SDLScancodeMapper.swift */,
@@ -1047,6 +1056,8 @@
 				BF00000B0000000000000045 /* EmbeddedEmulatorSessionControls.swift in Sources */,
 				BF00000B00000000000000C1 /* NativeEmulatorOverlay.swift in Sources */,
 				BF00000B0000000000000046 /* EmbeddedVideoDiagnostics.swift in Sources */,
+				CF0000010000000000000009 /* EmbeddedVideoDisplayPolicy.swift in Sources */,
+				CF0000010000000000000008 /* EmbeddedVideoFrameBuffer.swift in Sources */,
 				BF00000B0000000000000047 /* EmbeddedVideoNSView.swift in Sources */,
 				BF00000B0000000000000044 /* EmbeddedVideoUpload.swift in Sources */,
 				BF00000B000000000000003D /* PlayerListView.swift in Sources */,
@@ -1123,6 +1134,7 @@
 				CE0000010000000000000007 /* GamepadSettingsViewModelTests.swift in Sources */,
 				CF0000010000000000000005 /* LobbyLayoutTests.swift in Sources */,
 				CF0000010000000000000006 /* SinglePlayerLaunchTests.swift in Sources */,
+				CF0000010000000000000007 /* EmbeddedVideoPresentationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1258,7 +1270,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1272,7 +1284,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.6.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -1287,7 +1299,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = "";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1301,7 +1313,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.6.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macade.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;

@@ -8,7 +8,12 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
             EmbeddedInputEventRouter.shared.unbind(session: oldValue)
             EmbeddedInputEventRouter.shared.bind(session: session)
             videoStream = session?.videoStream
-            diagnostics.sessionDidChange(session)
+            stopDisplayLink()
+            lastFrameIndex = 0
+            frameTexture = nil
+            preparedFrame = nil
+            needsPresentation = true
+            updateDisplayLink()
         }
     }
 
@@ -21,7 +26,16 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     private var lastFrameIndex: UInt64 = 0
     private var scanlinesEnabled = false
     private let videoUpload = EmbeddedVideoUpload()
-    private let diagnostics = EmbeddedVideoDiagnostics()
+    private var diagnostics: EmbeddedVideoDiagnostics? { session?.videoDiagnostics }
+    private var presentationLink: CADisplayLink?
+    private var activeDiagnostics: EmbeddedVideoDiagnostics?
+    private var frameBuffer: EmbeddedVideoFrameBuffer?
+    private let displayTarget = EmbeddedVideoDisplayTarget()
+    private var displayObservers: [NSObjectProtocol] = []
+    private var displayRate = 0
+    private var gpuBusy = false
+    private var needsPresentation = true
+    private var preparedFrame: PreparedFrame?
     private var videoStream: FightcadeEmbeddedVideoStream?
     private var settingsObserver: NSObjectProtocol?
 
@@ -53,8 +67,15 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         framebufferOnly = true
         presentsWithTransaction = false
         enableSetNeedsDisplay = false
-        isPaused = false
-        preferredFramesPerSecond = 60
+        // NSView's display link is the only clock. MTKView's timer is disabled.
+        isPaused = true
+        (layer as? CAMetalLayer)?.displaySyncEnabled = true
+        displayTarget.view = self
+        for name in [NSWindow.didChangeScreenNotification, NSApplication.didChangeScreenParametersNotification, NSWindow.didChangeOcclusionStateNotification] {
+            displayObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.updateDisplayLink() }
+            })
+        }
         commandQueue = device?.makeCommandQueue()
         bgraPipelineState = Self.makePipeline(device: device, pixelFormat: colorPixelFormat, fragmentName: "fragment_bgra")
         rgb565PipelineState = Self.makePipeline(device: device, pixelFormat: colorPixelFormat, fragmentName: "fragment_rgb565")
@@ -66,6 +87,9 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     }
 
     isolated deinit {
+        presentationLink?.invalidate()
+        displayObservers.forEach(NotificationCenter.default.removeObserver)
+        activeDiagnostics?.consumerDetached()
         if let settingsObserver {
             NotificationCenter.default.removeObserver(settingsObserver)
         }
@@ -75,6 +99,7 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        updateDisplayLink()
         if window == nil {
             EmbeddedInputEventRouter.shared.unbind(session: session)
         } else {
@@ -99,38 +124,104 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         }
     }
 
-    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) { }
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        needsPresentation = true
+    }
+
+    override func viewDidHide() {
+        super.viewDidHide()
+        updateDisplayLink()
+    }
+
+    override func viewDidUnhide() {
+        super.viewDidUnhide()
+        updateDisplayLink()
+    }
+
+    private func stopDisplayLink() {
+        presentationLink?.invalidate()
+        presentationLink = nil
+        frameBuffer = nil
+        displayRate = 0
+        activeDiagnostics?.consumerDetached()
+        activeDiagnostics = nil
+    }
+
+    private func updateDisplayLink() {
+        guard let screen = window?.screen, window?.occlusionState.contains(.visible) == true,
+              !isHiddenOrHasHiddenAncestor, session?.isActive == true else {
+            stopDisplayLink()
+            return
+        }
+        let policy = EmbeddedVideoDisplayPolicy(refreshRate: screen.maximumFramesPerSecond)
+        let rate = policy.refreshRate
+        if presentationLink == nil {
+            activeDiagnostics = diagnostics
+            activeDiagnostics?.consumerAttached()
+            presentationLink = displayLink(target: displayTarget, selector: #selector(EmbeddedVideoDisplayTarget.tick(_:)))
+            presentationLink?.add(to: .main, forMode: .common)
+        }
+        presentationLink?.preferredFrameRateRange = CAFrameRateRange(minimum: Float(rate), maximum: Float(rate), preferred: Float(rate))
+        if displayRate != rate {
+            // Near the source rate, preserve short bursts instead of sampling away an image.
+            // Faster displays can sample the latest publication directly with lower latency.
+            frameBuffer = policy.usesBurstBuffer ? videoStream.map { EmbeddedVideoFrameBuffer(stream: $0) } : nil
+        }
+        displayRate = rate
+        diagnostics?.recordDisplay(name: screen.localizedName, rate: rate)
+        needsPresentation = true
+    }
+
+    fileprivate func displayTick(_ link: CADisplayLink) {
+        guard session?.isActive == true else { updateDisplayLink(); return }
+        if window?.screen?.maximumFramesPerSecond != displayRate { updateDisplayLink() }
+        diagnostics?.recordTick(timestamp: link.timestamp, targetTimestamp: link.targetTimestamp)
+        draw()
+    }
 
     func draw(in view: MTKView) {
         let drawStart = EmbeddedVideoDiagnostics.now
-        guard let videoStream else { diagnostics.recordMissingFrame(reason: "no-stream"); return }
+        // Never block the display callback or overwrite a texture still read by the GPU.
+        guard !gpuBusy else { diagnostics?.recordBusy(); return }
+        guard let videoStream else { diagnostics?.recordMissingFrame(reason: "no-stream"); return }
         let snapshotStart = EmbeddedVideoDiagnostics.now
-        let read = videoStream.withNextFrame(after: lastFrameIndex) { frame -> PreparedFrame? in
-            let snapshotMs = (EmbeddedVideoDiagnostics.now - snapshotStart) * 1_000
-            let uploadStart = EmbeddedVideoDiagnostics.now
-            guard upload(frame: frame) else { return nil }
-            return PreparedFrame(
-                width: frame.width,
-                height: frame.height,
-                bytesPerPixel: frame.bytesPerPixel,
-                pixelFormat: frame.pixelFormat,
-                frameIndex: frame.frameIndex,
-                overlayState: frame.overlayState,
-                snapshotMs: snapshotMs,
-                uploadMs: (EmbeddedVideoDiagnostics.now - uploadStart) * 1_000
-            )
+        let read: FightcadeEmbeddedVideoFrameRead<PreparedFrame?>
+        if let frameBuffer {
+            let pending = frameBuffer.next()
+            diagnostics?.recordBufferRead(dropped: pending.dropped, ageMs: pending.ageMs)
+            if let frame = pending.frame, frame.frameIndex != lastFrameIndex {
+                let uploadStart = EmbeddedVideoDiagnostics.now
+                read = .frame(upload(frame: frame) ? PreparedFrame(width: frame.width, height: frame.height,
+                    bytesPerPixel: frame.bytesPerPixel, pixelFormat: frame.pixelFormat,
+                    frameIndex: frame.frameIndex, overlayState: frame.overlayState,
+                    snapshotMs: (uploadStart - snapshotStart) * 1_000,
+                    uploadMs: (EmbeddedVideoDiagnostics.now - uploadStart) * 1_000) : nil)
+            } else {
+                read = lastFrameIndex == 0 ? .missing : .duplicate
+            }
+        } else {
+            read = videoStream.withNextFrame(after: lastFrameIndex) { frame -> PreparedFrame? in
+                let snapshotMs = (EmbeddedVideoDiagnostics.now - snapshotStart) * 1_000
+                let uploadStart = EmbeddedVideoDiagnostics.now
+                guard upload(frame: frame) else { return nil }
+                return PreparedFrame(width: frame.width, height: frame.height,
+                    bytesPerPixel: frame.bytesPerPixel, pixelFormat: frame.pixelFormat,
+                    frameIndex: frame.frameIndex, overlayState: frame.overlayState, snapshotMs: snapshotMs,
+                    uploadMs: (EmbeddedVideoDiagnostics.now - uploadStart) * 1_000)
+            }
         }
 
         let frame: PreparedFrame
         switch read {
         case .missing:
-            diagnostics.recordMissingFrame(reason: "no-snapshot")
+            diagnostics?.recordMissingFrame(reason: "no-snapshot")
             return
         case .duplicate:
-            diagnostics.recordDuplicateFrame()
-            return
+            diagnostics?.recordDuplicateFrame()
+            guard needsPresentation, let preparedFrame else { return }
+            frame = preparedFrame
         case .frame(let preparedFrame):
-            guard let preparedFrame else { diagnostics.recordFailure(reason: "upload"); return }
+            guard let preparedFrame else { diagnostics?.recordFailure(reason: "upload"); return }
             frame = preparedFrame
         }
 
@@ -138,9 +229,12 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
               let descriptor = currentRenderPassDescriptor,
               let commandBuffer = commandQueue?.makeCommandBuffer(),
               let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor),
-              let pipelineState = pipelineState(for: frame) else { diagnostics.recordFailure(reason: "metal"); return }
+              let pipelineState = pipelineState(for: frame) else { diagnostics?.recordFailure(reason: "metal"); return }
 
+        let isNewFrame = lastFrameIndex != frame.frameIndex
         lastFrameIndex = frame.frameIndex
+        preparedFrame = frame
+        needsPresentation = false
         if session?.overlayState != frame.overlayState {
             session?.overlayState = frame.overlayState
         }
@@ -156,9 +250,29 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         }
         encoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
         encoder.endEncoding()
+        let frameIndex = frame.frameIndex
+        let sessionDiagnostics = diagnostics
+        drawable.addPresentedHandler { drawable in
+            let time = drawable.presentedTime
+            Task { @MainActor in
+                sessionDiagnostics?.recordPresented(frameIndex: frameIndex, time: time, isNewFrame: isNewFrame)
+            }
+        }
+        gpuBusy = true
+        commandBuffer.addCompletedHandler { [weak self] buffer in
+            let failed = buffer.status == .error
+            Task { @MainActor in
+                self?.gpuBusy = false
+                if failed {
+                    sessionDiagnostics?.recordFailure(reason: "gpu")
+                    self?.needsPresentation = true
+                }
+            }
+        }
         commandBuffer.present(drawable)
         commandBuffer.commit()
-        diagnostics.recordFrame(
+        guard isNewFrame else { return }
+        diagnostics?.recordFrame(
             frameIndex: frame.frameIndex,
             snapshotMs: frame.snapshotMs,
             uploadMs: frame.uploadMs,
@@ -167,6 +281,7 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
     }
 
     private func reloadVideoSettings() {
+        needsPresentation = true
         scanlinesEnabled = (try? FightcadeFBNeoSettingsStore().load().scanlines) ?? false
     }
 
@@ -273,5 +388,15 @@ final class EmbeddedVideoNSView: MTKView, MTKViewDelegate {
         descriptor.fragmentFunction = fragment
         descriptor.colorAttachments[0].pixelFormat = pixelFormat
         return try? device.makeRenderPipelineState(descriptor: descriptor)
+    }
+}
+
+// CADisplayLink retains its target; the weak hop lets view teardown invalidate the link.
+@MainActor
+private final class EmbeddedVideoDisplayTarget: NSObject {
+    weak var view: EmbeddedVideoNSView?
+
+    @objc func tick(_ link: CADisplayLink) {
+        view?.displayTick(link)
     }
 }

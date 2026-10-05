@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import Macade
 
@@ -123,6 +124,9 @@ final class SinglePlayerLaunchTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(250))
         XCTAssertGreaterThan(try XCTUnwrap(session.videoStream.snapshot()).frameIndex, frame.frameIndex)
         print("Single Player native verification: \(session.gameID), \(frame.width)x\(frame.height), frame \(frame.frameIndex), \(session.statusText)")
+        if ProcessInfo.processInfo.environment["MACADE_VIDEO_RUNTIME"] == "1" {
+            try await measurePresentation(session)
+        }
         model.stopActiveEmulationSession()
         XCTAssertNil(model.activeEmulationSession)
         XCTAssertFalse(model.isShowingGameplay)
@@ -131,6 +135,33 @@ final class SinglePlayerLaunchTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(50))
         }
         guard case .terminated = session.status else { return XCTFail("Emulator did not terminate: \(session.statusText)") }
+    }
+
+    private func measurePresentation(_ session: FightcadeEmbeddedSession) async throws {
+        let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 768, height: 576),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let view = EmbeddedVideoNSView()
+        window.contentView = view
+        view.session = session
+        window.orderFront(nil)
+        defer { view.session = nil; window.close() }
+        var last: UInt64 = 0
+        var previousTime = EmbeddedVideoDiagnostics.now
+        var intervals: [Double] = []
+        let deadline = ContinuousClock.now + .seconds(8)
+        while ContinuousClock.now < deadline {
+            _ = session.videoStream.withNextFrame(after: last) { frame in
+                let now = EmbeddedVideoDiagnostics.now
+                if last > 0 { intervals.append((now - previousTime) * 1_000) }
+                previousTime = now
+                last = frame.frameIndex
+            }
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertGreaterThan(intervals.count, 200)
+        print("Publication observation (1ms polling): samples=\(intervals.count) minMs=\(intervals.min() ?? 0) maxMs=\(intervals.max() ?? 0) meanMs=\(intervals.reduce(0, +) / Double(max(1, intervals.count)))")
+        print("Presentation diagnostics: \(session.videoDiagnostics.url.path)")
     }
 
     private var channel: FightcadeChannel {
