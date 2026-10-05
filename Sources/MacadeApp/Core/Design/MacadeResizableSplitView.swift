@@ -69,6 +69,7 @@ struct MacadeResizableSplitView<Leading: View, Trailing: View>: View {
         }
         .onDisappear { if isHovering { NSCursor.pop(); isHovering = false } }
         .focusable()
+        .focusEffectDisabled()
         .onKeyPress(.leftArrow) { adjust(-1, axis: .horizontal, fixed: fixed, total: total) }
         .onKeyPress(.rightArrow) { adjust(1, axis: .horizontal, fixed: fixed, total: total) }
         .onKeyPress(.upArrow) { adjust(-1, axis: .vertical, fixed: fixed, total: total) }
